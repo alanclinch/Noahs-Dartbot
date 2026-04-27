@@ -368,11 +368,11 @@ body{
   border-color:var(--blue2);
 }
 .sb-mark-cell.is-scoring-cell {
-  background:rgba(52,211,153,.15);
-  border-color:rgba(52,211,153,.4);
+  background:rgba(52,211,153,.18);
+  border-color:rgba(52,211,153,.6);
 }
 .sb-mark-cell.is-scoring-cell.active-turn {
-  background:rgba(52,211,153,.25);
+  background:rgba(52,211,153,.3);
   border-color:var(--green);
 }
 .sb-mark-cell.just-hit{animation:cellFlash .5s ease-out;}
@@ -410,6 +410,7 @@ body{
   opacity:0;transition:opacity .3s;
 }
 .mark-closed-line.visible{opacity:1;}
+.mark-closed-line.scoring-line{background:var(--green);}
 
 /* SVG marks */
 .mark-svg-wrap{

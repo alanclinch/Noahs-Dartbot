@@ -391,14 +391,18 @@ function updateScoreboard(){
     // Marks
     NUMBERS.forEach(num => {
       const marks = p.marks[num];
-      const markEl = document.getElementById(`marksvg-${num}-${i}`);
-      if(markEl) markEl.innerHTML = drawMarkSVG(marks);
-      // closed line — show if closed
-      const cl = document.getElementById(`closedline-${num}-${i}`);
-      if(cl) cl.classList.toggle('visible', marks >= 3);
-      
       const allClosedNum = players.every(op => op.marks[num] >= 3);
       const canScore = marks >= 3 && !allClosedNum && gameVariant !== 'noscore';
+
+      const markEl = document.getElementById(`marksvg-${num}-${i}`);
+      if(markEl) markEl.innerHTML = drawMarkSVG(marks, canScore);
+      
+      // closed line — show if closed
+      const cl = document.getElementById(`closedline-${num}-${i}`);
+      if(cl) {
+        cl.classList.toggle('visible', marks >= 3);
+        cl.classList.toggle('scoring-line', canScore);
+      }
 
       // Update column background active state logic
       const cellEl = document.getElementById(`mcell-${num}-${i}`);
@@ -437,22 +441,25 @@ function updateScoreboard(){
   document.getElementById('round-num').textContent = round;
 }
 
-function drawMarkSVG(marks){
+function drawMarkSVG(marks, canScore = false){
   if(marks === 0) return '';
   const s = 60, cx = s/2, cy = s/2, r = s*0.38;
   let svg = `<svg viewBox="0 0 ${s} ${s}" width="100%" height="100%" style="max-height:60px;" xmlns="http://www.w3.org/2000/svg">`;
+  const c1 = "#60a5fa"; // blue for 1 or 2 marks
+  const c3 = canScore ? "#34d399" : "#f0a030"; // green if scoring, gold if just closed
+
   if(marks === 1){
     // Single slash /
-    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.7}" x2="${cx+r*.5}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.7}" x2="${cx+r*.5}" y2="${cy-r*.7}" stroke="${c1}" stroke-width="5" stroke-linecap="round"/>`;
   } else if(marks === 2){
     // X
-    svg += `<line x1="${cx-r*.55}" y1="${cy+r*.7}" x2="${cx+r*.55}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/>`;
-    svg += `<line x1="${cx+r*.55}" y1="${cy+r*.7}" x2="${cx-r*.55}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<line x1="${cx-r*.55}" y1="${cy+r*.7}" x2="${cx+r*.55}" y2="${cy-r*.7}" stroke="${c1}" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<line x1="${cx+r*.55}" y1="${cy+r*.7}" x2="${cx-r*.55}" y2="${cy-r*.7}" stroke="${c1}" stroke-width="5" stroke-linecap="round"/>`;
   } else if(marks >= 3){
     // Circle around X (closed)
-    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.65}" x2="${cx+r*.5}" y2="${cy-r*.65}" stroke="#f0a030" stroke-width="5" stroke-linecap="round"/>`;
-    svg += `<line x1="${cx+r*.5}" y1="${cy+r*.65}" x2="${cx-r*.5}" y2="${cy-r*.65}" stroke="#f0a030" stroke-width="5" stroke-linecap="round"/>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${r*.85}" fill="none" stroke="#f0a030" stroke-width="5"/>`;
+    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.65}" x2="${cx+r*.5}" y2="${cy-r*.65}" stroke="${c3}" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<line x1="${cx+r*.5}" y1="${cy+r*.65}" x2="${cx-r*.5}" y2="${cy-r*.65}" stroke="${c3}" stroke-width="5" stroke-linecap="round"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r*.85}" fill="none" stroke="${c3}" stroke-width="5"/>`;
   }
   svg += '</svg>';
   return svg;
