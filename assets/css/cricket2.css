@@ -103,8 +103,8 @@ body{
   border-radius:10px;
   padding:10px 16px;
 }
-.flag-wrap { width:42px; height:42px; flex-shrink:0; font-size:34px; display:flex; align-items:center; justify-content:center; }
-.sb-flag-wrap { width:48px; height:48px; font-size:40px; display:flex; align-items:center; justify-content:center; }
+.flag-wrap { width:42px; height:28px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.sb-flag-wrap { width:48px; height:32px; display:flex; align-items:center; justify-content:center; }
 
 .player-row-name{
   font-size:20px;font-weight:700;color:var(--text);flex:1;

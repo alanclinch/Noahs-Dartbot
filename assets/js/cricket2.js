@@ -39,6 +39,24 @@ function exitFullscreen(){
   else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
 }
 
+function renderFlag(code) {
+  let c = String(code || 'sco').toLowerCase();
+  // Catch old emojis from DB and map them to our new SVG system
+  if (c.includes('󠁳󠁣󠁴') || c === '👤' || c === 'undefined') c = 'sco';
+  if (c.includes('󠁥󠁮󠁧')) c = 'eng';
+  if (c.includes('󠁷󠁬󠁳')) c = 'wal';
+  if (c.includes('🇳🇱')) c = 'ned';
+  
+  const wrap = (svg) => `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${svg}</div>`;
+  
+  if (c === 'sco') return wrap(`<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:4px;box-shadow:0 0 4px rgba(0,0,0,0.5);"><rect width="60" height="40" fill="#005eb8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="6"/></svg>`);
+  if (c === 'eng') return wrap(`<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:4px;box-shadow:0 0 4px rgba(0,0,0,0.5);"><rect width="60" height="40" fill="#fff"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#ce1126" stroke-width="8"/></svg>`);
+  if (c === 'wal') return wrap(`<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:4px;box-shadow:0 0 4px rgba(0,0,0,0.5);"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#00ab39"/><text x="30" y="27" font-size="20" text-anchor="middle" fill="#d30731">🐉</text></svg>`);
+  if (c === 'ned') return wrap(`<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:4px;box-shadow:0 0 4px rgba(0,0,0,0.5);"><rect width="60" height="13.4" fill="#ae1c28"/><rect y="13.3" width="60" height="13.4" fill="#fff"/><rect y="26.6" width="60" height="13.4" fill="#21468b"/></svg>`);
+  
+  return wrap(`<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:4px;box-shadow:0 0 4px rgba(0,0,0,0.5);"><rect width="60" height="40" fill="#444"/></svg>`);
+}
+
 // =============================================
 // LOCAL STORAGE — player persistence
 // Schema: { "name": { games, wins, marks, darts } }
@@ -98,7 +116,7 @@ function getSavedPlayers(){
 async function savePlayerStat(name, flag, won, marksThrown, dartsThrown){
   // 1. Keep LocalStorage as a fast local fallback
   const all = getSavedPlayers();
-  if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0, flag: flag || '👤' };
+  if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0, flag: flag };
   all[name].games++;
   if(won) all[name].wins++;
   all[name].marks += marksThrown;
@@ -245,8 +263,7 @@ function buildCpuGrid(){
   g.innerHTML = CPU_PLAYERS.map(c => {
     const barW = Math.round((c.mpr / 6.5) * 100);
     return `<div class="cpu-pick-card" onclick="addCpuPlayer('${c.id}')">
-      <div style="font-size:28px; margin-bottom:-4px;">${c.flag}</div>
-      <div class="cpu-pick-name">${c.name}</div>
+      <div style="width:48px; height:32px; margin-bottom:6px;">${renderFlag(c.flag)}</div>
       <div class="cpu-pick-mpr">MPR ${c.mpr.toFixed(1)}</div>
       <div class="cpu-mpr-bar"><div class="cpu-mpr-fill" style="width:${barW}%"></div></div>
     </div>`;
@@ -303,9 +320,8 @@ function removePlayer(idx){
 function renderPlayerList(){
   const html = players.map((p,i) => `
     <div class="player-row">
-      <div class="flag-wrap">${p.flag}</div>
-      <div class="player-row-name">${escapeHTML(p.name)}</div>
-      <div class="player-row-badge ${p.isCpu ? 'badge-cpu' : 'badge-human'}">${p.isCpu ? `CPU ${p.cpuData.mpr.toFixed(1)}` : 'HUMAN'}</div>
+      <div class="flag-wrap">${renderFlag(p.flag)}</div>
+      <div class="player-rwu ? 'badge-cpu' : 'badge-human'}">${p.isCpu ? `CPU ${p.cpuData.mpr.toFixed(1)}` : 'HUMAN'}</div>
       <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
     </div>
   `).join('');
@@ -341,24 +357,21 @@ async function renderRecentPlayers(){
     suggestions.map(n => {
       const s = saved[n];
       const mpr = savedMPR(s);
-      const flag = s.flag || '👤';
+      const flag = s.flag || 'sco';
       return `<button class="recent-chip" onclick="addSavedPlayer(this, '${escapeHTML(n).replace(/'/g,"\\'")}', '${flag}')">
-        ${flag} ${escapeHTML(n)}<span class="chip-stat">${mpr} MPR</span>
+        <div style="width:24px;height:16px;margin-right:6px;">${renderFlag(flag)}</div> ${escapeHTML(n)}<span class="chip-stat">${mpr} MPR</span>
       </button>`;
-    }).join('') : '';
-    
-  const el1 = document.getElementById('recent-players');
+    e)
   const el2 = document.getElementById('recent-players-winner');
   if(el1) el1.innerHTML = html;
   if(el2) el2.innerHTML = html;
 }
 
-function addSavedPlayer(btn, name, flag = '👤'){
+function addSavedPlayer(btn, name, flag = 'sco'){
   if(players.length >= 4) return;
   const color = PLAYER_COLORS[players.length % 6];
   humanCount++;
-  players.push({name, color, flag, isCpu:false, cpuData:null, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
-  renderPlayerList();
+
   renderRecentPlayers();
   checkStartBtn();
 }
@@ -453,13 +466,12 @@ function buildScoreboard(){
   players.forEach((p,i) => {
     hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
-      <div class="sb-flag-wrap">${p.flag}</div>
+      <div class="sb-flag-wrap">${renderFlag(p.flag)}</div>
       <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
       <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR 0.00</div>
       <div class="sb-pname" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
       ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
     </div>`;
-  });
   top.innerHTML = hdrHTML;
 
   // Rows
