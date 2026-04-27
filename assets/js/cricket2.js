@@ -71,6 +71,21 @@ async function initNeonDB() {
   }
 }
 
+function promptNeonString() {
+  const current = localStorage.getItem('neon_db_string') || '';
+  const res = prompt("Enter your Neon Database Connection String:\n(Leave blank to play offline)", current);
+  if (res !== null) {
+    if (res.trim() === '') {
+      localStorage.removeItem('neon_db_string');
+      alert("Database connection disabled. Playing offline.");
+    } else {
+      localStorage.setItem('neon_db_string', res.trim());
+      alert("Database connection saved! Reloading to connect...");
+    }
+    location.reload();
+  }
+}
+
 function getSavedPlayers(){
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
   catch { return {}; }
