@@ -464,8 +464,10 @@ function buildScoreboard(){
   const colTemplate = `${numColW}px ` + players.map(() => '1fr').join(' ');
 
   // Calculate dynamically scaled font sizes based on player count
-  const scoreFontSize = n <= 2 ? '64px' : n === 3 ? '52px' : '42px';
-  const mprFontSize = n <= 2 ? '18px' : '16px';
+  const scoreFontSize = n <= 2 ? '8px' : '22px';
+  const scoreFontSize = n <= 2 ? '72px' : n === 3 ? '60px' : '48px';
+  const mprFontSize = n <= 2 ? '22px' : '18px';
+  const nameFontSize = n <= 2 ? '28px' : '22px';
   const numFontSize = n <= 2 ? '56px' : '48px';
 
   // Header
@@ -476,10 +478,16 @@ function buildScoreboard(){
   players.forEach((p,i) => {
     hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
-      <div class="sb-flag-wrap">${renderFlag(p.flag)}</div>
-      <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
-      <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR 0.00</div>
-      <div class="sb-pname" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
+      <div class="sb-hdr-row1">
+        <div class="sb-flag-wratiame)}" style="font-size:${nameFontSize}">${escapeHTML(p.name)}</div>
+      </div>b-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR 0.00</div>
+        <div class="sb-flag-wrap">${renderFlag(p.flag)}</div>
+        <div class="sb-pname" title="${escapeHTML(p.name)}" style="font-size:${nameFontSize}">${escapeHTML(p.name)}</div>
+      </div>
+      <div class="sb-hdr-row2">
+        <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
+        <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR 0.00</div>
+      </div>
       ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
     </div>`;
   });
@@ -559,21 +567,22 @@ function updateScoreboard(){
   // Number cells — red + strikethrough if all players closed
   NUMBERS.forEach(num => {
     const allClosed = players.every(p => p.marks[num] >= 3);
-    const anyClosed = players.some(p => p.marks[num] >= 3);
-    const isScoring = anyClosed && !allClosed && gameVariant !== 'noscore';
 
     const nc = document.getElementById(`numcell-${num}`);
     if(nc) {
       nc.classList.toggle('num-closed-all', allClosed);
-      nc.classList.toggle('num-scoring', isScoring);
+      nc.classList.remove('num-scoring');
     }
+
+   w 
     const row = document.getElementById(`row-${num}`);
-    if(row) {
+    if (row) {
       row.classList.toggle('all-closed', allClosed);
       row.classList.remove('is-scoring');
     }
   });
 
+  // Targetarget(players[currentPlayer]);
   // Target
   const t = getBestTarget(players[currentPlayer]);
   document.getElementById('target-val').textContent = t === 25 ? 'BULL' : t;
@@ -581,7 +590,6 @@ function updateScoreboard(){
   // Round
   document.getElementById('round-num').textContent = round;
 }
-
 function drawMarkSVG(marks, canScore = false){
   if(marks === 0) return '';
   const s = 60, cx = s/2, cy = s/2, r = s*0.38;
@@ -741,8 +749,7 @@ function registerDart(seg, coords = null){
     const dn = dartName(num, mul);
     const numWord = num === 25 ? 'Bull' : String(num);
     if(wasClosed && !scored){
-      sfxDeadDart();
-      speak(dn);
+      sfxMiss();
     } else if(justClosedAll){
       sfxClose();
       speak(`Closed ${numWord}`);
@@ -751,9 +758,7 @@ function registerDart(seg, coords = null){
       speak(`Opened ${numWord}`);
     } else if(justClosed){
       sfxClose();
-      speak(`Opened ${numWord}`);
-    } else if(scored > 0){
-      sfxScore();
+      speak(`Opened ${numWord;
       speak(dn);
     } else {
       sfxHit();
@@ -782,9 +787,8 @@ function registerDart(seg, coords = null){
   // Auto-end after 3 darts
   if(currentDarts.length >= 3){
     turnEnded = true;
-    // After 3rd dart speech finishes, say total score (~1.2s gap covers any announcement)
-    const totalScore = p.score;
-    if(totalScore > 0) setTimeout(() => speak(String(totalScore)), 1200);
+    const turnScored = currentDarts.reduce((s, d) => s + (d.score || 0), 0);
+    if(turnScored > 0) setTimeout(() => speak(String(p.score)), 1200);
   }
 }
 
@@ -794,6 +798,7 @@ function registerDart(seg, coords = null){
 function saveState() {
   const copy = players.map(p => ({
     score: p.score,
+    marks: { ...p.m
     marks: { ...p.marks },
     dartsThrown: p.dartsThrown,
     marksThrown: p.marksThrown,
