@@ -16,15 +16,15 @@
 // mpr = marks-per-round; 0.9 (weakest) → 6.0 (world #1)
 // Consistent across all DartBot games.
 const CPU_PLAYERS = [
-  { id:'cpu0', name:'Jocky Wilson',       mpr:0.9, face:{skin:'#fce8c8',hair:'#6b4423',eyes:'#224433',mouth:'grin',   style:'messy'}},
-  { id:'cpu1', name:'John Lowe',          mpr:1.3, face:{skin:'#f5c8a0',hair:'#dddddd',eyes:'#1a1a2a',mouth:'flat',   style:'short'}},
-  { id:'cpu2', name:'Eric Bristow',       mpr:1.8, face:{skin:'#f0c890',hair:'#4a3018',eyes:'#1a2a3a',mouth:'smirk',  style:'slick'}},
-  { id:'cpu3', name:'Peter Wright',       mpr:2.4, face:{skin:'#fce8c8',hair:'#ff00aa',eyes:'#334455',mouth:'smirk',  style:'messy'}},
-  { id:'cpu4', name:'Gary Anderson',      mpr:3.0, face:{skin:'#f0c080',hair:'#888888',eyes:'#334433',mouth:'smile',  style:'messy'}},
-  { id:'cpu5', name:'Luke Littler',       mpr:3.7, face:{skin:'#ffd8b0',hair:'#4a3018',eyes:'#113355',mouth:'smile',  style:'short'}},
-  { id:'cpu6', name:'Luke Humphries',     mpr:4.4, face:{skin:'#f5c8a0',hair:'#aa8855',eyes:'#2a3a5a',mouth:'neutral',style:'short'}},
-  { id:'cpu7', name:'Michael van Gerwen', mpr:5.2, face:{skin:'#ffe8d0',hair:'#111111',eyes:'#113300',mouth:'flat',   style:'bald'}},
-  { id:'cpu8', name:'Phil Taylor',        mpr:6.0, face:{skin:'#f0d0a0',hair:'#222222',eyes:'#2a3a5a',mouth:'smirk',  style:'bald'}},
+  { id:'cpu0', name:'Jocky Wilson',       mpr:0.9, flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},
+  { id:'cpu1', name:'John Lowe',          mpr:1.3, flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  { id:'cpu2', name:'Eric Bristow',       mpr:1.8, flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  { id:'cpu3', name:'Peter Wright',       mpr:2.4, flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},
+  { id:'cpu4', name:'Gary Anderson',      mpr:3.0, flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿'},
+  { id:'cpu5', name:'Luke Littler',       mpr:3.7, flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  { id:'cpu6', name:'Luke Humphries',     mpr:4.4, flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+  { id:'cpu7', name:'Michael van Gerwen', mpr:5.2, flag:'🇳🇱'},
+  { id:'cpu8', name:'Phil Taylor',        mpr:6.0, flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
 ];
 
 // ── FACE SVG GENERATOR ───────────────────────────────────────

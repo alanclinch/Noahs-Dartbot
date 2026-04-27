@@ -31,7 +31,7 @@
     <h3>Players <span id="player-count-label" style="color:var(--muted);font-size:12px;">(1–4)</span></h3>
     <div id="player-list"></div>
     <div class="add-btns">
-      <button class="add-btn add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
+      <button class="add-btn add-human-btn" onclick="openHumanModal()">+ Human Player</button>
       <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
     </div>
     <div id="recent-players" class="recent-players"></div>
@@ -59,12 +59,35 @@
 </div>
 
 <!-- CPU MODAL -->
-<div id="cpu-modal">
+<div id="cpu-modal" class="modal-overlay">
   <div class="cpu-modal-box">
     <h2>SELECT OPPONENT</h2>
 
     <div class="cpu-grid" id="cpu-grid"></div>
     <button class="cpu-modal-cancel" onclick="closeCpuModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- HUMAN MODAL -->
+<div id="human-modal" class="modal-overlay">
+  <div class="cpu-modal-box" style="width:min(420px, 96vw);">
+    <h2>ADD HUMAN PLAYER</h2>
+    <input type="text" id="new-human-name" class="modal-input" placeholder="Enter Name" maxlength="14">
+    <select id="new-human-flag" class="modal-input" style="cursor:pointer;">
+      <option value="🏴󠁧󠁢󠁥󠁮󠁧󠁿">🏴󠁧󠁢󠁥󠁮󠁧󠁿 England</option>
+      <option value="🏴󠁧󠁢󠁳󠁣󠁴󠁿">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland</option>
+      <option value="🏴󠁧󠁢󠁷󠁬󠁳󠁿">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales</option>
+      <option value="🇮🇪">🇮🇪 Ireland</option>
+      <option value="🇬🇧">🇬🇧 Great Britain</option>
+      <option value="🇺🇸">🇺🇸 USA</option>
+      <option value="🇨🇦">🇨🇦 Canada</option>
+      <option value="🇳🇱">🇳🇱 Netherlands</option>
+      <option value="🇦🇺">🇦🇺 Australia</option>
+    </select>
+    <div style="display:flex; gap:14px; margin-top:10px;">
+      <button class="win-btn win-btn-primary" onclick="confirmAddHuman()">ADD PLAYER</button>
+      <button class="win-btn" onclick="closeHumanModal()">CANCEL</button>
+    </div>
   </div>
 </div>
 
@@ -150,7 +173,7 @@
       <h3>Next Match Roster</h3>
       <div id="player-list-winner"></div>
       <div class="add-btns">
-        <button class="add-btn add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
+        <button class="add-btn add-human-btn" onclick="openHumanModal()">+ Human Player</button>
         <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
       </div>
       <div id="recent-players-winner" class="recent-players"></div>

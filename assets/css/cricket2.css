@@ -103,8 +103,9 @@ body{
   border-radius:10px;
   padding:10px 16px;
 }
-.pmini-wrap{width:42px;height:42px;flex-shrink:0;}
-.pmini-wrap svg{width:42px;height:42px;}
+.flag-wrap { width:42px; height:42px; flex-shrink:0; font-size:34px; display:flex; align-items:center; justify-content:center; }
+.sb-flag-wrap { width:48px; height:48px; font-size:40px; display:flex; align-items:center; justify-content:center; }
+
 .player-row-name{
   font-size:20px;font-weight:700;color:var(--text);flex:1;
 }
@@ -133,13 +134,21 @@ body{
 .add-btn:hover{border-color:var(--blue);color:var(--blue);}
 .add-btn:disabled{opacity:.3;cursor:not-allowed;}
 
-/* CPU modal */
-#cpu-modal{
+/* Modals */
+.modal-overlay {
   display:none;position:fixed;inset:0;
   background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
   z-index:200;align-items:center;justify-content:center;
 }
-#cpu-modal.open{display:flex;}
+.modal-overlay.open {display:flex;}
+
+.modal-input {
+  width: 100%; background: var(--surface); border: 2px solid var(--border2);
+  color: var(--text); font-family: 'Exo 2', sans-serif; font-size: 18px; font-weight: 700;
+  padding: 14px; border-radius: 10px; outline: none; margin-bottom: 16px;
+}
+.modal-input:focus { border-color: var(--blue); }
+
 .cpu-modal-box{
   background:var(--bg2);
   border:2px solid var(--border2);
@@ -166,17 +175,6 @@ body{
 .cpu-pick-mpr{font-size:14px;color:var(--blue);font-weight:700;}
 .cpu-mpr-bar{width:90%;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
 .cpu-mpr-fill{height:100%;background:linear-gradient(90deg,var(--blue2),var(--blue));border-radius:3px;}
-
-/* Player name input in setup */
-.player-name-input{
-  flex:1;background:transparent;
-  border:none;border-bottom:2px solid var(--border2);
-  color:var(--text);font-family:'Exo 2',sans-serif;
-  font-size:20px;font-weight:700;
-  padding:6px 4px;outline:none;
-}
-.player-name-input::placeholder{color:var(--muted);}
-.player-name-input:focus{border-bottom-color:var(--blue);}
 
 /* Winner screen */
 .winner-layout{

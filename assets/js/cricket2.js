@@ -461,7 +461,7 @@ function buildScoreboard(){
   players.forEach((p,i) => {
     hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
-      <div style="width:48px;height:48px;">${p.isCpu ? makeFaceSVG(p.cpuData.face,48) : humanAvatarSVG(p.color,48)}</div>
+      <div class="sb-flag-wrap">${p.flag}</div>
       <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
       <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR 0.00</div>
       <div class="sb-pname" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
@@ -666,7 +666,7 @@ function registerDart(seg, coords = null){
   // Silently record the human's exact throw coordinates to the database
   if (!p.isCpu && coords) {
     const targetAim = getBestTarget(p); // What they were likely aiming at
-    saveThrowToNeon(p.name, targetAim, seg, coords);
+    pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords });
   }
 
   const dartIdx = currentDarts.length;
@@ -985,7 +985,7 @@ function endWithWinner(idx){
 
   // Save stats for human players
   players.forEach((p, i) => {
-    if(!p.isCpu) savePlayerStat(p.name, i === idx, p.marksThrown, p.dartsThrown);
+    if(!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown);
   });
 
   flushThrowsToNeon();
