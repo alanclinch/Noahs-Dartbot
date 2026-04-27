@@ -1329,20 +1329,31 @@ function runCpuTurn(){
 // generateCpuThrow, getAdjacentNumbers — from bots.js
 
 function getBestTarget(p){
-  // Priority 1: close numbers highest-first, bull saved for last
-  // (bull is hardest to hit — close 20→15 first to maximise scoring,
-  //  then finish with bull as described in standard cricket strategy)
-  const open = NUMBERS.filter(n => p.marks[n] < 3).sort((a,b) => {
-    const va = a === 25 ? -1 : a;  // bull sorts to bottom
-    const vb = b === 25 ? -1 : b;
-    return vb - va;  // descending: 20, 19, 18, 17, 16, 15, bull
-  });
-  if(open.length > 0) return open[0];
-  // Priority 2: all closed — score on highest open enemy number
-  const scoring = NUMBERS.filter(n => {
+  // Helper to sort numbers: 20, 19, 18, 17, 16, 15, Bull
+  const sortHighest = (a, b) => (b === 25 ? 14 : b) - (a === 25 ? 14 : a);
+
+  const myOpen = NUMBERS.filter(n => p.marks[n] < 3).sort(sortHighest);
+  const myScoring = NUMBERS.filter(n => {
     return p.marks[n] >= 3 && players.some((op,i) => i !== currentPlayer && op.marks[n] < 3);
-  }).sort((a,b) => b - a);
-  return scoring[0] || 20;
+  }).sort(sortHighest);
+
+  const enemies = players.filter((op, i) => i !== currentPlayer);
+
+  if (gameVariant === 'standard') {
+    const highestEnemyScore = Math.max(0, ...enemies.map(op => op.score));
+    // Golden Rule: If tied, behind, or only have a tiny lead, hammer open scoring numbers!
+    if (p.score <= highestEnemyScore + 10 && myScoring.length > 0) return myScoring[0];
+  } else if (gameVariant === 'cutthroat') {
+    const lowestEnemyScore = Math.min(...enemies.map(op => op.score));
+    // Cut-throat: If tied or higher than the leader, give opponents points!
+    if (p.score >= lowestEnemyScore - 10 && myScoring.length > 0) return myScoring[0];
+  }
+
+  // Default: Close highest open number. If all closed, score on highest available.
+  if (myOpen.length > 0) return myOpen[0];
+  if (myScoring.length > 0) return myScoring[0];
+
+  return 20; // Fallback
 }
 
 // =============================================
