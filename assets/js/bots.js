@@ -90,124 +90,103 @@ function humanAvatarSVG(color, size = 34) {
   </svg>`;
 }
 
+// ── 2D GAUSSIAN DARTBOARD SIMULATION ─────────────────────────
+// Uses physical dartboard dimensions to mimic human variance.
+// A target is converted to polar coordinates, standard deviation
+// (based on MPR) is applied, and the result is resolved back to a segment.
+const BOARD_ORDER = [20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+
+function randn_bm() {
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+function getSectorAngle(num) {
+  const idx = BOARD_ORDER.indexOf(num);
+  // 20 is at 90 degrees (PI/2). Each sector is 18 degrees (PI/10) clockwise.
+  return (Math.PI / 2) - (idx * Math.PI / 10);
+}
+
 // ── CPU THROW GENERATOR ──────────────────────────────────────
-// Produces a fake segment object simulating a throw at `target`
-// with accuracy scaled by `mpr` (0.9 = beginner, 6.0 = elite).
-//
-// Core maths (same as before — guarantees E[marks/dart] = mpr/3):
-//   accuracy    = (mpr - 0.9) / 5.1                 → 0..1
-//   singleFrac  = 0.70 - accuracy × 0.60  (min 0.10)
-//   doubleFrac  = 0.15 + accuracy × 0.05
-//   tripleFrac  = 1 - singleFrac - doubleFrac
-//   scoringChance = (mpr/3) / avgMarks               → P(dart scores a mark)
-//
-// Three modifiers applied on top (all preserve long-run MPR):
-//
-//   opts.roundForm   (default 1.0) — per-round hot/cold factor, caller
-//                    draws once per turn from a range centred at 1.0.
-//                    Wider range for low-skill bots (more streaky).
-//
-//   opts.missStreak  (default 0) — consecutive non-cricket darts so far.
-//                    Each miss adds a tiny recovery bonus (self-correcting;
-//                    resets to 0 on any cricket hit).
-//
-//   opts.prevSeg     (default null) — segment object from the previous dart
-//                    in the same turn. If that dart landed in the same tight
-//                    bed (treble or bull), apply a clustering penalty — a dart
-//                    already there physically blocks the same spot.
-//
 function generateCpuThrow(target, mpr, opts) {
   opts = opts || {};
   const prevSeg    = opts.prevSeg    || null;
   const missStreak = opts.missStreak || 0;
   const roundForm  = opts.roundForm  || 1.0;
 
-  const accuracy = (mpr - 0.9) / 5.1;
+  // Base standard deviation (sigma) in mm. 
+  // MPR 6.0 -> ~8mm spread, MPR 1.0 -> ~43mm spread
+  let baseSigma = 50 - (7 * mpr);
+  baseSigma = Math.max(6, Math.min(60, baseSigma));
 
-  // ── Distribution fractions (scoring darts only) ──
-  let singleFrac = Math.max(0.70 - accuracy * 0.60, 0.10);
-  let doubleFrac = 0.15 + accuracy * 0.05;
-  let tripleFrac = 1 - singleFrac - doubleFrac;
+  // Apply roundForm (higher form = better throw = tighter variance)
+  let currentSigma = baseSigma / roundForm;
 
-  // ── Clustering: shift away from the crowded bed ──
-  // If the previous dart in this turn hit the same target's treble (or bull),
-  // a dart is already in that tiny area — shift probability toward singles.
-  const clusterHit = prevSeg && prevSeg.number === target &&
-    (prevSeg.bed === 'Triple' || (target === 25 && prevSeg.bed === 'Single'));
-  if (clusterHit) {
-    const shift = 0.12 - accuracy * 0.10; // 0.12 beginner → 0.02 elite
-    if (target !== 25) {
-      // Treble clustering: move triple → single
-      tripleFrac = Math.max(0, tripleFrac - shift);
-      singleFrac = Math.min(0.95, singleFrac + shift);
-    } else {
-      // Bull clustering: reduce both hit beds, spread to adj/miss
-      doubleFrac = Math.max(0, doubleFrac - shift * 0.5);
-      singleFrac = Math.max(0, singleFrac - shift * 0.5);
-    }
-    const tot = tripleFrac + doubleFrac + singleFrac;
-    if (tot > 0) { tripleFrac /= tot; doubleFrac /= tot; singleFrac /= tot; }
+  // Miss streak recovery: tighten focus by up to 15% after missing
+  currentSigma *= Math.max(0.85, 1 - (missStreak * 0.05));
+
+  // Occasional random wild dart (yips / slip) ~3% chance
+  if (Math.random() < 0.03) {
+    currentSigma *= (1.5 + Math.random());
   }
 
-  const avgMarks = tripleFrac * 3 + doubleFrac * 2 + singleFrac * 1;
-
-  // ── Base scoring chance from target MPR ──
-  let scoringChance = (mpr / 3) / avgMarks;
-
-  // ── Round form: hot/cold variance ──
-  scoringChance *= roundForm;
-
-  // ── Miss momentum: consecutive wasted darts raise next-dart chance ──
-  // Self-correcting: as soon as a dart hits, missStreak resets to 0.
-  const maxBonus = 0.20 - accuracy * 0.12; // 0.20 beginner, 0.08 elite
-  scoringChance += Math.min(missStreak * 0.04, maxBonus);
-
-  // ── Overall clustering reduction (dart physically in the way) ──
-  if (clusterHit) scoringChance *= (1 - (0.06 - accuracy * 0.05));
-
-  scoringChance = Math.max(0, Math.min(0.95, scoringChance));
-
-  const tripleChance = scoringChance * tripleFrac;
-  const doubleChance = scoringChance * doubleFrac;
-  const singleChance = scoringChance * singleFrac;
-  const adjChance    = 0.15 - accuracy * 0.09;  // 0.15 → 0.06
-  const missChance   = 0.08 - accuracy * 0.07;  // 0.08 → 0.01
-  // remainder = wasted dart on non-cricket number
-
-  const r = Math.random();
-  let num, mul;
-
-  if (r < tripleChance) {
-    // Treble — or inner bull (2 marks) for target 25
-    num = target;
-    mul = target === 25 ? 2 : 3;
-  } else if (r < tripleChance + doubleChance) {
-    // Double — or outer bull (1 mark) for target 25
-    num = target;
-    mul = target === 25 ? 1 : 2;
-  } else if (r < tripleChance + doubleChance + singleChance) {
-    num = target;
-    mul = 1;
-  } else if (r < tripleChance + doubleChance + singleChance + adjChance) {
-    const adj = getAdjacentNumbers(target);
-    num = adj[Math.floor(Math.random() * adj.length)];
-    mul = 1;
-  } else if (r < tripleChance + doubleChance + singleChance + adjChance + missChance) {
-    return null;
-  } else {
-    const nonCricket = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
-    num = nonCricket[Math.floor(Math.random() * nonCricket.length)];
-    mul = 1;
-    return { name:`${num}`, number:num, multiplier:mul, bed:'SingleOuter' };
+  // Target Cartesian Coordinates
+  let aimR = 0, aimTheta = 0;
+  if (target !== 25) {
+    aimR = 103; // Center of treble bed (99mm to 107mm)
+    aimTheta = getSectorAngle(target);
   }
 
-  const bedMap  = { 1:'SingleOuter', 2:'Double', 3:'Triple' };
+  // Deflection: If aim bed is occupied, drift aim slightly down towards bull
+  if (prevSeg && prevSeg.number === target && prevSeg.multiplier === 3 && target !== 25) {
+    aimR -= 5;
+  }
+
+  const aimX = aimR * Math.cos(aimTheta);
+  const aimY = aimR * Math.sin(aimTheta);
+
+  // Apply Gaussian distribution
+  const hitX = aimX + randn_bm() * currentSigma;
+  const hitY = aimY + randn_bm() * currentSigma;
+
+  // Resolve polar coordinates back to a dartboard segment
+  const hitR = Math.sqrt(hitX*hitX + hitY*hitY);
+  const hitTheta = Math.atan2(hitY, hitX);
+
+  if (hitR > 170) return null; // Missed board
+
+  let num, mul, bed;
+  
+  // Bullseye bounds
+  if (hitR <= 6.35) {
+    return { name: 'D25', number: 25, multiplier: 2, bed: 'Single' };
+  }
+  if (hitR <= 15.9) {
+    return { name: 'B25', number: 25, multiplier: 1, bed: 'Single' };
+  }
+
+  // Standard bounds
+  if (hitR <= 99)      { bed = 'SingleInner'; mul = 1; }
+  else if (hitR <= 107){ bed = 'Triple';      mul = 3; }
+  else if (hitR <= 162){ bed = 'SingleOuter'; mul = 1; }
+  else                 { bed = 'Double';      mul = 2; }
+
+  // Determine Segment Number
+  let angleFromTop = (Math.PI / 2) - hitTheta;
+  while (angleFromTop < 0) angleFromTop += 2 * Math.PI;
+  while (angleFromTop >= 2 * Math.PI) angleFromTop -= 2 * Math.PI;
+  
+  const sectorIdx = Math.floor((angleFromTop + Math.PI / 20) / (Math.PI / 10)) % 20;
+  num = BOARD_ORDER[sectorIdx];
+
   const nameMap = { 1:'S', 2:'D', 3:'T' };
   return {
-    name:       num === 25 ? (mul === 2 ? 'D25' : 'B25') : `${nameMap[mul]}${num}`,
+    name:       `${nameMap[mul]}${num}`,
     number:     num,
     multiplier: mul,
-    bed:        num === 25 ? 'Single' : bedMap[mul],
+    bed:        bed,
   };
 }
 
