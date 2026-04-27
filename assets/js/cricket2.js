@@ -87,6 +87,7 @@ let turnEnded = false;
 let gameActive = false;
 let missTimer = null;
 let round = 1;
+let stateHistory = [];
 let humanCount = 0;
 let startingPlayer = 0;  // rotates each leg
 let legNumber = 0;       // 0 = first game (random start)
@@ -281,6 +282,7 @@ function launchLeg(){
   seenThrows = 0;
   turnEnded = false;
   gameActive = true;
+  stateHistory = [];
   round = 1;
 
   buildScoreboard();
@@ -506,6 +508,8 @@ function updateDartSlot(idx, label, cssClass){
 // =============================================
 function registerDart(seg){
   if(!gameActive || turnEnded || currentDarts.length >= 3) return;
+  saveState();
+  
   const p = players[currentPlayer];
   p.dartsThrown++;
 
@@ -619,6 +623,95 @@ function registerDart(seg){
     const totalScore = p.score;
     if(totalScore > 0) setTimeout(() => speak(String(totalScore)), 1200);
   }
+}
+
+// =============================================
+// UNDO & MANUAL KEYPAD
+// =============================================
+function saveState() {
+  const copy = players.map(p => ({
+    score: p.score,
+    marks: { ...p.marks },
+    dartsThrown: p.dartsThrown,
+    marksThrown: p.marksThrown,
+    cpuMissStreak: p.cpuMissStreak
+  }));
+  stateHistory.push({
+    players: copy,
+    currentPlayer,
+    currentDarts: [...currentDarts],
+    seenThrows,
+    turnEnded,
+    round
+  });
+}
+
+function undoLastDart() {
+  if (!gameActive || stateHistory.length === 0) return;
+
+  let last = stateHistory.pop();
+  // If popping puts us back into a CPU turn, skip over all CPU darts back to a human turn
+  while (stateHistory.length > 0 && players[last.currentPlayer].isCpu) {
+    last = stateHistory.pop();
+  }
+
+  currentPlayer = last.currentPlayer;
+  currentDarts = last.currentDarts;
+  seenThrows = last.seenThrows;
+  turnEnded = last.turnEnded;
+  round = last.round;
+
+  last.players.forEach((savedP, i) => {
+    const p = players[i];
+    p.score = savedP.score;
+    p.marks = { ...savedP.marks };
+    p.dartsThrown = savedP.dartsThrown;
+    p.marksThrown = savedP.marksThrown;
+    p.cpuMissStreak = savedP.cpuMissStreak;
+  });
+
+  if (missTimer) { clearTimeout(missTimer); missTimer = null; }
+
+  resetDartSlots();
+  currentDarts.forEach((d, idx) => {
+    const cssClass = d.score > 0 ? 'scored' : (d.label === 'Miss' ? 'miss' : 'hit');
+    updateDartSlot(idx, d.label, cssClass);
+  });
+
+  updateScoreboard();
+  const nameEl = document.getElementById('turn-player-name');
+  nameEl.textContent = players[currentPlayer].name;
+  nameEl.classList.toggle('cpu-turn', players[currentPlayer].isCpu);
+  document.getElementById('turn-sub').textContent = players[currentPlayer].isCpu ? 'Computer thinking...' : 'Throw your darts';
+}
+
+let keypadMod = 1;
+function toggleKeypadMod(mod) {
+  keypadMod = (keypadMod === mod) ? 1 : mod;
+  document.getElementById('mod-double').classList.toggle('active', keypadMod === 2);
+  document.getElementById('mod-treble').classList.toggle('active', keypadMod === 3);
+}
+
+function manualDart(num) {
+  if (!gameActive || turnEnded || players[currentPlayer].isCpu) {
+    if (keypadMod !== 1) toggleKeypadMod(keypadMod);
+    return;
+  }
+  if (num === 0) {
+    registerDart(null);
+  } else {
+    let mul = keypadMod;
+    if (num === 25 && mul === 3) mul = 1; // No Treble Bull
+    const nameMap = { 1: 'S', 2: 'D', 3: 'T' };
+    const bedMap = { 1: 'SingleOuter', 2: 'Double', 3: 'Triple' };
+    registerDart({
+      number: num,
+      multiplier: mul,
+      name: num === 25 ? (mul === 2 ? 'D25' : 'B25') : `${nameMap[mul]}${num}`,
+      bed: num === 25 ? 'Single' : bedMap[mul]
+    });
+  }
+  if (keypadMod !== 1) toggleKeypadMod(keypadMod);
 }
 
 // =============================================

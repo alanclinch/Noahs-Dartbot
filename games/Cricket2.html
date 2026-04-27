@@ -100,6 +100,27 @@
       </div>
     </div>
     <div class="variant-badge" id="game-variant-badge">STANDARD</div>
+
+    <div class="keypad-wrap">
+      <div class="keypad-row">
+        <button class="kp-btn" onclick="manualDart(20)">20</button>
+        <button class="kp-btn" onclick="manualDart(19)">19</button>
+        <button class="kp-btn" onclick="manualDart(18)">18</button>
+        <button class="kp-btn" onclick="manualDart(17)">17</button>
+      </div>
+      <div class="keypad-row">
+        <button class="kp-btn" onclick="manualDart(16)">16</button>
+        <button class="kp-btn" onclick="manualDart(15)">15</button>
+        <button class="kp-btn" onclick="manualDart(25)">BULL</button>
+        <button class="kp-btn kp-miss" onclick="manualDart(0)">MISS</button>
+      </div>
+      <div class="keypad-row">
+        <button class="kp-btn kp-mod" id="mod-double" onclick="toggleKeypadMod(2)">DOUBLE</button>
+        <button class="kp-btn kp-mod" id="mod-treble" onclick="toggleKeypadMod(3)">TREBLE</button>
+        <button class="kp-btn kp-undo" onclick="undoLastDart()">UNDO</button>
+      </div>
+    </div>
+
     <div class="game-ws">
       <div class="ws-dot" id="game-ws-dot"></div>
       <div class="ws-label" id="game-ws-label">Not Connected</div>
