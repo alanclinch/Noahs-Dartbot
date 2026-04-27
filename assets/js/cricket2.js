@@ -88,6 +88,7 @@ let gameActive = false;
 let missTimer = null;
 let round = 1;
 let stateHistory = [];
+let throwLog = []; // Debug log for Autodarts throws
 let humanCount = 0;
 let startingPlayer = 0;  // rotates each leg
 let legNumber = 0;       // 0 = first game (random start)
@@ -98,12 +99,15 @@ function handleWS(data){
   const d = data.data || {};
   const throws = d.throws;
   const event = d.event || '';
+
+
   const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
   const tc = Array.isArray(throws) ? throws.length : 0;
 
   // Only process human turns
   if(gameActive && !players[currentPlayer].isCpu){
     if(tc > seenThrows && !turnEnded){
+      throwLog.push(throws[seenThrows]); // Save raw throw object for AI profiling
       if(missTimer){ clearTimeout(missTimer); missTimer = null; }
       const seg = throws[seenThrows].segment || {};
       registerDart(seg);
@@ -124,6 +128,26 @@ function handleWS(data){
       if(currentDarts.length > 0 || turnEnded) advanceTurn();
     }
   }
+}
+
+// =============================================
+// DEBUG LOGGER
+// =============================================
+function showLog() {
+  const m = document.getElementById('log-modal');
+  const o = document.getElementById('log-output');
+  if (m && o) {
+    o.value = JSON.stringify(throwLog, null, 2);
+    m.style.display = 'flex';
+  }
+}
+function closeLog() {
+  const m = document.getElementById('log-modal');
+  if (m) m.style.display = 'none';
+}
+function copyLog() {
+  const o = document.getElementById('log-output');
+  if (o) { o.select(); document.execCommand('copy'); alert('Copied ' + throwLog.length + ' throws to clipboard!'); }
 }
 
 // =============================================
@@ -543,7 +567,7 @@ function registerDart(seg){
     currentDarts.push({score:0, label:'Miss', num:0, mul:0});
     updateDartSlot(dartIdx, 'Miss', 'miss');
     sfxMiss();
-    speak(isMiss ? 'Miss' : dartName(num, mul));
+    // No speech for misses or dead numbers, the sfx is enough feedback
   } else {
     // Valid cricket number
     const marks = Math.min(mul, 3); // each dart gives 1-3 marks

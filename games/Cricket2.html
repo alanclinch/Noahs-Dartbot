@@ -125,6 +125,7 @@
       <div class="ws-dot" id="game-ws-dot"></div>
       <div class="ws-label" id="game-ws-label">Not Connected</div>
     </div>
+    <button class="end-btn" onclick="showLog()" style="margin-bottom:8px; border-color:var(--amber); color:var(--amber);">Show Throw Log</button>
     <button class="end-btn" onclick="endGame()">End Game</button>
   </div>
 </div>
@@ -144,6 +145,16 @@
       <button class="win-btn" onclick="goToSetup()">ADJUST SETTINGS</button>
       <button class="win-btn win-btn-danger" onclick="goToMenu()">MENU</button>
     </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div id="log-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:999; align-items:center; justify-content:center; flex-direction:column; padding:20px; backdrop-filter:blur(4px);">
+  <h2 style="color:var(--blue); font-family:'Orbitron',monospace; margin-bottom:16px;">Raw Throw Log</h2>
+  <textarea id="log-output" style="width:min(800px, 90%); height:60vh; background:var(--bg2); color:var(--green); font-family:'Share Tech Mono',monospace; padding:16px; border:2px solid var(--border2); border-radius:12px; outline:none; resize:none;"></textarea>
+  <div style="display:flex; gap:14px; margin-top:20px;">
+    <button class="win-btn win-btn-primary" onclick="copyLog()">Copy to Clipboard</button>
+    <button class="win-btn" onclick="closeLog()">Close</button>
   </div>
 </div>
 
