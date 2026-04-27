@@ -168,11 +168,32 @@ let gameActive = false;
 let missTimer = null;
 let round = 1;
 let stateHistory = [];
+let pendingThrowsToSave = [];
 let throwLog = []; // Debug log for Autodarts throws
 let humanCount = 0;
 let startingPlayer = 0;  // rotates each leg
 let legNumber = 0;       // 0 = first game (random start)
 // ws, connectWS, updateWSUI — from autodarts.js
+
+async function flushThrowsToNeon() {
+  if (!sql || pendingThrowsToSave.length === 0) return;
+  const throws = [...pendingThrowsToSave];
+  pendingThrowsToSave = [];
+  
+  try {
+    const uniquePlayers = [...new Set(throws.map(t => t.playerName))];
+    for (const pName of uniquePlayers) {
+      await sql`INSERT INTO players (name) VALUES (${pName}) ON CONFLICT DO NOTHING`;
+    }
+    
+    const promises = throws.map(t => 
+      sql`INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord)
+          VALUES (${t.playerName}, ${t.targetAim}, ${t.seg.name}, ${t.seg.multiplier}, ${t.coords.x}, ${t.coords.y})`
+    );
+    await Promise.all(promises);
+    console.log(`✅ Synced ${throws.length} throws to Neon DB.`);
+  } catch (e) { console.error('Neon DB Error (Batch Throws):', e); }
+}
 
 function handleWS(data){
   if(!data || data.type !== 'state') return;
@@ -180,20 +201,6 @@ function handleWS(data){
   const throws = d.throws;
   const event = d.event || '';
 
-
-async function saveThrowToNeon(playerName, target, seg, coords) {
-  if (!sql || !coords || !seg) return;
-  try {
-    // Ensure player exists to avoid foreign key errors
-    await sql`INSERT INTO players (name) VALUES (${playerName}) ON CONFLICT DO NOTHING`;
-    
-    // Log the exact physical throw for the Ghost AI!
-    await sql`
-      INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord)
-      VALUES (${playerName}, ${target}, ${seg.name}, ${seg.multiplier}, ${coords.x}, ${coords.y})
-    `;
-  } catch (e) { console.error('Neon DB Error (Throws):', e); }
-}
 
   const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
   const tc = Array.isArray(throws) ? throws.length : 0;
@@ -264,6 +271,7 @@ function buildCpuGrid(){
     const barW = Math.round((c.mpr / 6.5) * 100);
     return `<div class="cpu-pick-card" onclick="addCpuPlayer('${c.id}')">
       <div style="width:48px; height:32px; margin-bottom:6px;">${renderFlag(c.flag)}</div>
+      <div class="cpu-pick-name">${c.name}</div>
       <div class="cpu-pick-mpr">MPR ${c.mpr.toFixed(1)}</div>
       <div class="cpu-mpr-bar"><div class="cpu-mpr-fill" style="width:${barW}%"></div></div>
     </div>`;
@@ -374,6 +382,8 @@ function addSavedPlayer(btn, name, flag = 'sco'){
   if(players.length >= 4) return;
   const color = PLAYER_COLORS[players.length % 6];
   humanCount++;
+  players.push({name, color, flag, isCpu:false, cpuData:null, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
+  renderPlayerList();
 
   renderRecentPlayers();
   checkStartBtn();
@@ -385,9 +395,6 @@ function checkStartBtn(){
   if(sb) sb.disabled = !valid;
   const nb = document.getElementById('next-leg-btn');
   if(nb) nb.disabled = !valid;
-}
-
-function syncPlayerNames() {
 }
 
 // =============================================
@@ -475,6 +482,7 @@ function buildScoreboard(){
       <div class="sb-pname" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
       ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
     </div>`;
+  });
   top.innerHTML = hdrHTML;
 
   // Rows

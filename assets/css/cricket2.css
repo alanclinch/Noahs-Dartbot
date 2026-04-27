@@ -557,24 +557,6 @@ body{
   font-family:'Share Tech Mono',monospace;font-size:18px;
   color:var(--muted);margin-top:12px;
 }
-.play-again-btn{
-  padding:18px 48px;
-  background:linear-gradient(135deg,#1a4580,#0d2450);
-  border:2px solid var(--blue);border-radius:14px;
-  color:var(--white);
-  font-family:'Orbitron',monospace;font-size:16px;letter-spacing:4px;
-  cursor:pointer;transition:all .2s;
-}
-.play-again-btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(96,165,250,.35);}
-#confetti{position:fixed;inset:0;pointer-events:none;z-index:50;}
-.cf{position:absolute;top:-20px;animation:cfall linear infinite;}
-@keyframes cfall{
-  0%{transform:translateY(0) rotate(0deg);opacity:1;}
-  100%{transform:translateY(110vh) rotate(720deg);opacity:0;}
-}
-
-/* Flash announcements */
-#announce{
   position:fixed;top:50%;left:50%;
   transform:translate(-50%,-50%);
   z-index:300;pointer-events:none;
