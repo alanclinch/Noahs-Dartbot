@@ -31,8 +31,8 @@
     <h3>Players <span id="player-count-label" style="color:var(--muted);font-size:12px;">(1–4)</span></h3>
     <div id="player-list"></div>
     <div class="add-btns">
-      <button class="add-btn" id="add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
-      <button class="add-btn" id="add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
+      <button class="add-btn add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
+      <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
     </div>
     <div id="recent-players" class="recent-players"></div>
   </div>
@@ -134,16 +134,26 @@
 <!-- WINNER -->
 <div id="winner" class="screen">
   <div class="winner-layout">
-    <div class="win-card">
+    <div class="win-card" style="width: 100%;">
       <div class="win-trophy">🏆</div>
       <div class="win-label">WINNER</div>
       <div class="win-name" id="win-name">—</div>
       <div class="win-score" id="win-details">—</div>
     </div>
     <div id="win-others"></div>
+
+    <div class="setup-card" style="width: 100%; margin-top: 4px;">
+      <h3>Next Match Roster</h3>
+      <div id="player-list-winner"></div>
+      <div class="add-btns">
+        <button class="add-btn add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
+        <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
+      </div>
+      <div id="recent-players-winner" class="recent-players"></div>
+    </div>
+
     <div class="win-buttons">
-      <button class="win-btn win-btn-primary" onclick="nextLeg()">NEXT LEG</button>
-      <button class="win-btn" onclick="goToSetup()">ADJUST SETTINGS</button>
+      <button class="win-btn win-btn-primary" id="next-leg-btn" onclick="nextLeg()" style="font-size: 18px; padding: 20px;">PLAY NEXT LEG</button>
       <button class="win-btn win-btn-danger" onclick="goToMenu()">MENU</button>
     </div>
   </div>

@@ -45,13 +45,39 @@ function exitFullscreen(){
 // Future: mirror to Neon (serverless Postgres) via API
 // =============================================
 const LS_KEY = 'dartbot_players';
+let sql = null; // Neon DB Connection
+
+// Initialize Neon Serverless DB
+async function initNeonDB() {
+  try {
+    const { neon } = await import('https://esm.sh/@neondatabase/serverless');
+    
+    // Retrieve connection string securely from your local browser storage
+    let connString = localStorage.getItem('neon_db_string');
+    if (!connString) {
+      connString = prompt("Please enter your Neon Database Connection String to enable cloud stats tracking:\n(Leave blank to play offline)");
+      if (connString && connString.trim() !== "") {
+        localStorage.setItem('neon_db_string', connString.trim());
+      } else {
+        console.warn('Neon DB disabled: No connection string provided.');
+        return;
+      }
+    }
+
+    sql = neon(connString);
+    console.log('✅ Connected to Neon PostgreSQL Database!');
+  } catch (e) {
+    console.error('❌ Failed to connect to Neon DB:', e);
+  }
+}
 
 function getSavedPlayers(){
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
   catch { return {}; }
 }
 
-function savePlayerStat(name, won, marksThrown, dartsThrown){
+async function savePlayerStat(name, won, marksThrown, dartsThrown){
+  // 1. Keep LocalStorage as a fast local fallback
   const all = getSavedPlayers();
   if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0 };
   all[name].games++;
@@ -59,6 +85,21 @@ function savePlayerStat(name, won, marksThrown, dartsThrown){
   all[name].marks += marksThrown;
   all[name].darts += dartsThrown;
   try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
+
+  // 2. Sync permanently to Neon DB
+  if (sql) {
+    try {
+      await sql`
+        INSERT INTO players (name, games, wins, marks, darts)
+        VALUES (${name}, 1, ${won ? 1 : 0}, ${marksThrown}, ${dartsThrown})
+        ON CONFLICT (name) DO UPDATE SET
+          games = players.games + 1,
+          wins = players.wins + ${won ? 1 : 0},
+          marks = players.marks + ${marksThrown},
+          darts = players.darts + ${dartsThrown}
+      `;
+    } catch (e) { console.error('Neon DB Error (Players):', e); }
+  }
 }
 
 function savedMPR(stats){
@@ -101,6 +142,20 @@ function handleWS(data){
   const event = d.event || '';
 
 
+async function saveThrowToNeon(playerName, target, seg, coords) {
+  if (!sql || !coords || !seg) return;
+  try {
+    // Ensure player exists to avoid foreign key errors
+    await sql`INSERT INTO players (name) VALUES (${playerName}) ON CONFLICT DO NOTHING`;
+    
+    // Log the exact physical throw for the Ghost AI!
+    await sql`
+      INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord)
+      VALUES (${playerName}, ${target}, ${seg.name}, ${seg.multiplier}, ${coords.x}, ${coords.y})
+    `;
+  } catch (e) { console.error('Neon DB Error (Throws):', e); }
+}
+
   const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
   const tc = Array.isArray(throws) ? throws.length : 0;
 
@@ -109,15 +164,18 @@ function handleWS(data){
     if(tc > seenThrows && !turnEnded){
       throwLog.push(throws[seenThrows]); // Save raw throw object for AI profiling
       if(missTimer){ clearTimeout(missTimer); missTimer = null; }
-      const seg = throws[seenThrows].segment || {};
-      registerDart(seg);
+      
+      const rawThrow = throws[seenThrows];
+      const seg = rawThrow.segment || {};
+      const coords = rawThrow.coords || null;
+      registerDart(seg, coords);
       seenThrows = tc;
     }
     if(!turnEnded && numThrows > 0 && numThrows > seenThrows && tc === seenThrows){
       if(!missTimer) missTimer = setTimeout(() => {
         missTimer = null;
         if(seenThrows < numThrows && !turnEnded && gameActive){
-          registerDart(null);
+          registerDart(null, null);
           seenThrows = numThrows;
         }
       }, 700);
@@ -209,14 +267,14 @@ function addCpuPlayer(id){
 
 function removePlayer(idx){
   players.splice(idx,1);
+  if (startingPlayer >= players.length) startingPlayer = 0;
   renderPlayerList();
   renderRecentPlayers();
   checkStartBtn();
 }
 
 function renderPlayerList(){
-  const list = document.getElementById('player-list');
-  list.innerHTML = players.map((p,i) => `
+  const html = players.map((p,i) => `
     <div class="player-row">
       <div class="pmini-wrap">${p.isCpu ? makeFaceSVG(p.cpuData.face,42) : humanAvatarSVG(p.color,42)}</div>
       ${p.isCpu
@@ -226,16 +284,22 @@ function renderPlayerList(){
       <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
     </div>
   `).join('');
+  
+  const list1 = document.getElementById('player-list');
+  const list2 = document.getElementById('player-list-winner');
+  if(list1) list1.innerHTML = html;
+  if(list2) list2.innerHTML = html;
+
   // Attach live name-sync to each input
-  list.querySelectorAll('.player-name-input').forEach(inp => {
+  document.querySelectorAll('.player-name-input').forEach(inp => {
     const idx = parseInt(inp.dataset.idx);
     inp.addEventListener('input', e => {
       players[idx].name = e.target.value.trim() || `Player ${idx + 1}`;
     });
   });
   const maxed = players.length >= 4;
-  document.getElementById('add-human-btn').disabled = maxed;
-  document.getElementById('add-cpu-btn').disabled = maxed;
+  document.querySelectorAll('.add-human-btn').forEach(b => b.disabled = maxed);
+  document.querySelectorAll('.add-cpu-btn').forEach(b => b.disabled = maxed);
   renderRecentPlayers();
 }
 
@@ -246,21 +310,21 @@ function renderRecentPlayers(){
   const usedNames = new Set(players.filter(p => !p.isCpu).map(p => p.name));
   const suggestions = Object.keys(saved)
     .filter(n => !usedNames.has(n))
-    .slice(0, 6);
+    .slice(0, 5);
 
-  const el = document.getElementById('recent-players');
-  if(!el) return;
-  if(!suggestions.length){ el.innerHTML = ''; return; }
-
-  el.innerHTML = '<span class="recent-label">Recent:</span>' +
+  const html = suggestions.length ? '<span class="recent-label">Recent:</span>' +
     suggestions.map(n => {
       const s = saved[n];
       const mpr = savedMPR(s);
-      const record = `${s.wins}W / ${s.games - s.wins}L`;
       return `<button class="recent-chip" onclick="addSavedPlayer(this, '${escapeHTML(n).replace(/'/g,"\\'")}')">
-        ${escapeHTML(n)}<span class="chip-stat">${mpr} MPR · ${record}</span>
+        ${escapeHTML(n)}<span class="chip-stat">${mpr} MPR</span>
       </button>`;
-    }).join('');
+    }).join('') : '';
+    
+  const el1 = document.getElementById('recent-players');
+  const el2 = document.getElementById('recent-players-winner');
+  if(el1) el1.innerHTML = html;
+  if(el2) el2.innerHTML = html;
 }
 
 function addSavedPlayer(btn, name){
@@ -274,7 +338,21 @@ function addSavedPlayer(btn, name){
 }
 
 function checkStartBtn(){
-  document.getElementById('start-btn').disabled = players.length < 2;
+  const valid = players.length >= 2;
+  const sb = document.getElementById('start-btn');
+  if(sb) sb.disabled = !valid;
+  const nb = document.getElementById('next-leg-btn');
+  if(nb) nb.disabled = !valid;
+}
+
+function syncPlayerNames() {
+  const activeScreen = document.querySelector('.screen.active');
+  if (activeScreen) {
+    activeScreen.querySelectorAll('.player-name-input').forEach(inp => {
+      const idx = parseInt(inp.dataset.idx);
+      if(!isNaN(idx)) players[idx].name = inp.value.trim() || `Player ${idx+1}`;
+    });
+  }
 }
 
 // =============================================
@@ -282,11 +360,7 @@ function checkStartBtn(){
 // =============================================
 function startGame(){
   if(players.length < 2) return;
-  // Sync names from any focused inputs before starting
-  document.querySelectorAll('.player-name-input').forEach(inp => {
-    const idx = parseInt(inp.dataset.idx);
-    if(!isNaN(idx)) players[idx].name = inp.value.trim() || `Player ${idx+1}`;
-  });
+  syncPlayerNames();
   legNumber = 0;
   startingPlayer = Math.floor(Math.random() * players.length);
   launchLeg();
@@ -307,6 +381,7 @@ function launchLeg(){
   turnEnded = false;
   gameActive = true;
   stateHistory = [];
+  pendingThrowsToSave = [];
   round = 1;
 
   buildScoreboard();
@@ -319,6 +394,8 @@ function launchLeg(){
 }
 
 function nextLeg(){
+  if(players.length < 2) return;
+  syncPlayerNames();
   legNumber++;
   startingPlayer = (startingPlayer + 1) % players.length;
   launchLeg();
@@ -546,7 +623,7 @@ function updateDartSlot(idx, label, cssClass){
 // =============================================
 // DART REGISTRATION
 // =============================================
-function registerDart(seg){
+function registerDart(seg, coords = null){
   if(!gameActive || turnEnded || currentDarts.length >= 3) return;
   saveState();
   
@@ -560,6 +637,12 @@ function registerDart(seg){
   // Miss check
   const isMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
   const isInPlay = !isMiss && NUMBERS.includes(num);
+  
+  // Silently record the human's exact throw coordinates to the database
+  if (!p.isCpu && coords) {
+    const targetAim = getBestTarget(p); // What they were likely aiming at
+    saveThrowToNeon(p.name, targetAim, seg, coords);
+  }
 
   const dartIdx = currentDarts.length;
 
@@ -865,8 +948,9 @@ function endWithWinner(idx){
   document.getElementById('win-details').textContent =
     `Score ${winner.score} · MPR ${mprOf(winner)}`;
 
-  // Other players below
-  document.getElementById('win-others').innerHTML = players
+  // Other players below 
+  const othersEl = document.getElementById('win-others');
+  if (othersEl) othersEl.innerHTML = players
     .filter((_,i) => i !== idx)
     .map(p => `<div class="win-other-card">
       <div class="win-other-name">${escapeHTML(p.name)}</div>
@@ -879,12 +963,15 @@ function endWithWinner(idx){
     if(!p.isCpu) savePlayerStat(p.name, i === idx, p.marksThrown, p.dartsThrown);
   });
 
+  flushThrowsToNeon();
+
   spawnConfetti();
   showScreen('winner');
 }
 
 function endGame(){
   gameActive = false;
+  flushThrowsToNeon();
   exitFullscreen();
   document.getElementById('confetti').innerHTML = '';
   showScreen('setup');
@@ -958,6 +1045,7 @@ document.addEventListener('keydown', e => {
 // INIT
 // =============================================
 document.addEventListener('DOMContentLoaded', () => {
+  initNeonDB();
   buildCpuGrid();
   addHumanPlayer(); // start with one human (focuses name input)
   renderRecentPlayers();
