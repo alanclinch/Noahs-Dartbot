@@ -329,10 +329,10 @@ body{
 .sb-score-big.leading{color:var(--blue);}
 .sb-mpr{
   font-family:'Share Tech Mono',monospace;
-  color:#9abfe8;line-height:1;
+  color:#6a9ac8;line-height:1;
 }
 .sb-pname{
-  font-size:14px;font-weight:800;
+  font-size:11px;font-weight:800;
   color:var(--text);letter-spacing:.5px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   max-width:100%;text-align:center;
@@ -420,7 +420,7 @@ body{
 }
 .panel-label{
   font-family:'Orbitron',monospace;
-  font-size:10px;letter-spacing:3px;color:var(--muted);
+  font-size:8px;letter-spacing:3px;color:var(--muted);
   text-transform:uppercase;margin-bottom:5px;
 }
 
@@ -443,8 +443,8 @@ body{
 .dart-slot.hit{border-color:var(--blue);color:var(--blue);background:rgba(96,165,250,.08);}
 .dart-slot.scored{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.1);}
 .dart-slot.miss{border-color:var(--red2);color:var(--muted);}
-.dart-slot-label{font-size:11px;color:var(--muted);letter-spacing:1px;}
-.dart-slot-val{font-size:20px;font-weight:700;line-height:1.1;}
+.dart-slot-label{font-size:9px;color:var(--muted);letter-spacing:1px;}
+.dart-slot-val{font-size:14px;font-weight:700;line-height:1.1;}
 
 /* Turn info */
 .turn-info{
@@ -452,7 +452,7 @@ body{
   border-radius:8px;padding:10px;text-align:center;
 }
 .turn-player{
-  font-size:18px;font-weight:800;color:var(--text);
+  font-size:13px;font-weight:800;color:var(--text);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .turn-player.cpu-turn{color:var(--gold);}
@@ -468,7 +468,7 @@ body{
 .target-label{font-size:9px;letter-spacing:2px;color:var(--muted);}
 .target-val{
   font-family:'Orbitron',monospace;
-  font-size:28px;font-weight:900;color:var(--blue);
+  font-size:18px;font-weight:900;color:var(--blue);
   margin-top:2px;
 }
 
@@ -479,7 +479,7 @@ body{
 }
 .round-num{
   font-family:'Orbitron',monospace;
-  font-size:36px;font-weight:900;color:var(--text);
+  font-size:22px;font-weight:900;color:var(--text);
 }
 .round-sub{font-size:9px;color:var(--muted);letter-spacing:2px;}
 
@@ -989,7 +989,7 @@ function goToMenu(){
 // =============================================
 function buildScoreboard(){
   const n = players.length;
-  const numColW = 88;
+  const numColW = 64;
   const colTemplate = `${numColW}px ` + players.map(() => '1fr').join(' ');
 
   // Header
@@ -1001,8 +1001,8 @@ function buildScoreboard(){
     hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
       <div style="width:40px;height:40px;">${p.isCpu ? makeFaceSVG(p.cpuData.face,40) : humanAvatarSVG(p.color,40)}</div>
-      <div class="sb-score-big" id="pscore-${i}" style="font-size:${n<=2?'44px':n===3?'36px':'28px'}">0</div>
-      <div class="sb-mpr" id="pmpr-${i}" style="font-size:${n<=2?'14px':'12px'}">MPR 0.00</div>
+      <div class="sb-score-big" id="pscore-${i}" style="font-size:${n<=2?'28px':n===3?'22px':'18px'}">0</div>
+      <div class="sb-mpr" id="pmpr-${i}" style="font-size:${n<=2?'11px':'10px'}">MPR 0.00</div>
       <div class="sb-pname" title="${p.name}">${p.name}</div>
       ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
     </div>`;
@@ -1018,7 +1018,7 @@ function buildScoreboard(){
     row.id = `row-${num}`;
     row.style.gridTemplateColumns = colTemplate;
 
-    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${num===25?'18px':'46px'}">${num===25?'BULL':num}</div>`;
+    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${num===25?'14px':'26px'}">${num===25?'BULL':num}</div>`;
     players.forEach((p,i) => {
       rowHTML += `<div class="sb-mark-cell" id="mcell-${num}-${i}">
         <div class="mark-wrap">
@@ -1084,7 +1084,7 @@ function updateScoreboard(){
 
 function drawMarkSVG(marks){
   if(marks === 0) return '';
-  const s = 44, cx = s/2, cy = s/2, r = s*0.38;
+  const s = 36, cx = s/2, cy = s/2, r = s*0.38;
   let svg = `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">`;
   if(marks === 1){
     // Single slash /
@@ -1228,22 +1228,21 @@ function registerDart(seg){
     const justClosedAll = justClosed && othersAllClosed;
 
     const dn = dartName(num, mul);
-    const numWord = num === 25 ? 'Bull' : String(num);
     if(wasClosed && !scored){
       sfxDeadDart();
       speak(dn);
     } else if(justClosedAll){
       sfxClose();
-      speak(`Closed ${numWord}`);
+      speak(`${dn}, closed`);
     } else if(justClosed && scored > 0){
       sfxCloseAndScore();
-      speak(`Opened ${numWord}`);
+      speak(`${dn}, closed, scoring`);
     } else if(justClosed){
       sfxClose();
-      speak(`Opened ${numWord}`);
+      speak(`${dn}, closed`);
     } else if(scored > 0){
       sfxScore();
-      speak(dn);
+      speak(`${dn}`);
     } else {
       sfxHit();
       speak(dn);
@@ -1271,9 +1270,9 @@ function registerDart(seg){
   // Auto-end after 3 darts
   if(currentDarts.length >= 3){
     turnEnded = true;
-    // After 3rd dart speech finishes, say total score (~1.2s gap covers any announcement)
-    const totalScore = p.score;
-    if(totalScore > 0) setTimeout(() => speak(String(totalScore)), 1200);
+    // Speak score immediately — don't wait for darts to be removed
+    const turnPts = currentDarts.reduce((s, d) => s + (d.score || 0), 0);
+    if(turnPts > 0) speak(String(turnPts));
   }
 }
 
@@ -1305,7 +1304,6 @@ function runCpuTurn(){
       prevSeg,
       missStreak: p.cpuMissStreak,
       roundForm,
-      dartsThrown: p.dartsThrown
     });
 
     // Update persistent miss streak on this CPU player
@@ -1329,31 +1327,20 @@ function runCpuTurn(){
 // generateCpuThrow, getAdjacentNumbers — from bots.js
 
 function getBestTarget(p){
-  // Helper to sort numbers: 20, 19, 18, 17, 16, 15, Bull
-  const sortHighest = (a, b) => (b === 25 ? 14 : b) - (a === 25 ? 14 : a);
-
-  const myOpen = NUMBERS.filter(n => p.marks[n] < 3).sort(sortHighest);
-  const myScoring = NUMBERS.filter(n => {
+  // Priority 1: close numbers highest-first, bull saved for last
+  // (bull is hardest to hit — close 20→15 first to maximise scoring,
+  //  then finish with bull as described in standard cricket strategy)
+  const open = NUMBERS.filter(n => p.marks[n] < 3).sort((a,b) => {
+    const va = a === 25 ? -1 : a;  // bull sorts to bottom
+    const vb = b === 25 ? -1 : b;
+    return vb - va;  // descending: 20, 19, 18, 17, 16, 15, bull
+  });
+  if(open.length > 0) return open[0];
+  // Priority 2: all closed — score on highest open enemy number
+  const scoring = NUMBERS.filter(n => {
     return p.marks[n] >= 3 && players.some((op,i) => i !== currentPlayer && op.marks[n] < 3);
-  }).sort(sortHighest);
-
-  const enemies = players.filter((op, i) => i !== currentPlayer);
-
-  if (gameVariant === 'standard') {
-    const highestEnemyScore = Math.max(0, ...enemies.map(op => op.score));
-    // Golden Rule: If tied, behind, or only have a tiny lead, hammer open scoring numbers!
-    if (p.score <= highestEnemyScore + 10 && myScoring.length > 0) return myScoring[0];
-  } else if (gameVariant === 'cutthroat') {
-    const lowestEnemyScore = Math.min(...enemies.map(op => op.score));
-    // Cut-throat: If tied or higher than the leader, give opponents points!
-    if (p.score >= lowestEnemyScore - 10 && myScoring.length > 0) return myScoring[0];
-  }
-
-  // Default: Close highest open number. If all closed, score on highest available.
-  if (myOpen.length > 0) return myOpen[0];
-  if (myScoring.length > 0) return myScoring[0];
-
-  return 20; // Fallback
+  }).sort((a,b) => b - a);
+  return scoring[0] || 20;
 }
 
 // =============================================
