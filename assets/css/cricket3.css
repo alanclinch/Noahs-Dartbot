@@ -372,6 +372,10 @@ body{
   background:rgba(52,211,153,.3);
   border-color:var(--green);
 }
+.sb-mark-cell.all-closed-cell {
+  background:rgba(248,113,113,.12);
+  border-color:rgba(248,113,113,.5);
+}
 .sb-mark-cell.just-hit{animation:cellFlash .5s ease-out;}
 @keyframes cellFlash{
   0%{background:rgba(200,230,255,.5);}

@@ -498,6 +498,7 @@ function updateScoreboard(){
       if(cellEl) {
         cellEl.classList.toggle('active-turn', i === currentPlayer);
         cellEl.classList.toggle('is-scoring-cell', canScore);
+        cellEl.classList.toggle('all-closed-cell', allClosedNum);
         cellEl.style.backgroundColor = "";
         cellEl.style.borderColor = "";
       }
