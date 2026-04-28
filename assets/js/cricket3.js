@@ -424,7 +424,7 @@ function buildScoreboard(){
   top.style.gridTemplateColumns = colTemplate;
 
   // FIX: rewritten — was garbled with broken class names and duplicate IDs
-  let hdrHTML = `<div class="sb-num-label">#</div>`;
+  let hdrHTML = `<div class="sb-num-label"></div>`;
   players.forEach((p,i) => {
     hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
@@ -432,7 +432,6 @@ function buildScoreboard(){
       <div class="sb-pname" title="${escapeHTML(p.name)}" style="font-size:${nameFontSize}">${escapeHTML(p.name)}</div>
       <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
       <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR —</div>
-      ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
     </div>`;
   });
   top.innerHTML = hdrHTML;
@@ -444,11 +443,22 @@ function buildScoreboard(){
     row.className = 'sb-row';
     row.id = `row-${num}`;
     row.style.gridTemplateColumns = colTemplate;
-    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${num===25?'24px':numFontSize}">${num===25?'BULL':num}</div>`;
+    const numCellContent = num === 25
+      ? `<div class="bull-cell-inner">
+           <svg viewBox="0 0 60 60" class="bull-svg" xmlns="http://www.w3.org/2000/svg">
+             <circle cx="30" cy="30" r="29" fill="#0a1a0a"/>
+             <circle cx="30" cy="30" r="21" fill="#7a0000"/>
+             <circle cx="30" cy="30" r="13" fill="#1a6b1a"/>
+             <circle cx="30" cy="30" r="7" fill="#bb0000"/>
+             <circle cx="30" cy="30" r="3.5" fill="#ff2020"/>
+           </svg>
+           <span class="bull-label">BULL</span>
+         </div>`
+      : num;
+    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${numFontSize}">${numCellContent}</div>`;
     players.forEach((p,i) => {
       rowHTML += `<div class="sb-mark-cell" id="mcell-${num}-${i}">
         <div class="mark-wrap">
-          <div class="mark-line"></div>
           <div class="mark-closed-line" id="closedline-${num}-${i}"></div>
           <div class="mark-svg-wrap" id="marksvg-${num}-${i}"></div>
         </div>
@@ -673,7 +683,7 @@ function registerDart(seg, coords = null){
       speak(`Opened ${numWord}`);
     } else if(justClosed){
       sfxClose();
-      flash(`OPENED ${numWord}`, 'var(--blue)');
+      flash(`OPENED ${numWord}`, 'var(--green)');
       speak(`Opened ${numWord}`);
     } else if(scored > 0){
       sfxScore();
