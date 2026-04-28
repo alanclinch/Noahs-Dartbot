@@ -444,16 +444,13 @@ function buildScoreboard(){
     row.id = `row-${num}`;
     row.style.gridTemplateColumns = colTemplate;
     const numCellContent = num === 25
-      ? `<div class="bull-cell-inner">
-           <svg viewBox="0 0 60 60" class="bull-svg" xmlns="http://www.w3.org/2000/svg">
-             <circle cx="30" cy="30" r="29" fill="#0a1a0a"/>
-             <circle cx="30" cy="30" r="21" fill="#7a0000"/>
-             <circle cx="30" cy="30" r="13" fill="#1a6b1a"/>
-             <circle cx="30" cy="30" r="7" fill="#bb0000"/>
-             <circle cx="30" cy="30" r="3.5" fill="#ff2020"/>
-           </svg>
-           <span class="bull-label">BULL</span>
-         </div>`
+      ? `<svg viewBox="0 0 60 60" class="bull-svg" xmlns="http://www.w3.org/2000/svg">
+           <circle cx="30" cy="30" r="29" fill="#0a1a0a"/>
+           <circle cx="30" cy="30" r="21" fill="#7a0000"/>
+           <circle cx="30" cy="30" r="13" fill="#1a6b1a"/>
+           <circle cx="30" cy="30" r="7" fill="#bb0000"/>
+           <circle cx="30" cy="30" r="3.5" fill="#ff2020"/>
+         </svg>`
       : num;
     let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${numFontSize}">${numCellContent}</div>`;
     players.forEach((p,i) => {

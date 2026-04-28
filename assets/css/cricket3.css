@@ -337,25 +337,12 @@ body{
 .sb-body{display:flex;flex-direction:column;flex:1;overflow:hidden;}
 .sb-row{
   display:grid;
-  position:relative;
   align-items:stretch;
   gap:4px;
   flex:1;
   border-bottom:2px solid rgba(30,50,80,.4);
 }
 .sb-row:last-child{border-bottom:none;}
-.sb-row.all-closed::after{
-  content:'CLOSED';
-  position:absolute;
-  left:104px;right:0;top:0;bottom:0;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--red);
-  font-family:'Orbitron',monospace;font-weight:900;
-  font-size:18px;letter-spacing:6px;
-  background:rgba(160,20,20,.22);
-  pointer-events:none;
-  z-index:3;
-}
 
 .sb-num-cell{
   display:flex;align-items:center;justify-content:center;
@@ -363,11 +350,7 @@ body{
   color:#fff;
 }
 .sb-num-cell.num-closed-all{color:var(--red);text-decoration:line-through;}
-.bull-cell-inner{display:flex;flex-direction:column;align-items:center;gap:3px;}
 .bull-svg{width:min(75%,56px);height:auto;}
-.bull-label{font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:#fff;font-weight:700;}
-.sb-row.all-closed{background:rgba(220,30,30,.25);}
-.sb-row.all-closed .sb-num-cell{color:var(--red);}
 
 .sb-mark-cell{
   display:flex;align-items:center;justify-content:center;
