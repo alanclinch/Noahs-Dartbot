@@ -152,6 +152,7 @@ let pendingThrowsToSave = [];
 let throwLog = [];
 let startingPlayer = 0;
 let legNumber = 0;
+let advancing = false;
 
 async function flushThrowsToNeon() {
   if (!sql || pendingThrowsToSave.length === 0) return;
@@ -330,7 +331,7 @@ async function renderRecentPlayers(){
       const s = saved[n];
       const mpr = savedMPR(s);
       const flag = s.flag || 'sco';
-      return `<button class="recent-chip" onclick="addSavedPlayer(this, '${escapeHTML(n).replace(/'/g,"\\'")}', '${flag}')">
+      return `<button class="recent-chip" onclick="addSavedPlayer('${escapeHTML(n).replace(/'/g,"\\'")}', '${flag}')">
         <div style="width:24px;height:16px;margin-right:6px;">${renderFlag(flag)}</div> ${escapeHTML(n)}<span class="chip-stat">${mpr} MPR</span>
       </button>`;
     }).join('') : '';
@@ -340,7 +341,7 @@ async function renderRecentPlayers(){
   if(el2) el2.innerHTML = html;
 }
 
-function addSavedPlayer(btn, name, flag = 'sco'){
+function addSavedPlayer(name, flag = 'sco'){
   if(players.length >= 4) return;
   const color = PLAYER_COLORS[players.length % 6];
   players.push({name, color, flag, isCpu:false, cpuData:null, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
@@ -383,6 +384,7 @@ function launchLeg(){
   gameActive = true;
   stateHistory = [];
   pendingThrowsToSave = [];
+  advancing = false;
   round = 1;
   buildScoreboard();
   showScreen('game');
@@ -472,7 +474,7 @@ function updateScoreboard(){
     }
     const mprEl = document.getElementById(`pmpr-${i}`);
     if(mprEl){
-      const mpr = p.dartsThrown > 0 ? (p.marksThrown / Math.max(1,p.dartsThrown/3)).toFixed(2) : '0.00';
+      const mpr = p.dartsThrown >= 3 ? (p.marksThrown / (p.dartsThrown / 3)).toFixed(2) : '—';
       mprEl.textContent = `MPR ${mpr}`;
     }
     const hdrEl = document.getElementById(`phdr-${i}`);
@@ -554,6 +556,8 @@ function startTurn(){
   seenThrows = 0;
   turnEnded = false;
   resetDartSlots();
+  const nextBtn = document.getElementById('next-player-btn');
+  if(nextBtn) nextBtn.style.display = 'none';
   updateScoreboard();
   const nameEl = document.getElementById('turn-player-name');
   nameEl.textContent = p.name;
@@ -565,13 +569,14 @@ function startTurn(){
 }
 
 function advanceTurn(){
-  if(!gameActive) return;
+  if(!gameActive || advancing) return;
+  advancing = true;
   if(missTimer){ clearTimeout(missTimer); missTimer = null; }
   let next = (currentPlayer + 1) % players.length;
   if(next === 0) round++;
   currentPlayer = next;
   updateScoreboard();
-  setTimeout(() => { speak(playerCallName(players[currentPlayer])); startTurn(); }, 600);
+  setTimeout(() => { speak(playerCallName(players[currentPlayer])); startTurn(); advancing = false; }, 600);
 }
 
 function resetDartSlots(){
@@ -603,8 +608,8 @@ function registerDart(seg, coords = null){
   const mul = seg ? Number(seg.multiplier || 1) : 0;
   const name = seg ? (seg.name || '').trim().toLowerCase() : '';
 
-  const isMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
-  const isInPlay = !isMiss && NUMBERS.includes(num);
+  const dartIsMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
+  const isInPlay = !dartIsMiss && NUMBERS.includes(num);
 
   if (!p.isCpu && coords) {
     const targetAim = getBestTarget(p);
@@ -613,7 +618,7 @@ function registerDart(seg, coords = null){
 
   const dartIdx = currentDarts.length;
 
-  if(isMiss || !isInPlay){
+  if(dartIsMiss || !isInPlay){
     currentDarts.push({score:0, label:'Miss', num:0, mul:0});
     updateDartSlot(dartIdx, 'Miss', 'miss');
     sfxMiss();
@@ -659,23 +664,23 @@ function registerDart(seg, coords = null){
     const dn = dartName(num, mul);
     const numWord = num === 25 ? 'Bull' : String(num);
 
-    // FIX: dead dart now uses sfxDeadDart (not sfxMiss) and speaks the dart name
-    // FIX: added missing sfxScore() branch for already-closed scoring darts
-    // FIX: fixed broken template literal in justClosed branch (was `Opened ${numWord; — syntax error)
     if(wasClosed && !scored){
-      sfxDeadDart();
-      speak(dn);
+      sfxMiss();
     } else if(justClosedAll){
       sfxClose();
+      flash('CLOSED!', 'var(--red)');
       speak(`Closed ${numWord}`);
     } else if(justClosed && scored > 0){
       sfxCloseAndScore();
+      flash(`OPENED ${numWord}`, 'var(--green)');
       speak(`Opened ${numWord}`);
     } else if(justClosed){
       sfxClose();
+      flash(`OPENED ${numWord}`, 'var(--blue)');
       speak(`Opened ${numWord}`);
     } else if(scored > 0){
       sfxScore();
+      flash(`+${scored}`, 'var(--gold)');
       speak(dn);
     } else {
       sfxHit();
@@ -701,6 +706,8 @@ function registerDart(seg, coords = null){
 
   if(currentDarts.length >= 3){
     turnEnded = true;
+    const nextBtn = document.getElementById('next-player-btn');
+    if(nextBtn && !p.isCpu) nextBtn.style.display = '';
     const turnScored = currentDarts.reduce((s, d) => s + (d.score || 0), 0);
     if(turnScored > 0) setTimeout(() => speak(String(p.score)), 1200);
   }
@@ -865,28 +872,35 @@ function checkWin(idx){
   return myScore >= highestScore;
 }
 
-function endWithWinner(idx){
+async function endWithWinner(idx){
   gameActive = false;
   const winner = players[idx];
   sfxCheckout();
   speak(`${playerCallName(winner)} wins!`, true);
-  const mprOf = p => p.dartsThrown > 0
-    ? (p.marksThrown / Math.max(1, p.dartsThrown / 3)).toFixed(2)
+  const mprOf = p => p.dartsThrown >= 3
+    ? (p.marksThrown / (p.dartsThrown / 3)).toFixed(2)
     : '0.00';
+  const statsOf = p => {
+    const rounds = Math.floor(p.dartsThrown / 3);
+    return `${p.dartsThrown} darts · ${p.marksThrown} marks · ${rounds} rounds · MPR ${mprOf(p)}`;
+  };
   document.getElementById('win-name').textContent = winner.name;
-  document.getElementById('win-details').textContent = `Score ${winner.score} · MPR ${mprOf(winner)}`;
+  const legStr = legNumber > 0 ? `Leg ${legNumber + 1} · ` : '';
+  document.getElementById('win-details').innerHTML =
+    `${legStr}Score ${winner.score}<br><span style="font-size:14px;">${statsOf(winner)}</span>`;
   const othersEl = document.getElementById('win-others');
   if (othersEl) othersEl.innerHTML = players
     .filter((_,i) => i !== idx)
     .map(p => `<div class="win-other-card">
       <div class="win-other-name">${escapeHTML(p.name)}</div>
-      <div class="win-other-score">Score ${p.score} · MPR ${mprOf(p)}</div>
+      <div class="win-other-score">Score ${p.score}</div>
+      <div class="win-other-score" style="font-size:13px;margin-top:4px;">${statsOf(p)}</div>
     </div>`)
     .join('');
   players.forEach((p, i) => {
     if(!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown);
   });
-  flushThrowsToNeon();
+  await flushThrowsToNeon();
   spawnConfetti();
   showScreen('winner');
 }
@@ -905,7 +919,8 @@ function endGame(){
 // =============================================
 function sfxScore(){
   const ctx=gAC(),t=ctx.currentTime;
-  [440,554,659].forEach((f,i)=>tone(f,'triangle',t+i*.07,.15,.18,ctx));
+  [659,880,1175].forEach((f,i)=>tone(f,'sine',t+i*.065,.22,.18,ctx));
+  noiz(t+.13,.14,.09,1800,ctx);
 }
 function sfxClose(){
   const ctx=gAC(),t=ctx.currentTime;
@@ -921,6 +936,17 @@ function sfxDeadDart(){
   const ctx=gAC(),t=ctx.currentTime;
   tone(220,'sawtooth',t,.12,.1,ctx);
   noiz(t,.08,.06,200,ctx);
+}
+function flash(text, color = 'var(--gold)') {
+  const el = document.getElementById('announce');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = color;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(flash._timer);
+  flash._timer = setTimeout(() => el.classList.remove('show'), 1400);
 }
 // sfxMiss, sfxCheckout, sfxHit — from utils.js
 // initSpeech, speak, spawnConfetti — from utils.js

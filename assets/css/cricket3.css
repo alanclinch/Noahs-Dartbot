@@ -570,6 +570,7 @@ body{
   transform:translate(-50%,-50%);
   z-index:300;pointer-events:none;
   font-family:'Orbitron',monospace;font-weight:900;
+  font-size:80px;line-height:1;
   text-align:center;
   opacity:0;transition:opacity .2s;
   text-shadow:0 0 60px currentColor;
