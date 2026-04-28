@@ -636,7 +636,8 @@ function registerDart(seg, coords = null){
     const othersAllClosed = players.filter((_,i) => i !== currentPlayer).every(op => op.marks[num] >= 3);
 
     p.marks[num] = Math.min(3, currentMarks + marks);
-    p.marksThrown += marks;
+    const scoringMarks = (marksToScore > 0 && !othersAllClosed && gameVariant !== 'noscore') ? marksToScore : 0;
+    p.marksThrown += marksToClose + scoringMarks;
 
     if(marksToScore > 0 && !othersAllClosed && gameVariant !== 'noscore'){
       if(gameVariant === 'standard'){
