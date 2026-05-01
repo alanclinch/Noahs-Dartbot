@@ -120,10 +120,9 @@ function generateCpuThrow(target, mpr, opts) {
   // MPR 6.0 -> ~7mm spread, MPR 1.0 -> ~40mm spread
   let baseSigma = 46 - (6.5 * mpr);
 
-  // Simulate "early game confidence" vs "late game pressure/fatigue".
-  // Darts 0-10: Starts slightly hotter (~15% tighter variance).
-  // Darts 30+: Settles into their true baseline target MPR.
-  const focusMultiplier = 0.85 + (Math.min(dartsThrown, 30) / 30) * 0.15;
+  // Simulate early-game confidence: starts slightly hotter (~7% tighter variance).
+  // Darts 30+: settles into true baseline MPR.
+  const focusMultiplier = 0.93 + (Math.min(dartsThrown, 30) / 30) * 0.07;
   baseSigma *= focusMultiplier;
 
   baseSigma = Math.max(5, Math.min(65, baseSigma));
