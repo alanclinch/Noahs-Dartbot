@@ -39,6 +39,7 @@
   </div>
 
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
+  <button class="stats-btn" onclick="showStatsModal()">📊 Player Stats</button>
 
   <div class="setup-card">
     <h3>Connection</h3>
@@ -188,6 +189,18 @@
   <div style="display:flex; gap:14px; margin-top:20px;">
     <button class="win-btn win-btn-primary" onclick="copyLog()">Copy to Clipboard</button>
     <button class="win-btn" onclick="closeLog()">Close</button>
+  </div>
+</div>
+
+<!-- STATS MODAL -->
+<div id="stats-modal" class="modal-overlay" style="display:none;">
+  <div class="stats-modal-box">
+    <h2>PLAYER STATS</h2>
+    <div id="stats-content"></div>
+    <div style="display:flex; gap:12px; margin-top:20px; justify-content:center;">
+      <button class="win-btn win-btn-primary" id="stats-cloud-btn" onclick="loadStatsFromCloud()" style="display:none;">↻ Load from Cloud</button>
+      <button class="win-btn" onclick="closeStatsModal()">CLOSE</button>
+    </div>
   </div>
 </div>
 

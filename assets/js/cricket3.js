@@ -79,6 +79,67 @@ async function initNeonDB() {
   }
 }
 
+function showStatsModal() {
+  const all = getSavedPlayers();
+  const modal = document.getElementById('stats-modal');
+  const cloudBtn = document.getElementById('stats-cloud-btn');
+  if (sql) cloudBtn.style.display = '';
+  renderStatsTable(all);
+  modal.style.display = 'flex';
+}
+
+function closeStatsModal() {
+  document.getElementById('stats-modal').style.display = 'none';
+}
+
+function renderStatsTable(all) {
+  const el = document.getElementById('stats-content');
+  const entries = Object.entries(all).sort((a, b) => {
+    const mprA = a[1].darts > 0 ? a[1].marks / (a[1].darts / 3) : 0;
+    const mprB = b[1].darts > 0 ? b[1].marks / (b[1].darts / 3) : 0;
+    return mprB - mprA;
+  });
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="stats-empty">No player data yet. Play a game to start tracking stats.</div>';
+    return;
+  }
+
+  const rows = entries.map(([name, s], rank) => {
+    const mpr = s.darts > 0 ? (s.marks / (s.darts / 3)).toFixed(2) : '—';
+    const winPct = s.games > 0 ? Math.round((s.wins / s.games) * 100) : 0;
+    const flagHTML = s.flag ? `<span class="flag-icon fi fi-${s.flag}" style="width:20px;height:13px;display:inline-block;border-radius:2px;"></span>` : '';
+    return `<tr>
+      <td class="stats-rank">${rank + 1}</td>
+      <td class="stats-name">${flagHTML} ${escapeHTML(name)}</td>
+      <td>${s.games}</td>
+      <td>${s.wins}</td>
+      <td>${winPct}%</td>
+      <td class="stats-mpr">${mpr}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table class="stats-table">
+    <thead><tr>
+      <th>#</th><th>Player</th><th>Games</th><th>Wins</th><th>Win%</th><th>MPR</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function loadStatsFromCloud() {
+  if (!sql) return;
+  try {
+    const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players ORDER BY name`;
+    const all = {};
+    rows.forEach(r => { all[r.name] = { games: r.games, wins: r.wins, marks: r.marks, darts: r.darts, flag: r.flag }; });
+    renderStatsTable(all);
+  } catch (e) {
+    console.error('Stats load error:', e);
+    alert('Failed to load stats from cloud.');
+  }
+}
+
 function promptNeonString() {
   const current = localStorage.getItem('neon_db_string') || '';
   const res = prompt("Enter your Neon Database Connection String:\n(Leave blank to play offline)", current);
