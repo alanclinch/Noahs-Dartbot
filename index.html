@@ -4,58 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DartBot — Autodarts Games</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/game.css">
 <script src="assets/js/autodarts.js"></script>
+<script src="assets/js/utils.js"></script>
 <style>
 :root {
-  --bg: #0a0e0a;
-  --surface: #111811;
-  --border: #2a3a2a;
-  --gold: #f0c040;
-  --gold2: #a07818;
-  --green: #40e880;
-  --text: #e8f0e8;
-  --muted: #608060;
+  --bg:#0e1e38; --bg2:#122540; --surface:#1a3052; --surface2:#1f3a62;
+  --border:#2c4d72; --border2:#3a618e;
+  --gold:#fcd34d; --gold-dim:#b45309;
+  --text:#ffffff; --muted:#ffffff;
+  --green:#34d399; --red:#f87171; --blue:#60a5fa; --amber:#fbbf24;
 }
+
+*{box-sizing:border-box;margin:0;padding:0;}
 
 body {
   background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 10%, rgba(40,100,220,.22) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 90%, rgba(20,70,180,.18) 0%, transparent 50%);
   color: var(--text);
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Exo 2', sans-serif;
   min-height: 100vh;
   overflow-y: auto;
-  background-image:
-    radial-gradient(ellipse at 20% 10%, rgba(40,160,40,.12), transparent 55%),
-    radial-gradient(ellipse at 80% 90%, rgba(20,80,160,.12), transparent 55%);
 }
 
-/* ── HEADER ─── */
+/* ── HEADER ── */
 .header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 48px 24px 32px;
+  padding: 48px 24px 36px;
   text-align: center;
 }
-
 .logo {
-  font-family: 'Orbitron', sans-serif;
-  font-size: clamp(40px, 8vw, 88px);
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(36px, 7vw, 80px);
   font-weight: 900;
   color: var(--gold);
-  text-shadow: 0 4px 0 var(--gold2), 0 0 60px rgba(240,192,64,.35);
-  letter-spacing: 4px;
+  text-shadow: 0 4px 0 var(--gold-dim), 0 0 60px rgba(252,211,77,.3);
+  letter-spacing: 6px;
 }
-
 .tagline {
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: 5px;
   text-transform: uppercase;
   color: var(--muted);
-  margin-top: 6px;
+  opacity: .5;
+  margin-top: 8px;
 }
-
 .ws-bar {
   display: flex;
   align-items: center;
@@ -64,81 +63,82 @@ body {
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--muted);
+  opacity: .6;
   margin-top: 20px;
 }
 
-/* ── GAME CARDS ─── */
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 360px));
-  gap: 24px;
-  justify-content: center;
-  padding: 0 24px 60px;
-  max-width: 1200px;
-  margin: 0 auto;
+/* ── SECTION LABEL ── */
+.section-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  letter-spacing: 4px;
+  color: var(--blue);
+  opacity: .8;
+  text-align: center;
+  margin: 8px 0 16px;
 }
 
+/* ── MAIN LAYOUT ── */
+.page-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* ── GAME CARDS ── */
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
 .game-card {
   background: var(--surface);
   border: 2px solid var(--border);
-  border-radius: 20px;
-  padding: 32px 28px;
+  border-radius: 18px;
+  padding: 28px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   text-decoration: none;
   color: var(--text);
   transition: all .2s;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
-
 .game-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: 3px;
   background: var(--card-accent, var(--gold));
   opacity: 0;
   transition: opacity .2s;
 }
-
 .game-card:hover {
   transform: translateY(-4px);
   border-color: var(--card-accent, var(--gold));
-  box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 1px var(--card-accent, var(--gold));
+  box-shadow: 0 16px 40px rgba(0,0,0,.5), 0 0 0 1px var(--card-accent, var(--gold));
 }
-
 .game-card:hover::before { opacity: 1; }
-
-.card-icon {
-  font-size: 56px;
-  line-height: 1;
-}
-
+.card-icon { font-size: 48px; line-height: 1; }
 .card-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 22px;
+  font-family: 'Orbitron', monospace;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--card-accent, var(--gold));
 }
-
 .card-desc {
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
-  color: rgba(232,240,232,.6);
+  color: rgba(255,255,255,.6);
+  flex: 1;
 }
-
-.card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
+.card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .tag {
   font-size: 11px;
   letter-spacing: 1px;
@@ -146,47 +146,175 @@ body {
   padding: 3px 10px;
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,.15);
-  color: rgba(255,255,255,.45);
+  color: rgba(255,255,255,.4);
 }
-
 .tag.accent {
   border-color: var(--card-accent, var(--gold));
   color: var(--card-accent, var(--gold));
 }
-
 .card-play {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 14px;
   border-top: 1px solid var(--border);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--card-accent, var(--gold));
-  opacity: .7;
+  opacity: .6;
   transition: opacity .2s;
 }
-
 .game-card:hover .card-play { opacity: 1; }
 
-/* ── FOOTER ─── */
+/* ── SETTINGS ROW ── */
+.settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 600px) { .settings-row { grid-template-columns: 1fr; } }
+
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.settings-card h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--blue);
+}
+.settings-row-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-label {
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  opacity: .8;
+  flex: 1;
+}
+.settings-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--blue);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.settings-btn:hover { border-color: var(--blue); background: rgba(96,165,250,.08); }
+.voice-select {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  cursor: pointer;
+}
+.voice-select option { background: var(--bg2); }
+
+/* ── PLAYERS SECTION ── */
+.players-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.players-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.players-header h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: var(--blue);
+}
+.player-row-home {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+.player-flag-home { width: 32px; height: 21px; flex-shrink: 0; }
+.player-name-home { font-weight: 700; font-size: 15px; flex: 1; }
+.player-stat { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--muted); opacity: .7; min-width: 60px; text-align: right; }
+.player-mpr-home { font-family: 'Share Tech Mono', monospace; font-size: 15px; color: var(--gold); font-weight: 700; min-width: 70px; text-align: right; }
+.player-delete {
+  background: none;
+  border: none;
+  color: var(--red);
+  opacity: .4;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  transition: opacity .2s;
+  border-radius: 6px;
+}
+.player-delete:hover { opacity: 1; background: rgba(248,113,113,.1); }
+.players-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  opacity: .4;
+  font-size: 14px;
+}
+.danger-btn {
+  background: none;
+  border: 1px solid rgba(248,113,113,.4);
+  border-radius: 8px;
+  color: var(--red);
+  opacity: .6;
+  font-family: 'Exo 2', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.danger-btn:hover { opacity: 1; background: rgba(248,113,113,.08); }
+
+/* ── FOOTER ── */
 .footer {
   text-align: center;
   padding: 24px;
   font-size: 11px;
   letter-spacing: 2px;
   color: var(--muted);
+  opacity: .3;
   text-transform: uppercase;
   border-top: 1px solid var(--border);
 }
 </style>
 </head>
 <body>
-
-<div id="confetti"></div>
 
 <header class="header">
   <div class="logo">🎯 DARTBOT</div>
@@ -197,62 +325,188 @@ body {
   </div>
 </header>
 
-<main class="games-grid">
+<div class="page-content">
 
-  <a class="game-card" href="games/cricket.html" style="--card-accent:#40c860;">
-    <div class="card-icon">🏏</div>
-    <div class="card-title">Cricket</div>
-    <div class="card-desc">
-      Close numbers 15–20 and Bull. Score points on closed numbers to win.
-      Play Standard, Cut-Throat, or No-Score variants against humans or CPU.
-    </div>
-    <div class="card-tags">
-      <span class="tag accent">1–6 players</span>
-      <span class="tag accent">CPU opponents</span>
-      <span class="tag">Standard · Cut-Throat · No-Score</span>
-    </div>
-    <div class="card-play">Play Now <span>▶</span></div>
-  </a>
+  <!-- GAMES -->
+  <div>
+    <div class="section-label">GAMES</div>
+    <div class="games-grid">
 
-  <a class="game-card" href="games/Demolition.html" style="--card-accent:#ff40b0;">
-    <div class="card-icon">💥</div>
-    <div class="card-title">Demolition</div>
-    <div class="card-desc">
-      Race to demolish your gem tower by scoring points. Hit exactly zero to
-      check out — bust and your score resets. Last player to check out loses!
-    </div>
-    <div class="card-tags">
-      <span class="tag accent">2–6 players</span>
-      <span class="tag">Adjustable score &amp; multiplier</span>
-      <span class="tag">Sudden Death tiebreak</span>
-    </div>
-    <div class="card-play">Play Now <span>▶</span></div>
-  </a>
+      <a class="game-card" href="games/Cricket3.html" style="--card-accent:#34d399;">
+        <div class="card-icon">🏏</div>
+        <div class="card-title">Cricket</div>
+        <div class="card-desc">Close numbers 15–20 and Bull. Score points on open numbers to win. Play Standard, Cut-Throat, or No-Score variants against humans or CPU.</div>
+        <div class="card-tags">
+          <span class="tag accent">1–4 players</span>
+          <span class="tag accent">CPU opponents</span>
+          <span class="tag">Standard · Cut-Throat · No-Score</span>
+        </div>
+        <div class="card-play">Play Now <span>▶</span></div>
+      </a>
 
-  <a class="game-card" href="games/Snakes and Ladders.html" style="--card-accent:#40d0c0;">
-    <div class="card-icon">🐍</div>
-    <div class="card-title">Snakes &amp; Ladders</div>
-    <div class="card-desc">
-      Classic board game powered by darts. Each ring maps to a die face —
-      land on snakes to slide down, ladders to climb up. First to square 65 wins!
-    </div>
-    <div class="card-tags">
-      <span class="tag accent">1–6 players</span>
-      <span class="tag">Ring = die face (1–6)</span>
-      <span class="tag">Named snakes &amp; ladders</span>
-    </div>
-    <div class="card-play">Play Now <span>▶</span></div>
-  </a>
+      <a class="game-card" href="games/Demolition.html" style="--card-accent:#ff40b0;">
+        <div class="card-icon">💥</div>
+        <div class="card-title">Demolition</div>
+        <div class="card-desc">Race to demolish your gem tower by scoring points. Hit exactly zero to check out — bust and your score resets. Last player to check out loses!</div>
+        <div class="card-tags">
+          <span class="tag accent">2–6 players</span>
+          <span class="tag">Adjustable score &amp; multiplier</span>
+          <span class="tag">Sudden Death tiebreak</span>
+        </div>
+        <div class="card-play">Play Now <span>▶</span></div>
+      </a>
 
-</main>
+      <a class="game-card" href="games/Snakes and Ladders.html" style="--card-accent:#40d0c0;">
+        <div class="card-icon">🐍</div>
+        <div class="card-title">Snakes &amp; Ladders</div>
+        <div class="card-desc">Classic board game powered by darts. Each ring maps to a die face — land on snakes to slide down, ladders to climb up. First to square 65 wins!</div>
+        <div class="card-tags">
+          <span class="tag accent">1–6 players</span>
+          <span class="tag">Ring = die face (1–6)</span>
+          <span class="tag">Named snakes &amp; ladders</span>
+        </div>
+        <div class="card-play">Play Now <span>▶</span></div>
+      </a>
 
-<footer class="footer">
-  DartBot · Local play via Autodarts · No internet required
-</footer>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div>
+    <div class="section-label">SETTINGS</div>
+    <div class="settings-row">
+
+      <div class="settings-card">
+        <h3>Caller Voice</h3>
+        <select id="voice-picker" class="voice-select" onchange="setVoice(this.value)">
+          <option>Loading voices…</option>
+        </select>
+      </div>
+
+      <div class="settings-card">
+        <h3>Connections</h3>
+        <div class="settings-row-item">
+          <div class="ws-dot" id="conn-ws-dot"></div>
+          <span class="settings-label">Autodarts Board</span>
+        </div>
+        <div class="settings-row-item">
+          <span class="settings-label">Cloud Stats (Neon DB)</span>
+          <button class="settings-btn" onclick="promptNeonString()">⚙ SETUP</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- PLAYERS -->
+  <div class="players-section">
+    <div class="players-header">
+      <h3>Players</h3>
+      <button class="danger-btn" onclick="clearAllPlayers()">Clear All</button>
+    </div>
+    <div id="player-roster"></div>
+  </div>
+
+</div>
+
+<footer class="footer">DartBot · Powered by Autodarts</footer>
 
 <script>
+const LS_KEY = 'dartbot_players';
+
+function renderFlag(code) {
+  let c = String(code || 'sco').toLowerCase();
+  if (c === 'sco') return `<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:3px;box-shadow:0 0 3px rgba(0,0,0,.4);"><rect width="60" height="40" fill="#005eb8"/><path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="6"/></svg>`;
+  if (c === 'eng') return `<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:3px;box-shadow:0 0 3px rgba(0,0,0,.4);"><rect width="60" height="40" fill="#fff"/><path d="M30,0 L30,40 M0,20 L60,20" stroke="#ce1126" stroke-width="8"/></svg>`;
+  if (c === 'wal') return `<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:3px;box-shadow:0 0 3px rgba(0,0,0,.4);"><rect width="60" height="20" fill="#fff"/><rect y="20" width="60" height="20" fill="#00ab39"/><ellipse cx="30" cy="24" rx="10" ry="14" fill="#ce1126"/></svg>`;
+  if (c === 'ned') return `<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:3px;box-shadow:0 0 3px rgba(0,0,0,.4);"><rect width="60" height="40" fill="#fff"/><rect width="60" height="13.3" fill="#AE1C28"/><rect y="26.7" width="60" height="13.3" fill="#21468B"/></svg>`;
+  return `<svg viewBox="0 0 60 40" style="width:100%;height:100%;border-radius:3px;"><rect width="60" height="40" fill="#334"/></svg>`;
+}
+
+function getSavedPlayers() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+}
+
+function savedMPR(s) {
+  return s.darts > 0 ? (s.marks / (s.darts / 3)).toFixed(2) : '—';
+}
+
+function renderRoster() {
+  const all = getSavedPlayers();
+  const el = document.getElementById('player-roster');
+  const entries = Object.entries(all).sort((a, b) => {
+    const mA = a[1].darts > 0 ? a[1].marks / (a[1].darts / 3) : 0;
+    const mB = b[1].darts > 0 ? b[1].marks / (b[1].darts / 3) : 0;
+    return mB - mA;
+  });
+
+  if (!entries.length) {
+    el.innerHTML = '<div class="players-empty">No players tracked yet — play a game to start building stats.</div>';
+    return;
+  }
+
+  el.innerHTML = entries.map(([name, s]) => {
+    const mpr = savedMPR(s);
+    const winPct = s.games > 0 ? Math.round((s.wins / s.games) * 100) : 0;
+    return `<div class="player-row-home">
+      <div class="player-flag-home">${renderFlag(s.flag)}</div>
+      <div class="player-name-home">${escapeHTML(name)}</div>
+      <div class="player-stat">${s.games} games</div>
+      <div class="player-stat">${winPct}% wins</div>
+      <div class="player-mpr-home">${mpr} MPR</div>
+      <button class="player-delete" onclick="deletePlayer('${escapeHTML(name).replace(/'/g,"\\'")}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function deletePlayer(name) {
+  const all = getSavedPlayers();
+  delete all[name];
+  try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
+  renderRoster();
+}
+
+function clearAllPlayers() {
+  if (!confirm('Delete all player stats? This cannot be undone.')) return;
+  try { localStorage.removeItem(LS_KEY); } catch {}
+  renderRoster();
+}
+
+function promptNeonString() {
+  const current = localStorage.getItem('neon_db_string') || '';
+  const res = prompt('Enter your Neon Database Connection String:\n(Leave blank to play offline)', current);
+  if (res !== null) {
+    if (res.trim() === '') {
+      localStorage.removeItem('neon_db_string');
+      alert('Database connection disabled.');
+    } else {
+      localStorage.setItem('neon_db_string', res.trim());
+      alert('Saved! Connection will activate when you start a game.');
+    }
+  }
+}
+
+// Mirror the autodarts dot to the second indicator
+function syncConnDot() {
+  const src = document.getElementById('setup-ws-dot');
+  const dst = document.getElementById('conn-ws-dot');
+  if (!src || !dst) return;
+  dst.className = src.className;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  initAutodarts(() => {}); // keep WS dot live on home screen
+  initAutodarts(() => { syncConnDot(); });
+  initSpeech();
+  renderRoster();
+
+  // Keep conn dot in sync
+  const observer = new MutationObserver(syncConnDot);
+  const dot = document.getElementById('setup-ws-dot');
+  if (dot) observer.observe(dot, { attributes: true });
 });
 </script>
 </body>

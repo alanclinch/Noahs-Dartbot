@@ -40,24 +40,6 @@
 
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
   <button class="stats-btn" onclick="showStatsModal()">📊 Stats</button>
-
-  <div class="setup-card">
-    <h3>Connection</h3>
-    <div class="ws-row">
-      <div class="ws-dot" id="setup-ws-dot"></div>
-      <div class="ws-label" id="setup-ws-label">Autodarts: Not Connected</div>
-    </div>
-    <div class="ws-row" style="margin-top:12px;">
-      <div class="ws-label" style="flex:1;">Cloud Stats (Neon DB)</div>
-      <button onclick="promptNeonString()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--blue);font-family:'Exo 2',sans-serif;font-weight:700;">⚙️ SETUP</button>
-    </div>
-    <div style="margin-top:16px;">
-      <div class="ws-label" style="margin-bottom:8px;letter-spacing:2px;">Caller Voice</div>
-      <select id="voice-picker" class="voice-select" onchange="setVoice(this.value)">
-        <option>Loading voices…</option>
-      </select>
-    </div>
-  </div>
 </div>
 
 <!-- CPU MODAL -->
