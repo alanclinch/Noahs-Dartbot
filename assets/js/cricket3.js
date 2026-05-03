@@ -214,6 +214,7 @@ let throwLog = [];
 let startingPlayer = 0;
 let legNumber = 0;
 let advancing = false;
+let gameSession = null; // { playerKeys: string, wins: {[name]: number} }
 
 async function flushThrowsToNeon() {
   if (!sql || pendingThrowsToSave.length === 0) return;
@@ -422,14 +423,20 @@ function checkStartBtn(){
 // =============================================
 // GAME START / LEG NAVIGATION
 // =============================================
+function getSessionKey(){
+  return players.map(p => `${p.name}|${p.isCpu ? 1 : 0}`).join(',');
+}
+
 function startGame(){
   if(players.length < 2) return;
+  gameSession = null;
   legNumber = 0;
   startingPlayer = Math.floor(Math.random() * players.length);
   launchLeg();
 }
 
 function launchLeg(){
+  cancelSpeech();
   document.getElementById('confetti').innerHTML = '';
   players.forEach(p => {
     p.score = 0;
@@ -460,8 +467,16 @@ function launchLeg(){
 function nextLeg(){
   if(players.length < 2) return;
   stopWinMusic();
-  legNumber++;
-  startingPlayer = (startingPlayer + 1) % players.length;
+  const key = getSessionKey();
+  if(!gameSession || gameSession.playerKeys !== key){
+    // Players changed — start a fresh game
+    gameSession = null;
+    legNumber = 0;
+    startingPlayer = Math.floor(Math.random() * players.length);
+  } else {
+    legNumber++;
+    startingPlayer = (startingPlayer + 1) % players.length;
+  }
   launchLeg();
 }
 
@@ -874,6 +889,15 @@ function manualDart(num) {
 // =============================================
 const CRICKET_SET = new Set([15,16,17,18,19,20,25]);
 
+// Returns a sigma multiplier > 1 if CPU is over-performing their rated MPR (makes them worse),
+// < 1 if under-performing (gives them a slight correction back toward target).
+function getAdaptiveSigmaMul(p){
+  if(!p.isCpu || p.dartsThrown < 12) return 1.0;
+  const actual = p.marksThrown / (p.dartsThrown / 3);
+  const diff = actual - p.cpuData.mpr; // positive = playing above rating
+  return Math.max(0.8, Math.min(1.5, 1.0 + diff * 0.3));
+}
+
 function runCpuTurn(){
   if(!gameActive) return;
   const p   = players[currentPlayer];
@@ -883,6 +907,8 @@ function runCpuTurn(){
   const roundForm = Math.max(0.3, Math.min(2.5, 1 + (Math.random() * 2 - 1) * formRange));
   let prevSeg = null;
 
+  const sigmaMultiplier = getAdaptiveSigmaMul(p);
+
   function doThrow(dartN, cb){
     if(!gameActive || turnEnded){ cb && cb(); return; }
     const target = getBestTarget(p);
@@ -890,7 +916,8 @@ function runCpuTurn(){
       prevSeg,
       missStreak: p.cpuMissStreak,
       roundForm,
-      dartsThrown: p.dartsThrown
+      dartsThrown: p.dartsThrown,
+      sigmaMultiplier
     });
     const hitCricket = seg && CRICKET_SET.has(seg.number);
     p.cpuMissStreak = hitCricket ? 0 : p.cpuMissStreak + 1;
@@ -993,6 +1020,31 @@ async function endWithWinner(idx){
     if(!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown);
   });
   await flushThrowsToNeon();
+
+  // Session tracking
+  const key = getSessionKey();
+  if(!gameSession || gameSession.playerKeys !== key){
+    gameSession = { playerKeys: key, wins: {} };
+    players.forEach(p => { gameSession.wins[p.name] = 0; });
+  }
+  gameSession.wins[winner.name] = (gameSession.wins[winner.name] || 0) + 1;
+
+  const sessionEl = document.getElementById('win-session');
+  if(sessionEl){
+    const total = Object.values(gameSession.wins).reduce((a, b) => a + b, 0);
+    if(total > 1){
+      if(players.length === 2){
+        const [p0, p1] = players;
+        sessionEl.textContent = `Series: ${p0.name} ${gameSession.wins[p0.name] || 0} – ${gameSession.wins[p1.name] || 0} ${p1.name}`;
+      } else {
+        sessionEl.textContent = `Series: ${players.map(p => `${p.name} ${gameSession.wins[p.name] || 0}`).join(' · ')}`;
+      }
+      sessionEl.style.display = '';
+    } else {
+      sessionEl.style.display = 'none';
+    }
+  }
+
   spawnConfetti();
   showScreen('winner');
 }

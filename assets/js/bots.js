@@ -116,16 +116,13 @@ function generateCpuThrow(target, mpr, opts) {
   const roundForm  = opts.roundForm  || 1.0;
   const dartsThrown= opts.dartsThrown|| 0;
 
-  // Base standard deviation (sigma) in mm. 
-  // MPR 6.0 -> ~7mm spread, MPR 1.0 -> ~40mm spread
-  let baseSigma = 46 - (6.5 * mpr);
+  // Base standard deviation (sigma) in mm.
+  // Raised floor and steeper slope vs the old formula so low-MPR players
+  // scatter far more and high-MPR players are only marginally affected.
+  // MPR 0.5 → ~61mm  |  MPR 0.9 → ~57mm  |  MPR 3.0 → ~33mm  |  MPR 6.0 → ~10mm
+  let baseSigma = 66 - (9.5 * mpr);
 
-  // Simulate early-game confidence: starts slightly hotter (~7% tighter variance).
-  // Darts 30+: settles into true baseline MPR.
-  const focusMultiplier = 0.93 + (Math.min(dartsThrown, 30) / 30) * 0.07;
-  baseSigma *= focusMultiplier;
-
-  baseSigma = Math.max(5, Math.min(65, baseSigma));
+  baseSigma = Math.max(5, Math.min(80, baseSigma));
 
   // Apply roundForm (higher form = better throw = tighter variance)
   let currentSigma = baseSigma / roundForm;
@@ -133,15 +130,23 @@ function generateCpuThrow(target, mpr, opts) {
   // Miss streak recovery: tighten focus by up to 30% after sustained misses
   currentSigma *= Math.max(0.70, 1 - (missStreak * 0.06));
 
+  // Adaptive difficulty: caller can pass a multiplier to rubber-band actual MPR to target
+  if (opts.sigmaMultiplier && opts.sigmaMultiplier !== 1.0) {
+    currentSigma *= opts.sigmaMultiplier;
+  }
+
   // Occasional random wild dart (yips / slip) ~3% chance
   if (Math.random() < 0.03) {
     currentSigma *= (1.5 + Math.random());
   }
 
   // Target Cartesian Coordinates
+  // Low-skill players aim at the single outer bed (130mm) rather than the treble (103mm).
+  // Only skilled players (MPR ≥ 4.0) aim directly at the treble ring.
   let aimR = 0, aimTheta = 0;
   if (target !== 25) {
-    aimR = 103; // Center of treble bed (99mm to 107mm)
+    const trebleBlend = Math.max(0, Math.min(1, (mpr - 1.5) / 2.5));
+    aimR = 130 - trebleBlend * 27; // 130mm at MPR≤1.5 → 103mm at MPR≥4.0
     aimTheta = getSectorAngle(target);
   }
 

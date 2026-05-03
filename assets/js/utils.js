@@ -136,7 +136,17 @@ function speak(text, priority = false) {
   _doSpeak();
 }
 
+function cancelSpeech() {
+  _speechQueue = [];
+  _isSpeaking = false;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+
 function _doSpeak() {
+  // Safety: reset if synthesis finished without firing onend (common on page transitions)
+  if (_isSpeaking && !window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+    _isSpeaking = false;
+  }
   if (_isSpeaking || !_speechQueue.length) return;
   _isSpeaking = true;
   const utt = new SpeechSynthesisUtterance(_speechQueue.shift());
