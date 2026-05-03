@@ -211,6 +211,8 @@ let turnEnded = false;
 let gameActive = false;
 let missTimer = null;
 let round = 1;
+let turnsCompleted = 0;
+let gameId = null;
 let stateHistory = [];
 let pendingThrowsToSave = [];
 let throwLog = [];
@@ -229,8 +231,8 @@ async function flushThrowsToNeon() {
       await sql`INSERT INTO players (name) VALUES (${pName}) ON CONFLICT DO NOTHING`;
     }
     const promises = throws.map(t =>
-      sql`INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord)
-          VALUES (${t.playerName}, ${t.targetAim}, ${t.seg.name}, ${t.seg.multiplier}, ${t.coords?.x ?? null}, ${t.coords?.y ?? null})`
+      sql`INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord, game_id, round_number, dart_in_turn, mpr_at_throw, variant, marks_before)
+          VALUES (${t.playerName}, ${t.targetAim}, ${t.seg.name}, ${t.seg.multiplier}, ${t.coords?.x ?? null}, ${t.coords?.y ?? null}, ${t.gameId}, ${t.round}, ${t.dartInTurn}, ${t.mprAtThrow ?? null}, ${t.variant}, ${t.marksBefore ?? null})`
     );
     await Promise.all(promises);
     console.log(`✅ Synced ${throws.length} throws to Neon DB.`);
@@ -457,6 +459,8 @@ function launchLeg(){
   pendingThrowsToSave = [];
   advancing = false;
   round = 1;
+  turnsCompleted = 0;
+  gameId = crypto.randomUUID();
   buildScoreboard();
   showScreen('game');
   enterFullscreen();
@@ -662,7 +666,8 @@ function advanceTurn(){
   advancing = true;
   if(missTimer){ clearTimeout(missTimer); missTimer = null; }
   let next = (currentPlayer + 1) % players.length;
-  if(next === 0) round++;
+  turnsCompleted++;
+  round = Math.floor(turnsCompleted / players.length) + 1;
   currentPlayer = next;
   updateScoreboard();
   setTimeout(() => { speak(playerCallName(players[currentPlayer])); startTurn(); advancing = false; }, 600);
@@ -700,12 +705,26 @@ function registerDart(seg, coords = null){
   const dartIsMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
   const isInPlay = !dartIsMiss && NUMBERS.includes(num);
 
-  if (sql) {
+  if (sql && seg) {
     const targetAim = getBestTarget(p);
+    const mprAtThrow = p.dartsThrown > 1 ? p.marksThrown / ((p.dartsThrown - 1) / 3) : null;
+    const marksBefore = isInPlay ? Math.min(3, p.marks[num]) : null;
+    const throwRecord = {
+      playerName: p.name,
+      targetAim,
+      seg,
+      coords: (!p.isCpu && coords) ? coords : null,
+      gameId,
+      round,
+      dartInTurn: currentDarts.length + 1,
+      mprAtThrow,
+      variant: gameVariant,
+      marksBefore
+    };
     if (!p.isCpu && coords) {
-      pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords });
-    } else if (p.isCpu && seg && !dartIsMiss) {
-      pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords: null });
+      pendingThrowsToSave.push(throwRecord);
+    } else if (p.isCpu && !dartIsMiss) {
+      pendingThrowsToSave.push(throwRecord);
     }
   }
 
@@ -826,7 +845,8 @@ function saveState() {
     currentDarts: [...currentDarts],
     seenThrows,
     turnEnded,
-    round
+    round,
+    turnsCompleted
   });
 }
 
@@ -841,6 +861,7 @@ function undoLastDart() {
   seenThrows = last.seenThrows;
   turnEnded = last.turnEnded;
   round = last.round;
+  turnsCompleted = last.turnsCompleted;
   last.players.forEach((savedP, i) => {
     const p = players[i];
     p.score = savedP.score;
@@ -946,11 +967,24 @@ function runCpuTurn(){
 
 function getBestTarget(p){
   const sortHighest = (a, b) => (b === 25 ? 14 : b) - (a === 25 ? 14 : a);
-  const myOpen = NUMBERS.filter(n => p.marks[n] < 3).sort(sortHighest);
-  const myScoring = NUMBERS.filter(n => {
-    return p.marks[n] >= 3 && players.some((op,i) => i !== currentPlayer && op.marks[n] < 3);
-  }).sort(sortHighest);
   const enemies = players.filter((op, i) => i !== currentPlayer);
+
+  // Top priority: opponent is scoring on a number I haven't closed — stop the bleeding
+  const urgentClose = NUMBERS.filter(n =>
+    p.marks[n] < 3 && enemies.some(op => op.marks[n] >= 3)
+  ).sort(sortHighest);
+  if (urgentClose.length > 0) return urgentClose[0];
+
+  // Numbers I've closed but opponents haven't — I can score on these
+  const myScoring = NUMBERS.filter(n =>
+    p.marks[n] >= 3 && enemies.some(op => op.marks[n] < 3)
+  ).sort(sortHighest);
+
+  // Numbers nobody has opened yet — normal closing priority
+  const myOpen = NUMBERS.filter(n =>
+    p.marks[n] < 3 && !enemies.some(op => op.marks[n] >= 3)
+  ).sort(sortHighest);
+
   if (gameVariant === 'standard') {
     const highestEnemyScore = Math.max(0, ...enemies.map(op => op.score));
     if (p.score <= highestEnemyScore + 10 && myScoring.length > 0) return myScoring[0];

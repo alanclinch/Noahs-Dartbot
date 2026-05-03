@@ -145,8 +145,8 @@ function generateCpuThrow(target, mpr, opts) {
   // Only skilled players (MPR ≥ 4.0) aim directly at the treble ring.
   let aimR = 0, aimTheta = 0;
   if (target !== 25) {
-    const trebleBlend = Math.max(0, Math.min(1, (mpr - 1.5) / 2.5));
-    aimR = 130 - trebleBlend * 27; // 130mm at MPR≤1.5 → 103mm at MPR≥4.0
+    const trebleBlend = Math.max(0, Math.min(1, (mpr - 1.0) / 2.0));
+    aimR = 130 - trebleBlend * 27; // 130mm at MPR≤1.0 → 103mm at MPR≥3.0
     aimTheta = getSectorAngle(target);
   }
 
