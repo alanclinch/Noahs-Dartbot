@@ -130,7 +130,7 @@ function renderStatsTable(all) {
 async function loadStatsFromCloud() {
   if (!sql) return;
   try {
-    const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players ORDER BY name`;
+    const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players WHERE is_cpu IS NOT TRUE ORDER BY name`;
     const all = {};
     rows.forEach(r => { all[r.name] = { games: r.games, wins: r.wins, marks: r.marks, darts: r.darts, flag: r.flag }; });
     renderStatsTable(all);
@@ -160,20 +160,23 @@ function getSavedPlayers(){
   catch { return {}; }
 }
 
-async function savePlayerStat(name, flag, won, marksThrown, dartsThrown){
-  const all = getSavedPlayers();
-  if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0, flag: flag };
-  all[name].games++;
-  if(won) all[name].wins++;
-  all[name].marks += marksThrown;
-  all[name].darts += dartsThrown;
-  all[name].flag = flag;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
+async function savePlayerStat(name, flag, won, marksThrown, dartsThrown, isCpu = false){
+  if(!isCpu){
+    // Human players only — keep localStorage in sync for offline stats + recent players
+    const all = getSavedPlayers();
+    if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0, flag: flag };
+    all[name].games++;
+    if(won) all[name].wins++;
+    all[name].marks += marksThrown;
+    all[name].darts += dartsThrown;
+    all[name].flag = flag;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
+  }
   if (sql) {
     try {
       await sql`
-        INSERT INTO players (name, flag, games, wins, marks, darts)
-        VALUES (${name}, ${flag}, 1, ${won ? 1 : 0}, ${marksThrown}, ${dartsThrown})
+        INSERT INTO players (name, flag, games, wins, marks, darts, is_cpu)
+        VALUES (${name}, ${flag}, 1, ${won ? 1 : 0}, ${marksThrown}, ${dartsThrown}, ${isCpu})
         ON CONFLICT (name) DO UPDATE SET
           flag = EXCLUDED.flag,
           games = players.games + 1,
@@ -227,7 +230,7 @@ async function flushThrowsToNeon() {
     }
     const promises = throws.map(t =>
       sql`INSERT INTO throws (player_name, target_number, hit_segment, hit_multiplier, x_coord, y_coord)
-          VALUES (${t.playerName}, ${t.targetAim}, ${t.seg.name}, ${t.seg.multiplier}, ${t.coords.x}, ${t.coords.y})`
+          VALUES (${t.playerName}, ${t.targetAim}, ${t.seg.name}, ${t.seg.multiplier}, ${t.coords?.x ?? null}, ${t.coords?.y ?? null})`
     );
     await Promise.all(promises);
     console.log(`✅ Synced ${throws.length} throws to Neon DB.`);
@@ -380,7 +383,7 @@ async function renderRecentPlayers(){
   let saved = {};
   if (sql) {
     try {
-      const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players ORDER BY games DESC LIMIT 10`;
+      const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players WHERE is_cpu IS NOT TRUE ORDER BY games DESC LIMIT 10`;
       rows.forEach(r => saved[r.name] = r);
     } catch (e) { console.error(e); saved = getSavedPlayers(); }
   } else {
@@ -697,9 +700,13 @@ function registerDart(seg, coords = null){
   const dartIsMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
   const isInPlay = !dartIsMiss && NUMBERS.includes(num);
 
-  if (!p.isCpu && coords) {
+  if (sql) {
     const targetAim = getBestTarget(p);
-    pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords });
+    if (!p.isCpu && coords) {
+      pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords });
+    } else if (p.isCpu && seg && !dartIsMiss) {
+      pendingThrowsToSave.push({ playerName: p.name, targetAim, seg, coords: null });
+    }
   }
 
   const dartIdx = currentDarts.length;
@@ -1017,7 +1024,7 @@ async function endWithWinner(idx){
     </div>`)
     .join('');
   players.forEach((p, i) => {
-    if(!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown);
+    savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown, p.isCpu);
   });
   await flushThrowsToNeon();
 
