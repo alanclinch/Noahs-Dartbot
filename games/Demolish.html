@@ -293,16 +293,24 @@ body{
 .sd-score{font-family:'Orbitron',monospace;font-size:36px;color:var(--gold);}
 
 /* ── WINNER ── */
-#winner{flex-direction:column;align-items:center;justify-content:center;gap:20px;}
+#winner{flex-direction:column;align-items:center;justify-content:flex-start;gap:20px;overflow-y:auto;padding:20px;}
+.winner-layout{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:520px;}
 .win-card{background:var(--surface);border:2px solid var(--gold);border-radius:20px;
-  padding:40px 60px;text-align:center;box-shadow:0 0 60px rgba(252,211,77,.2);
-  animation:winPop .4s cubic-bezier(.34,1.56,.64,1);}
-.win-trophy{font-size:64px;display:block;margin-bottom:12px;animation:bounce 1s ease-in-out infinite;}
+  padding:28px 40px;text-align:center;box-shadow:0 0 60px rgba(252,211,77,.2);
+  animation:winPop .4s cubic-bezier(.34,1.56,.64,1);width:100%;}
+.win-trophy{font-size:56px;display:block;margin-bottom:8px;animation:bounce 1s ease-in-out infinite;}
 .win-label{font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--muted);opacity:.6;}
-.win-name{font-family:'Orbitron',monospace;font-size:clamp(32px,6vw,64px);letter-spacing:3px;
+.win-name{font-family:'Orbitron',monospace;font-size:clamp(28px,5vw,52px);letter-spacing:3px;
   text-shadow:0 0 40px currentColor;margin:8px 0;}
-.win-sub{font-size:13px;color:var(--muted);opacity:.6;letter-spacing:2px;margin-bottom:24px;}
-.win-btns{display:flex;gap:12px;justify-content:center;}
+.win-score{font-size:13px;color:var(--muted);opacity:.6;letter-spacing:1px;}
+.win-others{display:flex;flex-direction:column;gap:8px;width:100%;}
+.win-other-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 16px;display:flex;justify-content:space-between;align-items:center;}
+.win-other-name{font-weight:700;font-size:14px;}
+.win-other-score{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);opacity:.7;}
+.win-buttons{display:flex;gap:12px;width:100%;}
+.win-btn-danger{border-color:rgba(248,113,113,.5)!important;color:var(--red)!important;}
+.win-btn-danger:hover{background:rgba(248,113,113,.08)!important;border-color:var(--red)!important;}
 </style>
 </head>
 <body>
@@ -458,14 +466,26 @@ body{
 
 <!-- WINNER -->
 <div id="winner" class="screen">
-  <div class="win-card">
-    <span class="win-trophy">🏆</span>
-    <div class="win-label">Checked Out First!</div>
-    <div class="win-name" id="win-name">—</div>
-    <div class="win-sub">Demolish Champion!</div>
-    <div class="win-btns">
-      <button class="win-btn win-btn-primary" onclick="playAgain()">PLAY AGAIN</button>
-      <button class="win-btn" onclick="goHome()">HOME</button>
+  <div class="winner-layout">
+    <div class="win-card">
+      <span class="win-trophy">🏆</span>
+      <div class="win-label">Checked Out First!</div>
+      <div class="win-name" id="win-name">—</div>
+      <div class="win-score" id="win-score"></div>
+    </div>
+    <div class="win-others" id="win-others"></div>
+    <div class="setup-card" style="margin:0;">
+      <h3>Players</h3>
+      <div id="player-list-winner" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div class="add-btns" style="margin-top:4px;">
+        <button class="add-btn" onclick="openHumanModal()">+ Human Player</button>
+        <button class="add-btn" onclick="openCpuModal()">+ Computer Player</button>
+      </div>
+      <div id="recent-players-winner" class="recent-players"></div>
+    </div>
+    <div class="win-buttons">
+      <button class="win-btn win-btn-primary" onclick="nextLeg()">PLAY NEXT LEG</button>
+      <button class="win-btn win-btn-danger" onclick="goHome()">MENU</button>
     </div>
   </div>
 </div>
@@ -684,6 +704,24 @@ function sfxBonusMiss() {
   noiz(t, .24, .08, 260, ctx);
 }
 
+let _winMusicInterval = null;
+function playWinMusic() {
+  stopWinMusic();
+  function fanfare() {
+    const ctx = gAC(), t = ctx.currentTime;
+    [523.3, 659.3, 784, 1046.5].forEach((f, i) => {
+      tone(f, 'triangle', t + i * 0.16, 0.26, 0.30, ctx);
+      tone(f * 1.5, 'sine', t + i * 0.16, 0.07, 0.14, ctx);
+    });
+    noiz(t + 0.5, 0.12, 0.06, 2200, ctx);
+  }
+  fanfare();
+  _winMusicInterval = setInterval(fanfare, 2600);
+}
+function stopWinMusic() {
+  if (_winMusicInterval) { clearInterval(_winMusicInterval); _winMusicInterval = null; }
+}
+
 function firstName(name) {
   return String(name || '').trim().split(/\s+/)[0] || 'Player';
 }
@@ -770,8 +808,7 @@ function removePlayer(i) {
 }
 
 function renderPlayerList() {
-  const el = document.getElementById('player-list');
-  el.innerHTML = setupPlayers.map((p, i) => `
+  const html = setupPlayers.map((p, i) => `
     <div class="player-row">
       <div class="flag-wrap">${renderFlag(p.flag)}</div>
       <div class="player-row-name">${escapeHTML(p.name)}</div>
@@ -780,6 +817,10 @@ function renderPlayerList() {
       </div>
       <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
     </div>`).join('');
+  const el = document.getElementById('player-list');
+  if (el) el.innerHTML = html;
+  const elW = document.getElementById('player-list-winner');
+  if (elW) elW.innerHTML = html;
   checkStartBtn();
 }
 
@@ -787,9 +828,7 @@ function renderRecentPlayers() {
   const all = getSavedPlayers();
   const used = new Set(setupPlayers.filter(p=>!p.isCpu).map(p=>p.name));
   const suggestions = Object.keys(all).filter(n=>!used.has(n)).slice(0,5);
-  const el = document.getElementById('recent-players');
-  if (!suggestions.length) { el.innerHTML=''; return; }
-  el.innerHTML = '<span class="recent-label">Recent:</span>' +
+  const html = !suggestions.length ? '' : '<span class="recent-label">Recent:</span>' +
     suggestions.map(n => {
       const s = all[n], flag = s.flag || 'sco';
       const ppr = s.x01_darts > 0 ? (s.x01_points / (s.x01_darts/3)).toFixed(0)+' PPR' : savedMPR(s)+' MPR';
@@ -798,6 +837,10 @@ function renderRecentPlayers() {
         ${escapeHTML(n)}<span class="chip-stat">${ppr}</span>
       </button>`;
     }).join('');
+  const el = document.getElementById('recent-players');
+  if (el) el.innerHTML = html;
+  const elW = document.getElementById('recent-players-winner');
+  if (elW) elW.innerHTML = html;
 }
 
 function checkStartBtn() {
@@ -1407,10 +1450,11 @@ function hideBonusWarning() {
 // ══ CHECKOUT ══
 function handleCheckout(idx) {
   const p=players[idx]; p.checkedOut=true; checkedOut.push(idx); roundCheckedOut.push(idx);
-  turnEnded=true; sfxCheckout();
+  turnEnded=true; gameActive=false; clearTurnTimers();
+  sfxCheckout();
   showOverlay(idx,'checkout'); spawnConfetti();
   const sc=document.getElementById('ts-'+idx);if(sc)sc.className='tower-score checkout';
-  if(players.filter(p=>!p.checkedOut).length===0) setTimeout(()=>showWin(players[checkedOut[0]]),2000);
+  setTimeout(()=>showWin(p), 2000);
 }
 
 function advanceTurn() {
@@ -1575,14 +1619,34 @@ function updatePanel(){
 }
 
 async function showWin(w) {
-  document.getElementById('win-name').textContent=w.name;
-  document.getElementById('win-name').style.color=w.color;
-  sfxCheckout(); spawnConfetti();
-  // Save X01 stats for all human players
+  playWinMusic();
+  spawnConfetti();
+  speak('Winner ' + firstName(w.name), true);
+
+  document.getElementById('win-name').textContent = w.name;
+  document.getElementById('win-name').style.color = w.color;
+  const scoreEl = document.getElementById('win-score');
+  if (scoreEl) scoreEl.textContent = w.totalDartsThrown + ' DARTS';
+
+  const othersEl = document.getElementById('win-others');
+  if (othersEl) {
+    othersEl.innerHTML = players.filter(p => p !== w).map(p => `
+      <div class="win-other-card">
+        <div class="win-other-name" style="color:${p.color}">${escapeHTML(p.name)}</div>
+        <div class="win-other-score">${p.score} remaining · ${p.totalDartsThrown} darts</div>
+      </div>`).join('');
+  }
+
+  setupPlayers = players.map(p => ({
+    name: p.name, color: p.color, flag: p.flag, isCpu: p.isCpu, cpuData: p.cpuData
+  }));
+  renderPlayerList();
+  renderRecentPlayers();
+
   for (const p of players) {
     if (!p.isCpu) {
       const won = p === w;
-      const pts = startScore - p.score; // points demolished
+      const pts = startScore - p.score;
       await saveX01Stat(p.name, p.flag, won, pts, p.totalDartsThrown);
     }
   }
@@ -1590,13 +1654,15 @@ async function showWin(w) {
 }
 
 function skipTurn(){turnEnded=true;advanceTurn();}
-function quitGame(){if(confirm('Quit game?')){clearTurnTimers();gameActive=false;sdActive=false;turnToken++;showScreen('setup');}}
-function playAgain(){
-  document.getElementById('confetti').innerHTML='';
-  // Reset players but keep roster
+function quitGame(){if(confirm('Quit game?')){stopWinMusic();clearTurnTimers();gameActive=false;sdActive=false;turnToken++;showScreen('setup');}}
+function nextLeg() {
+  stopWinMusic();
+  document.getElementById('confetti').innerHTML = '';
   showScreen('setup');
+  renderPlayerList();
+  renderRecentPlayers();
 }
-function goHome(){window.location.href='../index.html';}
+function goHome(){stopWinMusic();window.location.href='../index.html';}
 
 // ══ KEYBOARD ══
 document.addEventListener('keydown',e=>{
