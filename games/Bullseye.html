@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bullseye - Autodarts</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/game.css?v=2">
+<link rel="stylesheet" href="../assets/css/bullseye.css?v=1">
+<script src="../assets/js/autodarts.js?v=2"></script>
+<script src="../assets/js/utils.js?v=2"></script>
+</head>
+<body>
+<div id="setup" class="screen active">
+  <div class="setup-shell">
+    <div class="bully-logo">
+      <span class="logo-small">DartBot Presents</span>
+      <span class="logo-main">BULLSEYE</span>
+      <span class="logo-sub">Questions, prizes, and one very nervous gamble</span>
+    </div>
+    <div class="setup-panel">
+      <label class="field-label" for="team-name">Team Name</label>
+      <input id="team-name" class="team-input" maxlength="24" value="The Contestants">
+      <div class="setup-actions">
+        <button class="primary-btn" onclick="startGame()">Start Game</button>
+        <a class="secondary-link" href="../index.html">Menu</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="game" class="screen">
+  <aside class="left-sidebar">
+    <div class="score-tile">
+      <div class="tile-label">Bank</div>
+      <div class="bank-total" id="bank-total">&pound;0</div>
+    </div>
+    <div class="inventory-block">
+      <div class="side-title">Inventory</div>
+      <div id="inventory-list" class="inventory-list"></div>
+    </div>
+    <div class="round-list" id="round-list"></div>
+  </aside>
+  <main class="stage">
+    <div class="topline">
+      <div>
+        <div class="team-name" id="display-team">The Contestants</div>
+        <div class="round-title" id="round-title">Round 1</div>
+      </div>
+      <div class="ws-pill">
+        <span class="ws-dot" id="game-ws-dot"></span>
+        <span id="game-ws-label">Manual Mode</span>
+      </div>
+    </div>
+    <div class="board-wrap">
+      <svg id="bullseye-board" class="bullseye-board" viewBox="0 0 420 420" role="img" aria-label="Bullseye dartboard"></svg>
+      <div class="board-center-readout" id="board-center-readout">
+        <span class="readout-kicker">Aim For</span>
+        <span id="center-target">Faces</span>
+      </div>
+    </div>
+    <div class="manual-panel">
+      <div class="manual-header">Manual Input</div>
+      <div class="manual-grid" id="manual-grid"></div>
+      <div class="manual-mods">
+        <button class="mod-btn" id="mod-double" onclick="setManualMultiplier(2)">Double</button>
+        <button class="mod-btn" id="mod-treble" onclick="setManualMultiplier(3)">Treble</button>
+        <button class="mod-btn miss" onclick="manualDart(0)">Miss</button>
+      </div>
+    </div>
+  </main>
+  <aside class="right-sidebar">
+    <div class="target-card">
+      <div class="side-title">Current Target</div>
+      <div class="target-main" id="target-main">Aim for Faces</div>
+      <div class="target-copy" id="target-copy">Hit an active category segment to unlock a question.</div>
+    </div>
+    <div class="turn-card">
+      <div class="side-title">Darts</div>
+      <div class="dart-slots" id="dart-slots"></div>
+      <div class="turn-total" id="turn-total">Total: 0</div>
+    </div>
+    <div class="action-stack" id="action-stack">
+      <button class="secondary-btn" onclick="nextPhase()">Skip / Continue</button>
+      <button class="danger-btn" onclick="endGame()">End Game</button>
+    </div>
+  </aside>
+</div>
+<div id="question-modal" class="modal-overlay">
+  <div class="question-box">
+    <div class="question-topline">
+      <div>
+        <div class="question-category" id="question-category">Category</div>
+        <div class="question-value" id="question-value">&pound;50</div>
+      </div>
+      <div class="timer-ring" id="timer-ring">15</div>
+    </div>
+    <div class="question-text" id="question-text"></div>
+    <div class="answer-grid" id="answer-grid"></div>
+  </div>
+</div>
+<div id="choice-modal" class="modal-overlay">
+  <div class="choice-box">
+    <h2>Player's Choice</h2>
+    <div class="choice-grid" id="choice-grid"></div>
+  </div>
+</div>
+<div id="final-modal" class="modal-overlay">
+  <div class="final-box">
+    <div class="final-kicker">Bully's Star Prize Gamble</div>
+    <h2 id="final-title">Gamble the bank?</h2>
+    <p id="final-copy"></p>
+    <div class="final-actions" id="final-actions"></div>
+  </div>
+</div>
+<div id="announce"></div>
+<div id="confetti"></div>
+<script src="../assets/js/bullseye.js?v=1"></script>
+</body>
+</html>
