@@ -949,6 +949,15 @@ function getAdaptiveSigmaMul(p){
   return Math.max(0.8, Math.min(1.5, 1.0 + diff * 0.3));
 }
 
+function getCpuMprRange(r, t) {
+  // r = current round, t = target MPR. Returns {lo, hi} for rejection sampling.
+  if (r <= 1) return null; // round 1: accept anything
+  const s = t / 0.9;
+  if (r <= 15) return { lo: t,        hi: 1.20 * s };
+  if (r <= 24) return { lo: t,        hi: 1.00 * s };
+               return { lo: 0.85 * s, hi: 0.95 * s };
+}
+
 function runCpuTurn(){
   if(!gameActive) return;
   const p   = players[currentPlayer];
@@ -956,20 +965,43 @@ function runCpuTurn(){
   const accuracy = (cpu.mpr - 0.9) / 5.1;
   const formRange = 0.35 - accuracy * 0.25;
   const roundForm = Math.max(0.3, Math.min(2.5, 1 + (Math.random() * 2 - 1) * formRange));
-  let prevSeg = null;
-
   const sigmaMultiplier = getAdaptiveSigmaMul(p);
+
+  const hasHuman = players.some(q => !q.isCpu);
+  const mprRange = hasHuman ? getCpuMprRange(round, cpu.mpr) : null;
+
+  // Rejection-sample 3 darts to land within the target MPR band (human games only)
+  let accepted = null;
+  if (mprRange) {
+    const opts = { missStreak: p.cpuMissStreak, roundForm, dartsThrown: p.dartsThrown, sigmaMultiplier };
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const segs = [];
+      let simPrev = null;
+      for (let d = 0; d < 3; d++) {
+        const t = getBestTarget(p);
+        const s = generateCpuThrow(t, cpu.mpr, { ...opts, prevSeg: simPrev });
+        segs.push(s);
+        simPrev = s;
+      }
+      const newMarks = segs.reduce((sum, s) => {
+        if (!s || !CRICKET_SET.has(s.number)) return sum;
+        return sum + s.multiplier;
+      }, 0);
+      const projMpr = (p.marksThrown + newMarks) / ((p.dartsThrown + 3) / 3);
+      if (projMpr > mprRange.lo && projMpr <= mprRange.hi) { accepted = segs; break; }
+    }
+  }
+
+  let dartIdx = 0;
+  let prevSeg = null;
 
   function doThrow(dartN, cb){
     if(!gameActive || turnEnded){ cb && cb(); return; }
-    const target = getBestTarget(p);
-    const seg = generateCpuThrow(target, cpu.mpr, {
-      prevSeg,
-      missStreak: p.cpuMissStreak,
-      roundForm,
-      dartsThrown: p.dartsThrown,
-      sigmaMultiplier
-    });
+    const seg = accepted ? accepted[dartIdx++]
+      : generateCpuThrow(getBestTarget(p), cpu.mpr, {
+          prevSeg, missStreak: p.cpuMissStreak, roundForm,
+          dartsThrown: p.dartsThrown, sigmaMultiplier
+        });
     const hitCricket = seg && CRICKET_SET.has(seg.number);
     p.cpuMissStreak = hitCricket ? 0 : p.cpuMissStreak + 1;
     prevSeg = seg;
@@ -991,31 +1023,37 @@ function runCpuTurn(){
 
 function getBestTarget(p){
   const sortHighest = (a, b) => (b === 25 ? 14 : b) - (a === 25 ? 14 : a);
-  const enemies = players.filter((op, i) => i !== currentPlayer);
+  const enemies = players.filter((_, i) => i !== currentPlayer);
 
-  // Top priority: opponent is scoring on a number I haven't closed — stop the bleeding
+  // P1: opponent scoring on a number I haven't closed — close it immediately
   const urgentClose = NUMBERS.filter(n =>
     p.marks[n] < 3 && enemies.some(op => op.marks[n] >= 3)
   ).sort(sortHighest);
   if (urgentClose.length > 0) return urgentClose[0];
 
-  // Numbers I've closed but opponents haven't — I can score on these
+  // Numbers I've closed that opponents haven't — scoring weapons
   const myScoring = NUMBERS.filter(n =>
     p.marks[n] >= 3 && enemies.some(op => op.marks[n] < 3)
   ).sort(sortHighest);
 
-  // Numbers nobody has opened yet — normal closing priority
-  const myOpen = NUMBERS.filter(n =>
-    p.marks[n] < 3 && !enemies.some(op => op.marks[n] >= 3)
-  ).sort(sortHighest);
+  // My next numbers to close
+  const myOpen = NUMBERS.filter(n => p.marks[n] < 3).sort(sortHighest);
 
-  if (gameVariant === 'standard') {
-    const highestEnemyScore = Math.max(0, ...enemies.map(op => op.score));
-    if (p.score <= highestEnemyScore + 10 && myScoring.length > 0) return myScoring[0];
-  } else if (gameVariant === 'cutthroat') {
-    const lowestEnemyScore = Math.min(...enemies.map(op => op.score));
-    if (p.score >= lowestEnemyScore - 10 && myScoring.length > 0) return myScoring[0];
+  // Lead-and-Cover multiplier M: how many × next segment value I want as a lead before closing.
+  // Weak players close fast (M≈0); stronger players build a point buffer first (M up to 5).
+  const M = p.isCpu ? Math.min(5, Math.max(0, (p.cpuData.mpr - 0.5) * 2)) : 1;
+
+  if (gameVariant === 'standard' && myOpen.length > 0 && myScoring.length > 0) {
+    const maxEnemyScore = Math.max(0, ...enemies.map(op => op.score));
+    if (p.score - maxEnemyScore < M * myOpen[0]) return myScoring[0];
   }
+
+  if (gameVariant === 'cutthroat' && myOpen.length > 0 && myScoring.length > 0) {
+    // Cutthroat: scoring raises opponent totals (good for us). Score aggressively when able.
+    const minEnemyScore = Math.min(...enemies.map(op => op.score));
+    if (p.score > minEnemyScore - M * 10) return myScoring[0];
+  }
+
   if (myOpen.length > 0) return myOpen[0];
   if (myScoring.length > 0) return myScoring[0];
   return 20;
