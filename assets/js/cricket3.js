@@ -951,12 +951,13 @@ function getAdaptiveSigmaMul(p){
 }
 
 function getCpuMprRange(r, t) {
-  // r = current round, t = target MPR. Returns {lo, hi} for rejection sampling.
+  // r = current round, t = target MPR. Returns {hi} upper cap for rejection sampling.
+  // Lower bound removed — enforcing lo causes sampler exhaustion after weak early rounds.
   if (r <= 1) return null; // round 1: accept anything
   const s = t / 0.9;
-  if (r <= 15) return { lo: t,        hi: 1.20 * s };
-  if (r <= 24) return { lo: t,        hi: 1.00 * s };
-               return { lo: 0.85 * s, hi: 0.95 * s };
+  if (r <= 15) return { lo: 0, hi: 1.20 * s };
+  if (r <= 24) return { lo: 0, hi: 1.00 * s };
+               return { lo: 0, hi: 0.95 * s };
 }
 
 function runCpuTurn(){
@@ -1043,6 +1044,9 @@ function getBestTarget(p){
   // Lead-and-Cover multiplier M: how many × next segment value I want as a lead before closing.
   // Weak players close fast (M≈0); stronger players build a point buffer first (M up to 5).
   const M = p.isCpu ? Math.min(5, Math.max(0, (p.cpuData.mpr - 0.5) * 2)) : 1;
+
+  // When only bull remains, always close it — Lead and Cover doesn't apply with 1 number left
+  if (myOpen.length === 1 && myOpen[0] === 25) return 25;
 
   if (gameVariant === 'standard' && myOpen.length > 0 && myScoring.length > 0) {
     const maxEnemyScore = Math.max(0, ...enemies.map(op => op.score));
