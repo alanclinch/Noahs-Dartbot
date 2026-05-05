@@ -179,6 +179,7 @@ async function savePlayerStat(name, flag, won, marksThrown, dartsThrown, isCpu =
         VALUES (${name}, ${flag}, 1, ${won ? 1 : 0}, ${marksThrown}, ${dartsThrown}, ${isCpu})
         ON CONFLICT (name) DO UPDATE SET
           flag = EXCLUDED.flag,
+          is_cpu = EXCLUDED.is_cpu,
           games = players.games + 1,
           wins = players.wins + ${won ? 1 : 0},
           marks = players.marks + ${marksThrown},
