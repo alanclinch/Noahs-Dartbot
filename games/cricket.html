@@ -4,559 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cricket — Autodarts</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/game.css">
-<script src="../assets/js/autodarts.js"></script>
-<script src="../assets/js/utils.js"></script>
-<script src="../assets/js/bots.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#0a0e1a;
-  --bg2:#0d1525;
-  --surface:#111d32;
-  --surface2:#162540;
-  --border:#1e3358;
-  --border2:#264470;
-  --gold:#f0a030;
-  --gold-dim:#8a5810;
-  --text:#dce8f8;
-  --muted:#4a6888;
-  --green:#34d399;
-  --green2:#065f46;
-  --green3:#022c20;
-  --red:#f87171;
-  --red2:#7f1d1d;
-  --amber:#fbbf24;
-  --blue:#60a5fa;
-  --blue2:#1e4faa;
-  --white:#f0f8ff;
-  --cyan:#22d3ee;
-}
-body{
-  background:var(--bg);
-  background-image:
-    radial-gradient(ellipse at 15% 10%, rgba(30,60,180,.18) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 90%, rgba(10,30,120,.15) 0%, transparent 50%);
-  color:var(--text);
-  font-family:'Exo 2',sans-serif;
-  height:100vh;
-  overflow:hidden;
-  user-select:none;
-}
-
-.screen{display:none;width:100vw;height:100vh;}
-.screen.active{display:flex;}
-
-/* ===================== SETUP ===================== */
-#setup{
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  padding:20px 16px 24px;
-  overflow-y:auto;
-  gap:14px;
-}
-.setup-title{
-  font-family:'Orbitron',monospace;
-  font-size:28px;font-weight:900;
-  color:var(--blue);
-  letter-spacing:8px;
-  text-shadow:0 0 40px rgba(96,165,250,.4);
-  flex-shrink:0;
-  padding-top:4px;
-}
-.setup-title span{color:var(--gold);}
-
-.setup-card{
-  width:100%;max-width:680px;
-  background:var(--surface);
-  border:1px solid var(--border2);
-  border-radius:12px;
-  padding:14px 18px;
-  flex-shrink:0;
-}
-.setup-card h3{
-  font-family:'Orbitron',monospace;
-  font-size:11px;letter-spacing:3px;
-  color:var(--blue);
-  text-transform:uppercase;
-  margin-bottom:12px;
-}
-
-/* Variant */
-.variant-grid{display:flex;gap:8px;flex-wrap:wrap;}
-.variant-btn{
-  flex:1;min-width:110px;
-  padding:9px 10px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:8px;
-  color:var(--muted);
-  font-family:'Exo 2',sans-serif;
-  font-size:12px;font-weight:700;
-  cursor:pointer;transition:all .18s;
-  text-align:center;letter-spacing:.5px;
-}
-.variant-btn:hover{border-color:var(--blue);color:var(--text);}
-.variant-btn.sel{background:var(--blue2);border-color:var(--blue);color:var(--white);}
-.variant-desc{
-  margin-top:8px;font-size:13px;color:rgba(200,225,255,.75);
-  line-height:1.6;min-height:32px;
-}
-
-/* Players */
-#player-list{display:flex;flex-direction:column;gap:7px;}
-.player-row{
-  display:flex;align-items:center;gap:10px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:7px 12px;
-}
-.pmini-wrap{width:34px;height:34px;flex-shrink:0;}
-.pmini-wrap svg{width:34px;height:34px;}
-.player-row-name{
-  font-size:15px;font-weight:700;color:var(--text);flex:1;
-}
-.player-row-badge{
-  font-size:10px;letter-spacing:1.5px;font-weight:800;
-  padding:2px 10px;border-radius:10px;
-}
-.badge-human{background:rgba(80,144,224,.15);color:var(--blue);border:1px solid rgba(80,144,224,.3);}
-.badge-cpu{background:rgba(200,168,75,.15);color:var(--gold);border:1px solid rgba(200,168,75,.3);}
-.remove-btn{
-  background:none;border:none;color:var(--muted);cursor:pointer;
-  font-size:18px;width:26px;height:26px;
-  display:flex;align-items:center;justify-content:center;
-  border-radius:4px;transition:all .15s;
-}
-.remove-btn:hover{color:var(--red);background:rgba(224,72,72,.1);}
-
-.add-btns{display:flex;gap:8px;margin-top:8px;}
-.add-btn{
-  flex:1;padding:9px;
-  background:none;border:1px dashed var(--border2);
-  border-radius:8px;color:var(--muted);
-  font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;
-  cursor:pointer;transition:all .2s;letter-spacing:.5px;
-}
-.add-btn:hover{border-color:var(--blue);color:var(--blue);}
-.add-btn:disabled{opacity:.3;cursor:not-allowed;}
-
-/* CPU modal */
-#cpu-modal{
-  display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
-  z-index:200;align-items:center;justify-content:center;
-}
-#cpu-modal.open{display:flex;}
-.cpu-modal-box{
-  background:var(--bg2);
-  border:1px solid var(--border2);
-  border-radius:16px;padding:22px;
-  width:min(580px,96vw);max-height:82vh;overflow-y:auto;
-}
-.cpu-modal-box h2{
-  font-family:'Orbitron',monospace;font-size:11px;
-  letter-spacing:3px;color:var(--blue);margin-bottom:16px;
-}
-.cpu-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
-  gap:10px;
-}
-.cpu-pick-card{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:10px;padding:14px 12px;
-  cursor:pointer;transition:all .18s;
-  text-align:center;display:flex;flex-direction:column;align-items:center;gap:7px;
-}
-.cpu-pick-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 20px rgba(200,168,75,.15);}
-.cpu-pick-name{font-size:13px;font-weight:800;color:var(--text);}
-.cpu-pick-mpr{font-size:11px;color:var(--blue);font-weight:700;}
-.cpu-mpr-bar{width:90%;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
-.cpu-mpr-fill{height:100%;background:linear-gradient(90deg,var(--blue2),var(--blue));border-radius:2px;}
-
-/* Player name input in setup */
-.player-name-input{
-  flex:1;background:transparent;
-  border:none;border-bottom:1px solid var(--border2);
-  color:var(--text);font-family:'Exo 2',sans-serif;
-  font-size:15px;font-weight:700;
-  padding:4px 2px;outline:none;
-}
-.player-name-input::placeholder{color:var(--muted);}
-.player-name-input:focus{border-bottom-color:var(--blue);}
-
-/* Winner screen */
-.winner-layout{
-  display:flex;flex-direction:column;align-items:center;
-  gap:18px;max-width:520px;width:92%;padding:20px;
-}
-#win-others{
-  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;width:100%;
-}
-.win-other-card{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:12px;padding:12px 18px;text-align:center;
-  flex:1;min-width:110px;
-}
-.win-other-name{font-size:13px;font-weight:700;color:var(--text);}
-.win-other-score{font-size:12px;color:var(--blue);margin-top:4px;}
-.win-buttons{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;}
-.win-btn{
-  flex:1;min-width:130px;
-  padding:13px 16px;
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:10px;color:var(--text);
-  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;
-  cursor:pointer;transition:all .2s;
-}
-.win-btn:hover{border-color:var(--blue);color:var(--blue);}
-.win-btn-primary{background:linear-gradient(135deg,#1a4580,#0d2450);border-color:var(--blue);color:var(--white);}
-.win-btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(96,165,250,.3);}
-.win-btn-danger:hover{border-color:var(--red);color:var(--red);}
-.cpu-modal-cancel{
-  margin-top:14px;width:100%;padding:9px;
-  background:none;border:1px solid var(--border2);
-  border-radius:8px;color:var(--muted);
-  font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-}
-.cpu-modal-cancel:hover{border-color:var(--red);color:var(--red);}
-
-/* Recent saved players */
-.recent-players{
-  margin-top:10px;
-  display:flex;flex-wrap:wrap;align-items:center;gap:6px;
-  min-height:0;
-}
-.recent-label{
-  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
-  color:var(--muted);margin-right:2px;
-}
-.recent-chip{
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:20px;padding:5px 12px;
-  color:var(--text);font-family:'Exo 2',sans-serif;
-  font-size:12px;font-weight:700;cursor:pointer;
-  transition:all .15s;display:flex;align-items:center;gap:5px;
-}
-.recent-chip:hover{border-color:var(--blue);color:var(--blue);}
-.chip-stat{font-size:9px;color:var(--muted);font-weight:400;}
-
-/* WS status */
-.ws-row{display:flex;align-items:center;gap:8px;}
-.ws-dot{width:8px;height:8px;border-radius:50%;background:#222;transition:background .3s;flex-shrink:0;}
-.ws-dot.on{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
-.ws-label{font-size:11px;color:var(--muted);}
-
-.voice-select{
-  width:100%;
-  background:var(--surface2);border:1px solid var(--border2);
-  border-radius:6px;color:var(--text);
-  font-family:'Exo 2',sans-serif;font-size:12px;
-  padding:6px 8px;outline:none;cursor:pointer;
-}
-.voice-select:focus{border-color:var(--blue);}
-.voice-select option{background:var(--bg2);}
-
-.start-btn{
-  width:100%;max-width:680px;
-  padding:15px;
-  background:linear-gradient(135deg,#1a4580,#0d2450);
-  border:1px solid var(--blue);
-  border-radius:12px;
-  color:var(--white);
-  font-family:'Orbitron',monospace;
-  font-size:16px;letter-spacing:5px;font-weight:700;
-  cursor:pointer;
-  box-shadow:0 5px 0 #060f20,0 10px 28px rgba(96,165,250,.2);
-  transition:all .2s;flex-shrink:0;
-}
-.start-btn:hover{transform:translateY(-2px);box-shadow:0 7px 0 #060f20,0 14px 36px rgba(96,165,250,.3);}
-.start-btn:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none;}
-
-/* ===================== GAME SCREEN ===================== */
-#game{flex-direction:row;height:100vh;overflow:hidden;}
-
-/* ---- SCOREBOARD ---- */
-#scoreboard{
-  flex:1;
-  display:flex;flex-direction:column;
-  padding:10px 8px 8px 10px;
-  overflow:hidden;
-  min-width:0;
-}
-
-.sb-top{
-  display:grid;
-  margin-bottom:6px;
-  gap:2px;
-}
-
-/* player header cells */
-.sb-num-label{
-  font-family:'Orbitron',monospace;
-  font-size:9px;letter-spacing:2px;color:var(--muted);
-  display:flex;align-items:flex-end;justify-content:center;
-  padding-bottom:4px;
-}
-.sb-player-hdr{
-  display:flex;flex-direction:column;align-items:center;
-  padding:6px 4px 4px;
-  border-radius:8px 8px 0 0;
-  border-bottom:2px solid transparent;
-  transition:all .25s;
-  gap:2px;
-}
-.sb-player-hdr.active-col{
-  background:rgba(96,165,250,.08);
-  border-bottom-color:var(--blue);
-}
-.sb-active-dot{
-  width:6px;height:6px;border-radius:50%;
-  background:var(--blue);box-shadow:0 0 8px var(--blue);
-  opacity:0;transition:opacity .25s;
-}
-.sb-player-hdr.active-col .sb-active-dot{opacity:1;}
-.sb-score-big{
-  font-family:'Orbitron',monospace;font-weight:900;
-  color:var(--gold);line-height:1;
-  transition:color .3s;
-}
-.sb-score-big.leading{color:var(--blue);}
-.sb-mpr{
-  font-family:'Share Tech Mono',monospace;
-  color:#6a9ac8;line-height:1;
-}
-.sb-pname{
-  font-size:11px;font-weight:800;
-  color:var(--text);letter-spacing:.5px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  max-width:100%;text-align:center;
-}
-.sb-player-hdr.active-col .sb-pname{color:var(--blue);}
-.cpu-tag{
-  font-size:8px;color:var(--gold);letter-spacing:1px;
-  font-weight:700;opacity:.7;
-}
-
-/* rows */
-.sb-body{display:flex;flex-direction:column;flex:1;overflow:hidden;}
-.sb-row{
-  display:grid;
-  align-items:stretch;
-  gap:2px;
-  flex:1;
-  border-bottom:1px solid rgba(30,50,80,.5);
-}
-.sb-row:last-child{border-bottom:none;}
-
-.sb-num-cell{
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Orbitron',monospace;font-weight:700;
-  color:var(--text);
-}
-.sb-num-cell.num-closed-all{color:var(--red);text-decoration:line-through;}
-.sb-row.all-closed{background:rgba(160,20,20,.1);}
-.sb-row.all-closed .sb-num-cell{color:var(--red);}
-
-.sb-mark-cell{
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  transition:background .2s;
-}
-.sb-mark-cell.just-hit{animation:cellFlash .5s ease-out;}
-@keyframes cellFlash{
-  0%{background:rgba(96,165,250,.25);}
-  100%{background:transparent;}
-}
-.sb-mark-cell.just-scored{animation:cellScore .5s ease-out;}
-@keyframes cellScore{
-  0%{background:rgba(240,160,48,.3);}
-  100%{background:transparent;}
-}
-.sb-mark-cell.closed-col{background:rgba(96,165,250,.05);}
-
-/* The horizontal baseline */
-.mark-wrap{
-  display:flex;align-items:center;justify-content:center;
-  width:100%;height:100%;
-  padding:4px 8px;
-  position:relative;
-}
-.mark-line{
-  position:absolute;
-  left:10%;right:10%;
-  height:2px;
-  background:var(--border2);
-  top:50%;transform:translateY(-50%);
-}
-.mark-closed-line{
-  position:absolute;
-  left:10%;right:10%;
-  height:2px;
-  background:var(--blue);
-  top:50%;transform:translateY(-50%);
-  opacity:0;transition:opacity .3s;
-}
-.mark-closed-line.visible{opacity:1;}
-
-/* SVG marks */
-.mark-svg-wrap{
-  position:relative;z-index:1;
-  display:flex;align-items:center;justify-content:center;
-}
-
-/* ---- SIDE PANEL ---- */
-#side-panel{
-  width:190px;flex-shrink:0;
-  background:var(--surface);
-  border-left:1px solid var(--border2);
-  display:flex;flex-direction:column;
-  padding:10px;gap:10px;overflow:hidden;
-}
-.panel-label{
-  font-family:'Orbitron',monospace;
-  font-size:8px;letter-spacing:3px;color:var(--muted);
-  text-transform:uppercase;margin-bottom:5px;
-}
-
-/* Dart slots */
-.dart-slots{display:flex;gap:5px;}
-.dart-slot{
-  flex:1;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:6px 3px;
-  text-align:center;
-  font-family:'Share Tech Mono',monospace;
-  font-size:12px;color:var(--muted);
-  min-height:50px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;
-  transition:all .25s;
-}
-.dart-slot.hit{border-color:var(--blue);color:var(--blue);background:rgba(96,165,250,.08);}
-.dart-slot.scored{border-color:var(--gold);color:var(--gold);background:rgba(200,168,75,.1);}
-.dart-slot.miss{border-color:var(--red2);color:var(--muted);}
-.dart-slot-label{font-size:9px;color:var(--muted);letter-spacing:1px;}
-.dart-slot-val{font-size:14px;font-weight:700;line-height:1.1;}
-
-/* Turn info */
-.turn-info{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:10px;text-align:center;
-}
-.turn-player{
-  font-size:13px;font-weight:800;color:var(--text);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-.turn-player.cpu-turn{color:var(--gold);}
-.turn-sub{font-size:10px;color:var(--muted);margin-top:2px;}
-
-/* Target suggestion */
-.target-box{
-  background:rgba(14,35,80,.5);
-  border:1px solid var(--blue2);
-  border-radius:8px;padding:8px 10px;
-  text-align:center;
-}
-.target-label{font-size:9px;letter-spacing:2px;color:var(--muted);}
-.target-val{
-  font-family:'Orbitron',monospace;
-  font-size:18px;font-weight:900;color:var(--blue);
-  margin-top:2px;
-}
-
-/* Round display */
-.round-box{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:8px;padding:8px 10px;text-align:center;
-}
-.round-num{
-  font-family:'Orbitron',monospace;
-  font-size:22px;font-weight:900;color:var(--text);
-}
-.round-sub{font-size:9px;color:var(--muted);letter-spacing:2px;}
-
-/* WS status in game */
-.game-ws{display:flex;align-items:center;gap:6px;margin-top:auto;}
-
-/* Variant badge */
-.variant-badge{
-  text-align:center;
-  font-family:'Orbitron',monospace;font-size:9px;
-  letter-spacing:2px;color:var(--muted);
-  padding:4px 8px;
-  border:1px solid var(--border);border-radius:6px;
-}
-
-/* End game btn */
-.end-btn{
-  padding:9px;background:none;
-  border:1px solid var(--border2);border-radius:8px;
-  color:var(--muted);font-family:'Exo 2',sans-serif;
-  font-size:11px;font-weight:700;cursor:pointer;
-  transition:all .2s;letter-spacing:.5px;
-}
-.end-btn:hover{border-color:var(--red);color:var(--red);}
-
-/* ===================== WINNER SCREEN ===================== */
-#winner{
-  flex-direction:column;align-items:center;justify-content:center;gap:20px;
-}
-.win-card{
-  background:var(--surface);border:1px solid var(--gold);
-  border-radius:20px;padding:40px 48px;text-align:center;
-  animation:winPop .5s cubic-bezier(.34,1.56,.64,1);
-  box-shadow:0 0 60px rgba(200,168,75,.2);
-}
-@keyframes winPop{from{transform:scale(.6);opacity:0;}to{transform:scale(1);opacity:1;}}
-.win-trophy{font-size:60px;margin-bottom:12px;}
-.win-label{
-  font-family:'Orbitron',monospace;font-size:12px;
-  letter-spacing:4px;color:var(--muted);margin-bottom:8px;
-}
-.win-name{
-  font-family:'Orbitron',monospace;font-size:36px;font-weight:900;
-  color:var(--gold);text-shadow:0 0 30px rgba(200,168,75,.5);
-}
-.win-score{
-  font-family:'Share Tech Mono',monospace;font-size:14px;
-  color:var(--muted);margin-top:8px;
-}
-.play-again-btn{
-  padding:14px 36px;
-  background:linear-gradient(135deg,#1a4580,#0d2450);
-  border:1px solid var(--blue);border-radius:12px;
-  color:var(--white);
-  font-family:'Orbitron',monospace;font-size:13px;letter-spacing:3px;
-  cursor:pointer;transition:all .2s;
-}
-.play-again-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(96,165,250,.3);}
-#confetti{position:fixed;inset:0;pointer-events:none;z-index:50;}
-.cf{position:absolute;top:-20px;animation:cfall linear infinite;}
-@keyframes cfall{
-  0%{transform:translateY(0) rotate(0deg);opacity:1;}
-  100%{transform:translateY(110vh) rotate(720deg);opacity:0;}
-}
-
-/* Flash announcements */
-#announce{
-  position:fixed;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  z-index:300;pointer-events:none;
-  font-family:'Orbitron',monospace;font-weight:900;
-  text-align:center;
-  opacity:0;transition:opacity .2s;
-  text-shadow:0 0 40px currentColor;
-}
-#announce.show{opacity:1;}
-</style>
+<link rel="stylesheet" href="../assets/css/game.css?v=2">
+<script src="../assets/js/autodarts.js?v=2"></script>
+<script src="../assets/js/utils.js?v=2"></script>
+<script src="../assets/js/bots.js?v=2"></script>
+<link rel="stylesheet" href="../assets/css/cricket.css?v=4">
 </head>
 <body>
 
@@ -575,38 +29,63 @@ body{
   </div>
 
   <div class="setup-card">
-    <h3>Players <span id="player-count-label" style="color:var(--muted);font-size:9px;">(1–4)</span></h3>
+    <h3>Players <span id="player-count-label" style="color:var(--muted);font-size:12px;">(1–4)</span></h3>
     <div id="player-list"></div>
     <div class="add-btns">
-      <button class="add-btn" id="add-human-btn" onclick="addHumanPlayer()">+ Human Player</button>
-      <button class="add-btn" id="add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
+      <button class="add-btn add-human-btn" onclick="openHumanModal()">+ Human Player</button>
+      <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
     </div>
     <div id="recent-players" class="recent-players"></div>
   </div>
 
+  <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
+
   <div class="setup-card">
-    <h3>Connection</h3>
-    <div class="ws-row">
-      <div class="ws-dot" id="setup-ws-dot"></div>
-      <div class="ws-label" id="setup-ws-label">Autodarts: Not Connected</div>
+    <h3>Settings</h3>
+    <div class="settings-grid">
+      <label class="setting-row">
+        <input type="checkbox" id="voice-toggle" onchange="setVoice(this.checked)" checked>
+        <span>Voice Caller</span>
+      </label>
+      <label class="setting-row">
+        <input type="checkbox" id="sfx-toggle" onchange="setSfx(this.checked)" checked>
+        <span>Sound Effects</span>
+      </label>
+      <label class="setting-row">
+        <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)">
+        <span>Test Mode</span>
+      </label>
     </div>
-    <div style="margin-top:12px;">
-      <div class="ws-label" style="margin-bottom:6px;letter-spacing:1px;">Caller Voice</div>
-      <select id="voice-picker" class="voice-select" onchange="setVoice(this.value)">
-        <option>Loading voices…</option>
-      </select>
+    <div class="setting-actions">
+      <button class="setting-action-btn" onclick="window.location.href='../index.html'">Main Menu</button>
+      <button class="setting-action-btn" onclick="showStatsModal()">View Stats</button>
     </div>
   </div>
-
-  <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
 </div>
 
 <!-- CPU MODAL -->
-<div id="cpu-modal">
+<div id="cpu-modal" class="modal-overlay">
   <div class="cpu-modal-box">
     <h2>SELECT OPPONENT</h2>
     <div class="cpu-grid" id="cpu-grid"></div>
     <button class="cpu-modal-cancel" onclick="closeCpuModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- HUMAN MODAL -->
+<div id="human-modal" class="modal-overlay">
+  <div class="cpu-modal-box" style="width:min(420px, 96vw);">
+    <h2>ADD HUMAN PLAYER</h2>
+    <input type="text" id="new-human-name" class="modal-input" placeholder="Enter Name" maxlength="14">
+    <select id="new-human-flag" class="modal-input" style="cursor:pointer;">
+      <option value="sco" selected>Scotland</option>
+      <option value="eng">England</option>
+      <option value="wal">Wales</option>
+    </select>
+    <div style="display:flex; gap:14px; margin-top:10px;">
+      <button class="win-btn win-btn-primary" onclick="confirmAddHuman()">ADD PLAYER</button>
+      <button class="win-btn" onclick="closeHumanModal()">CANCEL</button>
+    </div>
   </div>
 </div>
 
@@ -647,10 +126,33 @@ body{
       </div>
     </div>
     <div class="variant-badge" id="game-variant-badge">STANDARD</div>
+
+    <div class="keypad-wrap">
+      <div class="keypad-row">
+        <button class="kp-btn" onclick="manualDart(20)">20</button>
+        <button class="kp-btn" onclick="manualDart(19)">19</button>
+        <button class="kp-btn" onclick="manualDart(18)">18</button>
+        <button class="kp-btn" onclick="manualDart(17)">17</button>
+      </div>
+      <div class="keypad-row">
+        <button class="kp-btn" onclick="manualDart(16)">16</button>
+        <button class="kp-btn" onclick="manualDart(15)">15</button>
+        <button class="kp-btn" onclick="manualDart(25)">BULL</button>
+        <button class="kp-btn kp-miss" onclick="manualDart(0)">MISS</button>
+      </div>
+      <div class="keypad-row">
+        <button class="kp-btn kp-mod" id="mod-double" onclick="toggleKeypadMod(2)">DOUBLE</button>
+        <button class="kp-btn kp-mod" id="mod-treble" onclick="toggleKeypadMod(3)">TREBLE</button>
+        <button class="kp-btn kp-undo" onclick="undoLastDart()">UNDO</button>
+      </div>
+    </div>
+
     <div class="game-ws">
       <div class="ws-dot" id="game-ws-dot"></div>
       <div class="ws-label" id="game-ws-label">Not Connected</div>
     </div>
+    <button class="end-btn" id="next-player-btn" onclick="advanceTurn()" style="display:none; border-color:var(--green); color:var(--green);">NEXT PLAYER →</button>
+    <button class="end-btn" onclick="showLog()" style="margin-bottom:8px; border-color:var(--amber); color:var(--amber);">Show Throw Log</button>
     <button class="end-btn" onclick="endGame()">End Game</button>
   </div>
 </div>
@@ -658,828 +160,63 @@ body{
 <!-- WINNER -->
 <div id="winner" class="screen">
   <div class="winner-layout">
-    <div class="win-card">
+    <div class="win-card" style="width: 100%;">
       <div class="win-trophy">🏆</div>
       <div class="win-label">WINNER</div>
       <div class="win-name" id="win-name">—</div>
       <div class="win-score" id="win-details">—</div>
     </div>
     <div id="win-others"></div>
+    <div id="win-session" style="display:none;color:var(--blue);font-family:'Orbitron',monospace;font-size:14px;letter-spacing:1px;text-align:center;padding:8px 0;"></div>
+
+    <div class="setup-card" style="width: 100%; margin-top: 4px;">
+      <h3>Next Match Roster</h3>
+      <div id="player-list-winner"></div>
+      <div class="add-btns">
+        <button class="add-btn add-human-btn" onclick="openHumanModal()">+ Human Player</button>
+        <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
+      </div>
+      <div id="recent-players-winner" class="recent-players"></div>
+    </div>
+
+    <div id="cpu-auto-msg" style="display:none; text-align:center; color:var(--muted); font-family:'Share Tech Mono',monospace; font-size:13px; padding:4px 0;"></div>
     <div class="win-buttons">
-      <button class="win-btn win-btn-primary" onclick="nextLeg()">NEXT LEG</button>
-      <button class="win-btn" onclick="goToSetup()">ADJUST SETTINGS</button>
+      <button class="win-btn win-btn-primary" id="next-leg-btn" onclick="nextLeg()" style="font-size: 18px; padding: 20px;">PLAY NEXT LEG</button>
+      <button class="win-btn" id="cpu-stop-btn" onclick="stopCpuAuto()" style="display:none; border-color:var(--amber); color:var(--amber);">STOP AUTO</button>
       <button class="win-btn win-btn-danger" onclick="goToMenu()">MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG MODAL -->
+<div id="log-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:999; align-items:center; justify-content:center; flex-direction:column; padding:20px; backdrop-filter:blur(4px);">
+  <h2 style="color:var(--blue); font-family:'Orbitron',monospace; margin-bottom:16px;">Raw Throw Log</h2>
+  <textarea id="log-output" style="width:min(800px, 90%); height:60vh; background:var(--bg2); color:var(--green); font-family:'Share Tech Mono',monospace; padding:16px; border:2px solid var(--border2); border-radius:12px; outline:none; resize:none;"></textarea>
+  <div style="display:flex; gap:14px; margin-top:20px;">
+    <button class="win-btn win-btn-primary" onclick="copyLog()">Copy to Clipboard</button>
+    <button class="win-btn" onclick="closeLog()">Close</button>
+  </div>
+</div>
+
+<!-- STATS MODAL -->
+<div id="stats-modal" class="modal-overlay" style="display:none;">
+  <div class="stats-modal-box">
+    <h2>PLAYER STATS</h2>
+    <div id="stats-content"></div>
+    <div style="display:flex; gap:12px; margin-top:20px; justify-content:center;">
+      <button class="win-btn win-btn-primary" id="stats-cloud-btn" onclick="loadStatsFromCloud()" style="display:none;">↻ Load from Cloud</button>
+      <button class="win-btn" onclick="closeStatsModal()">CLOSE</button>
     </div>
   </div>
 </div>
 
 <div id="confetti"></div>
 <div id="announce"></div>
-
-<script>
-// CPU_PLAYERS, makeFaceSVG, humanAvatarSVG — from bots.js
-// PLAYER_COLORS, isMiss, segScore, dartSpeak, showScreen,
-// initSpeech, speak, gAC, tone, noiz, sfx*, spawnConfetti — from utils.js
-
-// =============================================
-// SPEECH HELPERS
-// =============================================
-// What to say when a dart lands on num with multiplier mul
-function dartName(num, mul){
-  if(num === 25) return mul === 2 ? 'Bullseye' : 'Bull';
-  if(mul === 3)  return `Treble ${num}`;
-  if(mul === 2)  return `Double ${num}`;
-  return String(num);
-}
-// Name to call out for a player (first name only for CPU)
-function playerCallName(p){
-  return p.isCpu ? p.name.split(' ')[0] : p.name;
-}
-
-// =============================================
-// FULLSCREEN
-// =============================================
-function enterFullscreen(){
-  const el = document.documentElement;
-  if(el.requestFullscreen) el.requestFullscreen();
-  else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  else if(el.mozRequestFullScreen) el.mozRequestFullScreen();
-}
-function exitFullscreen(){
-  if(document.exitFullscreen) document.exitFullscreen().catch(()=>{});
-  else if(document.webkitExitFullscreen) document.webkitExitFullscreen();
-  else if(document.mozCancelFullScreen) document.mozCancelFullScreen();
-}
-
-// =============================================
-// LOCAL STORAGE — player persistence
-// Schema: { "name": { games, wins, marks, darts } }
-// Future: mirror to Neon (serverless Postgres) via API
-// =============================================
-const LS_KEY = 'dartbot_players';
-
-function getSavedPlayers(){
-  try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }
-  catch { return {}; }
-}
-
-function savePlayerStat(name, won, marksThrown, dartsThrown){
-  const all = getSavedPlayers();
-  if(!all[name]) all[name] = { games:0, wins:0, marks:0, darts:0 };
-  all[name].games++;
-  if(won) all[name].wins++;
-  all[name].marks += marksThrown;
-  all[name].darts += dartsThrown;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
-}
-
-function savedMPR(stats){
-  return stats.darts > 0
-    ? (stats.marks / (stats.darts / 3)).toFixed(1)
-    : '—';
-}
-
-// =============================================
-// GAME CONFIG
-// =============================================
-const NUMBERS = [20,19,18,17,16,15,25]; // 25 = Bull
-const VARIANTS = {
-  standard:  'Close 20→15 & Bull. Score points on open numbers. Close all + highest score wins.',
-  cutthroat: 'Opponents gain points when you hit their open numbers. Fewest points + all closed wins.',
-  noscore:   'No points. First player to close all numbers wins.'
-};
-// PLAYER_COLORS — from utils.js
-
-let gameVariant = 'standard';
-let players = []; // {name, color, isCpu, cpuData, score, marks:{20:0..3,...}, dartsThrown, marksThrown}
-let currentPlayer = 0;
-let currentDarts = [];
-let seenThrows = 0;
-let turnEnded = false;
-let gameActive = false;
-let missTimer = null;
-let round = 1;
-let humanCount = 0;
-let startingPlayer = 0;  // rotates each leg
-let legNumber = 0;       // 0 = first game (random start)
-// ws, connectWS, updateWSUI — from autodarts.js
-
-function handleWS(data){
-  if(!data || data.type !== 'state') return;
-  const d = data.data || {};
-  const throws = d.throws;
-  const event = d.event || '';
-  const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
-  const tc = Array.isArray(throws) ? throws.length : 0;
-
-  // Only process human turns
-  if(gameActive && !players[currentPlayer].isCpu){
-    if(tc > seenThrows && !turnEnded){
-      if(missTimer){ clearTimeout(missTimer); missTimer = null; }
-      const seg = throws[seenThrows].segment || {};
-      registerDart(seg);
-      seenThrows = tc;
-    }
-    if(!turnEnded && numThrows > 0 && numThrows > seenThrows && tc === seenThrows){
-      if(!missTimer) missTimer = setTimeout(() => {
-        missTimer = null;
-        if(seenThrows < numThrows && !turnEnded && gameActive){
-          registerDart(null);
-          seenThrows = numThrows;
-        }
-      }, 700);
-    }
-    if(event === 'Takeout finished' && numThrows === 0){
-      if(missTimer){ clearTimeout(missTimer); missTimer = null; }
-      seenThrows = 0;
-      if(currentDarts.length > 0 || turnEnded) advanceTurn();
-    }
-  }
-}
-
-// =============================================
-// SETUP UI
-// =============================================
-function selectVariant(v, btn){
-  gameVariant = v;
-  document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  document.getElementById('variant-desc').textContent = VARIANTS[v];
-  document.getElementById('game-variant-badge').textContent = v.toUpperCase();
-}
-
-function buildCpuGrid(){
-  const g = document.getElementById('cpu-grid');
-  g.innerHTML = CPU_PLAYERS.map(c => {
-    const barW = Math.round((c.mpr / 6.5) * 100);
-    return `<div class="cpu-pick-card" onclick="addCpuPlayer('${c.id}')">
-      <div class="cpu-pick-name">${c.name}</div>
-      <div class="cpu-pick-mpr">MPR ${c.mpr.toFixed(1)}</div>
-      <div class="cpu-mpr-bar"><div class="cpu-mpr-fill" style="width:${barW}%"></div></div>
-    </div>`;
-  }).join('');
-}
-
-function openCpuModal(){
-  if(players.length >= 4) return;
-  document.getElementById('cpu-modal').classList.add('open');
-}
-function closeCpuModal(){
-  document.getElementById('cpu-modal').classList.remove('open');
-}
-
-function addHumanPlayer(){
-  if(players.length >= 4) return;
-  humanCount++;
-  const name = `Player ${humanCount}`;
-  const color = PLAYER_COLORS[players.length % 6];
-  players.push({name, color, isCpu:false, cpuData:null, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
-  renderPlayerList();
-  checkStartBtn();
-  // Focus and select the new name field so user can type immediately
-  setTimeout(() => {
-    const inputs = document.querySelectorAll('.player-name-input');
-    if(inputs.length){ inputs[inputs.length-1].focus(); inputs[inputs.length-1].select(); }
-  }, 30);
-}
-
-function addCpuPlayer(id){
-  if(players.length >= 4) return;
-  const cpu = CPU_PLAYERS.find(c => c.id === id);
-  if(!cpu) return;
-  const color = PLAYER_COLORS[players.length % 6];
-  players.push({name:cpu.name, color, isCpu:true, cpuData:cpu, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
-  closeCpuModal();
-  renderPlayerList();
-  checkStartBtn();
-}
-
-function removePlayer(idx){
-  players.splice(idx,1);
-  renderPlayerList();
-  renderRecentPlayers();
-  checkStartBtn();
-}
-
-function renderPlayerList(){
-  const list = document.getElementById('player-list');
-  list.innerHTML = players.map((p,i) => `
-    <div class="player-row">
-      <div class="pmini-wrap">${p.isCpu ? makeFaceSVG(p.cpuData.face,34) : humanAvatarSVG(p.color,34)}</div>
-      ${p.isCpu
-        ? `<div class="player-row-name">${p.name}</div>`
-        : `<input class="player-name-input" data-idx="${i}" value="${p.name.replace(/"/g,'&quot;')}" placeholder="Enter your name"/>`}
-      <div class="player-row-badge ${p.isCpu ? 'badge-cpu' : 'badge-human'}">${p.isCpu ? `CPU ${p.cpuData.mpr.toFixed(1)}` : 'HUMAN'}</div>
-      <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
-    </div>
-  `).join('');
-  // Attach live name-sync to each input
-  list.querySelectorAll('.player-name-input').forEach(inp => {
-    const idx = parseInt(inp.dataset.idx);
-    inp.addEventListener('input', e => {
-      players[idx].name = e.target.value.trim() || `Player ${idx + 1}`;
-    });
-  });
-  const maxed = players.length >= 4;
-  document.getElementById('add-human-btn').disabled = maxed;
-  document.getElementById('add-cpu-btn').disabled = maxed;
-  renderRecentPlayers();
-}
-
-// humanAvatarSVG — from bots.js
-
-function renderRecentPlayers(){
-  const saved = getSavedPlayers();
-  const usedNames = new Set(players.filter(p => !p.isCpu).map(p => p.name));
-  const suggestions = Object.keys(saved)
-    .filter(n => !usedNames.has(n))
-    .slice(0, 6);
-
-  const el = document.getElementById('recent-players');
-  if(!el) return;
-  if(!suggestions.length){ el.innerHTML = ''; return; }
-
-  el.innerHTML = '<span class="recent-label">Recent:</span>' +
-    suggestions.map(n => {
-      const s = saved[n];
-      const mpr = savedMPR(s);
-      const record = `${s.wins}W / ${s.games - s.wins}L`;
-      return `<button class="recent-chip" onclick="addSavedPlayer(this, '${n.replace(/'/g,"\\'")}')">
-        ${n}<span class="chip-stat">${mpr} MPR · ${record}</span>
-      </button>`;
-    }).join('');
-}
-
-function addSavedPlayer(btn, name){
-  if(players.length >= 4) return;
-  const color = PLAYER_COLORS[players.length % 6];
-  humanCount++;
-  players.push({name, color, isCpu:false, cpuData:null, score:0, marks:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown:0, marksThrown:0, cpuMissStreak:0});
-  renderPlayerList();
-  renderRecentPlayers();
-  checkStartBtn();
-}
-
-function checkStartBtn(){
-  document.getElementById('start-btn').disabled = players.length < 2;
-}
-
-// =============================================
-// GAME START / LEG NAVIGATION
-// =============================================
-function startGame(){
-  if(players.length < 2) return;
-  // Sync names from any focused inputs before starting
-  document.querySelectorAll('.player-name-input').forEach(inp => {
-    const idx = parseInt(inp.dataset.idx);
-    if(!isNaN(idx)) players[idx].name = inp.value.trim() || `Player ${idx+1}`;
-  });
-  legNumber = 0;
-  startingPlayer = Math.floor(Math.random() * players.length);
-  launchLeg();
-}
-
-function launchLeg(){
-  document.getElementById('confetti').innerHTML = '';
-  players.forEach(p => {
-    p.score = 0;
-    p.marks = {20:0,19:0,18:0,17:0,16:0,15:0,25:0};
-    p.dartsThrown = 0;
-    p.marksThrown = 0;
-    p.cpuMissStreak = 0; // reset between legs
-  });
-  currentPlayer = startingPlayer;
-  currentDarts = [];
-  seenThrows = 0;
-  turnEnded = false;
-  gameActive = true;
-  round = 1;
-
-  buildScoreboard();
-  showScreen('game');
-  enterFullscreen();
-  setTimeout(() => {
-    updateScoreboard();
-    startTurn();
-  }, 100);
-}
-
-function nextLeg(){
-  legNumber++;
-  startingPlayer = (startingPlayer + 1) % players.length;
-  launchLeg();
-}
-
-function goToSetup(){
-  gameActive = false;
-  exitFullscreen();
-  document.getElementById('confetti').innerHTML = '';
-  showScreen('setup');
-}
-
-function goToMenu(){
-  gameActive = false;
-  exitFullscreen();
-  document.getElementById('confetti').innerHTML = '';
-  window.location.href = '../index.html';
-}
-
-// =============================================
-// SCOREBOARD BUILD
-// =============================================
-function buildScoreboard(){
-  const n = players.length;
-  const numColW = 64;
-  const colTemplate = `${numColW}px ` + players.map(() => '1fr').join(' ');
-
-  // Header
-  const top = document.getElementById('sb-top');
-  top.style.gridTemplateColumns = colTemplate;
-
-  let hdrHTML = `<div class="sb-num-label">#</div>`;
-  players.forEach((p,i) => {
-    hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
-      <div class="sb-active-dot"></div>
-      <div style="width:40px;height:40px;">${p.isCpu ? makeFaceSVG(p.cpuData.face,40) : humanAvatarSVG(p.color,40)}</div>
-      <div class="sb-score-big" id="pscore-${i}" style="font-size:${n<=2?'28px':n===3?'22px':'18px'}">0</div>
-      <div class="sb-mpr" id="pmpr-${i}" style="font-size:${n<=2?'11px':'10px'}">MPR 0.00</div>
-      <div class="sb-pname" title="${p.name}">${p.name}</div>
-      ${p.isCpu ? `<div class="cpu-tag">CPU</div>` : ''}
-    </div>`;
-  });
-  top.innerHTML = hdrHTML;
-
-  // Rows
-  const body = document.getElementById('sb-body');
-  body.innerHTML = '';
-  NUMBERS.forEach(num => {
-    const row = document.createElement('div');
-    row.className = 'sb-row';
-    row.id = `row-${num}`;
-    row.style.gridTemplateColumns = colTemplate;
-
-    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${num===25?'14px':'26px'}">${num===25?'BULL':num}</div>`;
-    players.forEach((p,i) => {
-      rowHTML += `<div class="sb-mark-cell" id="mcell-${num}-${i}">
-        <div class="mark-wrap">
-          <div class="mark-line"></div>
-          <div class="mark-closed-line" id="closedline-${num}-${i}"></div>
-          <div class="mark-svg-wrap" id="marksvg-${num}-${i}"></div>
-        </div>
-      </div>`;
-    });
-    row.innerHTML = rowHTML;
-    body.appendChild(row);
-  });
-}
-
-function updateScoreboard(){
-  const n = players.length;
-  const maxScore = Math.max(...players.map(p => p.score));
-
-  players.forEach((p,i) => {
-    // Score
-    const scoreEl = document.getElementById(`pscore-${i}`);
-    if(scoreEl){
-      scoreEl.textContent = p.score;
-      scoreEl.classList.toggle('leading', p.score === maxScore && maxScore > 0);
-    }
-    // MPR
-    const mprEl = document.getElementById(`pmpr-${i}`);
-    if(mprEl){
-      const rounds = Math.max(1, Math.floor(p.dartsThrown/3) + (p.dartsThrown%3>0?1:0));
-      const mpr = p.dartsThrown > 0 ? (p.marksThrown / Math.max(1,p.dartsThrown/3)).toFixed(2) : '0.00';
-      mprEl.textContent = `MPR ${mpr}`;
-    }
-    // Active col
-    document.getElementById(`phdr-${i}`)?.classList.toggle('active-col', i === currentPlayer);
-
-    // Marks
-    NUMBERS.forEach(num => {
-      const marks = p.marks[num];
-      const markEl = document.getElementById(`marksvg-${num}-${i}`);
-      if(markEl) markEl.innerHTML = drawMarkSVG(marks);
-      // closed line — show if closed
-      const cl = document.getElementById(`closedline-${num}-${i}`);
-      if(cl) cl.classList.toggle('visible', marks >= 3);
-    });
-  });
-
-  // Number cells — red + strikethrough if all players closed
-  NUMBERS.forEach(num => {
-    const allClosed = players.every(p => p.marks[num] >= 3);
-    const nc = document.getElementById(`numcell-${num}`);
-    if(nc) nc.classList.toggle('num-closed-all', allClosed);
-    const row = document.getElementById(`row-${num}`);
-    if(row) row.classList.toggle('all-closed', allClosed);
-  });
-
-  // Target
-  const t = getBestTarget(players[currentPlayer]);
-  document.getElementById('target-val').textContent = t === 25 ? 'BULL' : t;
-
-  // Round
-  document.getElementById('round-num').textContent = round;
-}
-
-function drawMarkSVG(marks){
-  if(marks === 0) return '';
-  const s = 36, cx = s/2, cy = s/2, r = s*0.38;
-  let svg = `<svg viewBox="0 0 ${s} ${s}" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg">`;
-  if(marks === 1){
-    // Single slash /
-    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.7}" x2="${cx+r*.5}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="2.8" stroke-linecap="round"/>`;
-  } else if(marks === 2){
-    // X
-    svg += `<line x1="${cx-r*.55}" y1="${cy+r*.7}" x2="${cx+r*.55}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="2.8" stroke-linecap="round"/>`;
-    svg += `<line x1="${cx+r*.55}" y1="${cy+r*.7}" x2="${cx-r*.55}" y2="${cy-r*.7}" stroke="#60a5fa" stroke-width="2.8" stroke-linecap="round"/>`;
-  } else if(marks >= 3){
-    // Circle around X (closed)
-    svg += `<line x1="${cx-r*.5}" y1="${cy+r*.65}" x2="${cx+r*.5}" y2="${cy-r*.65}" stroke="#f0a030" stroke-width="2.5" stroke-linecap="round"/>`;
-    svg += `<line x1="${cx+r*.5}" y1="${cy+r*.65}" x2="${cx-r*.5}" y2="${cy-r*.65}" stroke="#f0a030" stroke-width="2.5" stroke-linecap="round"/>`;
-    svg += `<circle cx="${cx}" cy="${cy}" r="${r*.85}" fill="none" stroke="#f0a030" stroke-width="2.5"/>`;
-  }
-  svg += '</svg>';
-  return svg;
-}
-
-// =============================================
-// TURN FLOW
-// =============================================
-function startTurn(){
-  const p = players[currentPlayer];
-  currentDarts = [];
-  seenThrows = 0;
-  turnEnded = false;
-  resetDartSlots();
-  updateScoreboard();
-
-  const nameEl = document.getElementById('turn-player-name');
-  nameEl.textContent = p.name;
-  nameEl.classList.toggle('cpu-turn', p.isCpu);
-  document.getElementById('turn-sub').textContent = p.isCpu ? 'Computer thinking...' : 'Throw your darts';
-
-  if(p.isCpu){
-    // 3s after human removes darts before CPU starts (name call already spoken in advanceTurn)
-    setTimeout(() => runCpuTurn(), 3000);
-  }
-}
-
-function advanceTurn(){
-  if(!gameActive) return;
-  if(missTimer){ clearTimeout(missTimer); missTimer = null; }
-
-  // Next player
-  let next = (currentPlayer + 1) % players.length;
-  if(next === 0) round++;
-  currentPlayer = next;
-
-  // Update scoreboard before announcing
-  updateScoreboard();
-  setTimeout(() => {
-    speak(playerCallName(players[currentPlayer]));
-    startTurn();
-  }, 600);
-}
-
-function resetDartSlots(){
-  [0,1,2].forEach(i => {
-    const el = document.getElementById(`ds${i}`);
-    el.className = 'dart-slot';
-    el.innerHTML = `<div class="dart-slot-label">${['1ST','2ND','3RD'][i]}</div><div class="dart-slot-val">—</div>`;
-  });
-}
-
-function updateDartSlot(idx, label, cssClass){
-  const el = document.getElementById(`ds${idx}`);
-  if(!el) return;
-  el.className = `dart-slot ${cssClass}`;
-  el.innerHTML = `<div class="dart-slot-label">${['1ST','2ND','3RD'][idx]}</div><div class="dart-slot-val">${label}</div>`;
-}
-
-// =============================================
-// DART REGISTRATION
-// =============================================
-function registerDart(seg){
-  if(!gameActive || turnEnded || currentDarts.length >= 3) return;
-  const p = players[currentPlayer];
-  p.dartsThrown++;
-
-  const num = seg ? Number(seg.number) : 0;
-  const mul = seg ? Number(seg.multiplier || 1) : 0;
-  const name = seg ? (seg.name || '').trim().toLowerCase() : '';
-
-  // Miss check
-  const isMiss = !seg || !num || isNaN(num) || !name || name==='?' || name==='miss' || /^m\d+$/.test(name);
-  const isInPlay = !isMiss && NUMBERS.includes(num);
-
-  const dartIdx = currentDarts.length;
-
-  if(isMiss || !isInPlay){
-    currentDarts.push({score:0, label:'Miss', num:0, mul:0});
-    updateDartSlot(dartIdx, 'Miss', 'miss');
-    sfxMiss();
-    speak(isMiss ? 'Miss' : dartName(num, mul));
-  } else {
-    // Valid cricket number
-    const marks = Math.min(mul, 3); // each dart gives 1-3 marks
-    let marksToScore = 0;
-    let marksToClose = 0;
-    let scored = 0;
-    const currentMarks = p.marks[num];
-
-    // How many marks go towards closing vs scoring
-    const needed = Math.max(0, 3 - currentMarks);
-    marksToClose = Math.min(marks, needed);
-    marksToScore = marks - marksToClose;
-
-    // Check if others have closed this number
-    const othersAllClosed = players.filter((_,i) => i !== currentPlayer).every(op => op.marks[num] >= 3);
-
-    // Apply closing marks
-    p.marks[num] = Math.min(3, currentMarks + marks);
-    p.marksThrown += marks;
-
-    // Score if we've closed and others haven't
-    if(marksToScore > 0 && !othersAllClosed && gameVariant !== 'noscore'){
-      if(gameVariant === 'standard'){
-        scored = num * marksToScore;
-        p.score += scored;
-      } else if(gameVariant === 'cutthroat'){
-        // opponents gain points
-        players.forEach((op,i) => {
-          if(i !== currentPlayer && op.marks[num] < 3){
-            op.score += num * marksToScore;
-          }
-        });
-      }
-    }
-
-    // Build label
-    const label = num === 25 ? (mul===2?'Bullseye':'Bull') : (mul===3?`T${num}`:mul===2?`D${num}`:`${num}`);
-    const cssClass = scored > 0 ? 'scored' : 'hit';
-    currentDarts.push({score:scored, label, num, mul});
-    updateDartSlot(dartIdx, label, cssClass);
-
-    // Sound & speech
-    const wasClosed = currentMarks >= 3;
-    const nowClosed = p.marks[num] >= 3;
-    const justClosed = !wasClosed && nowClosed;
-    const justClosedAll = justClosed && othersAllClosed;
-
-    const dn = dartName(num, mul);
-    if(wasClosed && !scored){
-      sfxDeadDart();
-      speak(dn);
-    } else if(justClosedAll){
-      sfxClose();
-      speak(`${dn}, closed`);
-    } else if(justClosed && scored > 0){
-      sfxCloseAndScore();
-      speak(`${dn}, closed, scoring`);
-    } else if(justClosed){
-      sfxClose();
-      speak(`${dn}, closed`);
-    } else if(scored > 0){
-      sfxScore();
-      speak(`${dn}`);
-    } else {
-      sfxHit();
-      speak(dn);
-    }
-
-    // Flash cell
-    const cell = document.getElementById(`mcell-${num}-${currentPlayer}`);
-    if(cell){
-      cell.classList.remove('just-hit','just-scored');
-      void cell.offsetWidth;
-      cell.classList.add(scored > 0 ? 'just-scored' : 'just-hit');
-    }
-
-    // Check win immediately on dart landing
-    if(checkWin(currentPlayer)){
-      updateScoreboard();
-      turnEnded = true;
-      endWithWinner(currentPlayer);
-      return;
-    }
-  }
-
-  updateScoreboard();
-
-  // Auto-end after 3 darts
-  if(currentDarts.length >= 3){
-    turnEnded = true;
-    // Speak score immediately — don't wait for darts to be removed
-    const turnPts = currentDarts.reduce((s, d) => s + (d.score || 0), 0);
-    if(turnPts > 0) speak(String(turnPts));
-  }
-}
-
-// =============================================
-// CPU TURN
-// =============================================
-// Cricket numbers for miss-streak tracking
-const CRICKET_SET = new Set([15,16,17,18,19,20,25]);
-
-function runCpuTurn(){
-  if(!gameActive) return;
-  const p   = players[currentPlayer];
-  const cpu = p.cpuData;
-  const accuracy = (cpu.mpr - 0.9) / 5.1;
-
-  // Round form: computed once per turn so all 3 darts share the same
-  // hot/cold streak. Wide range for beginners, tight for elite.
-  const formRange = 0.35 - accuracy * 0.25; // 0.35 → 0.10
-  const roundForm = Math.max(0.3, Math.min(2.5,
-    1 + (Math.random() * 2 - 1) * formRange
-  ));
-
-  let prevSeg = null; // reset each turn; missStreak carries across turns
-
-  function doThrow(dartN, cb){
-    if(!gameActive || turnEnded){ cb && cb(); return; }
-    const target = getBestTarget(p);
-    const seg = generateCpuThrow(target, cpu.mpr, {
-      prevSeg,
-      missStreak: p.cpuMissStreak,
-      roundForm,
-    });
-
-    // Update persistent miss streak on this CPU player
-    const hitCricket = seg && CRICKET_SET.has(seg.number);
-    p.cpuMissStreak = hitCricket ? 0 : p.cpuMissStreak + 1;
-    prevSeg = seg;
-
-    registerDart(seg);
-    cb && cb();
-  }
-
-  doThrow(0, () => {
-    setTimeout(() => doThrow(1, () => {
-      setTimeout(() => doThrow(2, () => {
-        setTimeout(() => advanceTurn(), 800);
-      }), 1000);
-    }), 1000);
-  });
-}
-
-// generateCpuThrow, getAdjacentNumbers — from bots.js
-
-function getBestTarget(p){
-  // Priority 1: close numbers highest-first, bull saved for last
-  // (bull is hardest to hit — close 20→15 first to maximise scoring,
-  //  then finish with bull as described in standard cricket strategy)
-  const open = NUMBERS.filter(n => p.marks[n] < 3).sort((a,b) => {
-    const va = a === 25 ? -1 : a;  // bull sorts to bottom
-    const vb = b === 25 ? -1 : b;
-    return vb - va;  // descending: 20, 19, 18, 17, 16, 15, bull
-  });
-  if(open.length > 0) return open[0];
-  // Priority 2: all closed — score on highest open enemy number
-  const scoring = NUMBERS.filter(n => {
-    return p.marks[n] >= 3 && players.some((op,i) => i !== currentPlayer && op.marks[n] < 3);
-  }).sort((a,b) => b - a);
-  return scoring[0] || 20;
-}
-
-// =============================================
-// WIN CHECK
-// =============================================
-function checkWin(idx){
-  const p = players[idx];
-  const allClosed = NUMBERS.every(n => p.marks[n] >= 3);
-  if(!allClosed) return false;
-  if(gameVariant === 'noscore') return true;
-  if(gameVariant === 'cutthroat'){
-    // fewest points + all closed
-    const myScore = p.score;
-    const othersClosed = players.filter((_,i) => i!==idx).every(op => {
-      const theirAllClosed = NUMBERS.every(n => op.marks[n] >= 3);
-      return theirAllClosed && op.score >= myScore;
-    });
-    return true; // simplified: first to close all with <= score of others
-  }
-  // Standard: all closed AND highest score
-  const myScore = p.score;
-  const highestScore = Math.max(...players.map(op => op.score));
-  return myScore >= highestScore;
-}
-
-function endWithWinner(idx){
-  gameActive = false;
-  const winner = players[idx];
-  sfxCheckout();
-  speak(`${playerCallName(winner)} wins!`, true);
-
-  const mprOf = p => p.dartsThrown > 0
-    ? (p.marksThrown / Math.max(1, p.dartsThrown / 3)).toFixed(2)
-    : '0.00';
-
-  document.getElementById('win-name').textContent = winner.name;
-  document.getElementById('win-details').textContent =
-    `Score ${winner.score} · MPR ${mprOf(winner)}`;
-
-  // Other players below
-  document.getElementById('win-others').innerHTML = players
-    .filter((_,i) => i !== idx)
-    .map(p => `<div class="win-other-card">
-      <div class="win-other-name">${p.name}</div>
-      <div class="win-other-score">Score ${p.score} · MPR ${mprOf(p)}</div>
-    </div>`)
-    .join('');
-
-  // Save stats for human players
-  players.forEach((p, i) => {
-    if(!p.isCpu) savePlayerStat(p.name, i === idx, p.marksThrown, p.dartsThrown);
-  });
-
-  spawnConfetti();
-  showScreen('winner');
-}
-
-function endGame(){
-  gameActive = false;
-  exitFullscreen();
-  document.getElementById('confetti').innerHTML = '';
-  showScreen('setup');
-}
-
-// showScreen, gAC, tone, noiz — from utils.js
-
-// Hit open number — short positive tick
-function sfxHit(){
-  const ctx=gAC(),t=ctx.currentTime;
-  tone(660,'sine',t,.08,.15,ctx);
-  tone(880,'sine',t+.06,.06,.08,ctx);
-}
-// Score points — brighter positive
-function sfxScore(){
-  const ctx=gAC(),t=ctx.currentTime;
-  [440,554,659].forEach((f,i)=>tone(f,'triangle',t+i*.07,.15,.18,ctx));
-}
-// Close a number — satisfying
-function sfxClose(){
-  const ctx=gAC(),t=ctx.currentTime;
-  [523,659,784].forEach((f,i)=>tone(f,'sine',t+i*.08,.2,.2,ctx));
-  noiz(t,.1,.08,400,ctx);
-}
-// Close and score simultaneously
-function sfxCloseAndScore(){
-  const ctx=gAC(),t=ctx.currentTime;
-  [523,659,784,1047].forEach((f,i)=>tone(f,'triangle',t+i*.07,.25,.2,ctx));
-  tone(440,'square',t+.3,.2,.1,ctx);
-}
-// Dead dart / closed number or not in play
-function sfxDeadDart(){
-  const ctx=gAC(),t=ctx.currentTime;
-  tone(220,'sawtooth',t,.12,.1,ctx);
-  noiz(t,.08,.06,200,ctx);
-}
-// sfxMiss, sfxCheckout, sfxNext — from utils.js
-// initSpeech, speak, spawnConfetti — from utils.js
-
-// =============================================
-// KEYBOARD TESTING
-// =============================================
-document.addEventListener('keydown', e => {
-  if(!gameActive || players[currentPlayer].isCpu) return;
-  if(e.key===' '||e.key==='Enter'){
-    if(turnEnded||currentDarts.length>0) advanceTurn();
-    return;
-  }
-  // Number keys for cricket numbers
-  const numMap = {'0':null,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9};
-  // specific cricket numbers
-  if(e.key==='q') registerDart({name:'T20',number:20,multiplier:3,bed:'Triple'});       // T20
-  else if(e.key==='w') registerDart({name:'S20',number:20,multiplier:1,bed:'SingleOuter'}); // S20
-  else if(e.key==='e') registerDart({name:'T19',number:19,multiplier:3,bed:'Triple'});
-  else if(e.key==='r') registerDart({name:'S19',number:19,multiplier:1,bed:'SingleOuter'});
-  else if(e.key==='t') registerDart({name:'T18',number:18,multiplier:3,bed:'Triple'});
-  else if(e.key==='y') registerDart({name:'S18',number:18,multiplier:1,bed:'SingleOuter'});
-  else if(e.key==='a') registerDart({name:'T17',number:17,multiplier:3,bed:'Triple'});
-  else if(e.key==='s') registerDart({name:'S17',number:17,multiplier:1,bed:'SingleOuter'});
-  else if(e.key==='d') registerDart({name:'T16',number:16,multiplier:3,bed:'Triple'});
-  else if(e.key==='f') registerDart({name:'S16',number:16,multiplier:1,bed:'SingleOuter'});
-  else if(e.key==='z') registerDart({name:'T15',number:15,multiplier:3,bed:'Triple'});
-  else if(e.key==='x') registerDart({name:'S15',number:15,multiplier:1,bed:'SingleOuter'});
-  else if(e.key==='b') registerDart({name:'D25',number:25,multiplier:2,bed:'Single'});  // Bullseye
-  else if(e.key==='v') registerDart({name:'B25',number:25,multiplier:1,bed:'Single'}); // Outer bull
-  else if(e.key==='0') registerDart(null); // miss
-  else if(e.key==='1') registerDart({name:'S1',number:1,multiplier:1,bed:'SingleOuter'}); // non-cricket
-});
-
-// =============================================
-// INIT
-// =============================================
-document.addEventListener('DOMContentLoaded', () => {
-  buildCpuGrid();
-  addHumanPlayer(); // start with one human (focuses name input)
-  renderRecentPlayers();
-  initSpeech();
-  initAutodarts(handleWS);
-  window.addEventListener('resize', () => { if(gameActive) updateScoreboard(); });
-});
-</script>
+<div id="broadcast-event" aria-live="polite">
+  <div class="be-kicker" id="be-kicker"></div>
+  <div class="be-main" id="be-main"></div>
+  <div class="be-sub" id="be-sub"></div>
+</div>
+<script src="../assets/js/cricket.js?v=4"></script>
 </body>
 </html>
