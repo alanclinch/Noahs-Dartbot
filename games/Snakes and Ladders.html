@@ -352,14 +352,10 @@ body {
 
 <!-- SETUP -->
 <div id="setup" class="screen active">
-  <div class="setup-logo">
-    <h1>🐍 SNAKES &amp; LADDERS</h1>
-    <p>Powered by Autodarts</p>
-  </div>
+  <div class="setup-title">SNAKES &amp; LADDERS <span>🐍</span></div>
+
   <div class="setup-card">
-    <h2>Players</h2>
-    <div class="player-list" id="player-list"></div>
-    <button class="add-btn" id="add-btn">+ Add Player</button>
+    <h3>How to Play</h3>
     <div class="dice-legend">
       <div class="legend-row"><span class="legend-die">⚀</span><span class="legend-txt">Double ring</span></div>
       <div class="legend-row"><span class="legend-die">⚁</span><span class="legend-txt">Outer ring</span></div>
@@ -369,11 +365,21 @@ body {
       <div class="legend-row"><span class="legend-die">⚅</span><span class="legend-txt">Bullseye</span></div>
       <div class="legend-note">3 darts per turn · token moves after each dart · land exactly on 65 to win</div>
     </div>
-    <button class="start-btn" id="start-btn">GAME ON!</button>
   </div>
-  <div class="ws-status">
-    <div class="ws-dot" id="setup-ws-dot"></div>
-    <span id="setup-ws-label">Autodarts: Not Connected</span>
+
+  <div class="setup-card">
+    <h3>Players</h3>
+    <div class="player-list" id="player-list"></div>
+    <button class="add-btn" id="add-btn">+ Add Player</button>
+  </div>
+
+  <button class="start-btn" id="start-btn">GAME ON!</button>
+
+  <div class="setup-card">
+    <h3>Settings</h3>
+    <div class="setting-actions" style="margin-top:0;padding-top:0;border-top:none;">
+      <button class="setting-action-btn" onclick="window.location.href='../index.html'">Main Menu</button>
+    </div>
   </div>
 </div>
 
@@ -904,6 +910,7 @@ function startGame() {
   dartInTurn = 0;
   processing = false;
 
+  document.documentElement.requestFullscreen().catch(() => {});
   showScreen('game');
 
   drawTokens();

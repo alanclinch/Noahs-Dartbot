@@ -456,6 +456,7 @@ function startGame(){
   gameSession = null;
   legNumber = 0;
   startingPlayer = Math.floor(Math.random() * players.length);
+  document.documentElement.requestFullscreen().catch(() => {});
   launchLeg();
 }
 

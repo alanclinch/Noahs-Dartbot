@@ -351,6 +351,13 @@ body{
   </div>
 
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>DEMOLISH!</button>
+
+  <div class="setup-card">
+    <h3>Settings</h3>
+    <div class="setting-actions" style="margin-top:0;padding-top:0;border-top:none;">
+      <button class="setting-action-btn" onclick="window.location.href='../index.html'">Main Menu</button>
+    </div>
+  </div>
 </div>
 
 <!-- CPU MODAL -->
@@ -864,6 +871,7 @@ function startGame() {
   clearTurnTimers();
   cp=0; darts=[]; seenThrows=0; turnEnded=false; gameActive=true; turnToken++;
   checkedOut=[]; roundCheckedOut=[]; missTimer=null; activeBonus=null; bonusTimers=[];
+  document.documentElement.requestFullscreen().catch(() => {});
   showScreen('game');
   buildTowers();
   highlightActive();

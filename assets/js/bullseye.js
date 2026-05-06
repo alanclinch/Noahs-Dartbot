@@ -106,6 +106,7 @@ function startGame() {
   state = freshState();
   state.team = document.getElementById('team-name').value.trim() || 'The Contestants';
   document.getElementById('display-team').textContent = state.team;
+  document.documentElement.requestFullscreen().catch(() => {});
   showScreen('game');
   initRoundOne();
 }
