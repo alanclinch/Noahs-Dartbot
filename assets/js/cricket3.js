@@ -511,9 +511,11 @@ function goToMenu(){
 function buildScoreboard(){
   const n = players.length;
   const numColW = 100;
-  const colTemplate = `${numColW}px ` + players.map(() => '1fr').join(' ');
+  const twoPlayer = n === 2;
+  const colTemplate = twoPlayer
+    ? `1fr ${numColW}px 1fr`
+    : `${numColW}px ` + players.map(() => '1fr').join(' ');
 
-  // FIX: removed duplicate const declaration; correct sizes only
   const scoreFontSize = n <= 2 ? '72px' : n === 3 ? '60px' : '48px';
   const mprFontSize = n <= 2 ? '22px' : '18px';
   const nameFontSize = n <= 2 ? '34px' : '26px';
@@ -522,17 +524,22 @@ function buildScoreboard(){
   const top = document.getElementById('sb-top');
   top.style.gridTemplateColumns = colTemplate;
 
-  // FIX: rewritten — was garbled with broken class names and duplicate IDs
-  let hdrHTML = `<div class="sb-num-label"></div>`;
-  players.forEach((p,i) => {
-    hdrHTML += `<div class="sb-player-hdr" id="phdr-${i}">
+  const pHdr = (p, i) => `<div class="sb-player-hdr" id="phdr-${i}">
       <div class="sb-active-dot"></div>
       <div class="sb-flag-corner">${renderFlag(p.flag)}</div>
       <div class="sb-pname" title="${escapeHTML(p.name)}" style="font-size:${nameFontSize}">${escapeHTML(p.name)}</div>
       <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
       <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR —</div>
     </div>`;
-  });
+  const numLabel = `<div class="sb-num-label"></div>`;
+
+  let hdrHTML;
+  if (twoPlayer) {
+    hdrHTML = pHdr(players[0], 0) + numLabel + pHdr(players[1], 1);
+  } else {
+    hdrHTML = numLabel;
+    players.forEach((p, i) => { hdrHTML += pHdr(p, i); });
+  }
   top.innerHTML = hdrHTML;
 
   const body = document.getElementById('sb-body');
@@ -551,15 +558,21 @@ function buildScoreboard(){
            <circle cx="30" cy="30" r="3.5" fill="#ff2020"/>
          </svg>`
       : num;
-    let rowHTML = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${numFontSize}">${numCellContent}</div>`;
-    players.forEach((p,i) => {
-      rowHTML += `<div class="sb-mark-cell" id="mcell-${num}-${i}">
+    const numCell = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${numFontSize}">${numCellContent}</div>`;
+    const mCell = (i) => `<div class="sb-mark-cell" id="mcell-${num}-${i}">
         <div class="mark-wrap">
           <div class="mark-closed-line" id="closedline-${num}-${i}"></div>
           <div class="mark-svg-wrap" id="marksvg-${num}-${i}"></div>
         </div>
       </div>`;
-    });
+
+    let rowHTML;
+    if (twoPlayer) {
+      rowHTML = mCell(0) + numCell + mCell(1);
+    } else {
+      rowHTML = numCell;
+      players.forEach((p, i) => { rowHTML += mCell(i); });
+    }
     row.innerHTML = rowHTML;
     body.appendChild(row);
   });
@@ -598,6 +611,8 @@ function updateScoreboard(){
         cellEl.classList.toggle('active-turn', i === currentPlayer);
         cellEl.classList.toggle('is-scoring-cell', canScore);
         cellEl.classList.toggle('all-closed-cell', allClosedNum);
+        const isPressure = !allClosedNum && p.marks[num] < 3 && players.some((op, j) => j !== i && op.marks[num] >= 3);
+        cellEl.classList.toggle('pressure-cell', isPressure);
         cellEl.style.backgroundColor = "";
         cellEl.style.borderColor = "";
       }
@@ -809,18 +824,22 @@ function registerDart(seg, coords = null){
       if (!testMode) sfxClose();
       flash('CLOSED!', 'var(--red)');
       if (!testMode) speak(`Closed ${numWord}`);
+      showBroadcastEvent('close', 'CLOSED OUT', numWord, playerCallName(p));
     } else if(justClosed && scored > 0){
       if (!testMode) sfxCloseAndScore();
       flash(`OPENED ${numWord}`, 'var(--green)');
       if (!testMode) speak(`Opened ${numWord}`);
+      showBroadcastEvent('open', 'OPENED', numWord, `+${scored}`);
     } else if(justClosed){
       if (!testMode) sfxClose();
       flash(`OPENED ${numWord}`, 'var(--green)');
       if (!testMode) speak(`Opened ${numWord}`);
+      showBroadcastEvent('open', 'OPENED', numWord, playerCallName(p));
     } else if(scored > 0){
       if (!testMode) sfxScore();
       flash(`+${scored}`, 'var(--gold)');
       if (!testMode) speak(dn);
+      showBroadcastEvent('score', dartName(num, mul).toUpperCase(), String(scored), playerCallName(p) + ' · ' + p.score + ' pts');
     } else {
       if (!testMode) sfxHit();
       if (!testMode) speak(dn);
@@ -828,9 +847,10 @@ function registerDart(seg, coords = null){
 
     const cell = document.getElementById(`mcell-${num}-${currentPlayer}`);
     if(cell){
-      cell.classList.remove('just-hit','just-scored');
+      cell.classList.remove('just-hit','just-scored','just-closed');
       void cell.offsetWidth;
-      cell.classList.add(scored > 0 ? 'just-scored' : 'just-hit');
+      if(justClosed) cell.classList.add('just-closed');
+      else cell.classList.add(scored > 0 ? 'just-scored' : 'just-hit');
     }
 
     if(checkWin(currentPlayer)){
@@ -950,10 +970,13 @@ function getAdaptiveSigmaMul(p){
   return Math.max(0.8, Math.min(1.5, 1.0 + diff * 0.3));
 }
 
-function getCpuMprRange(r, t) {
-  // r = current round, t = target MPR. Returns {hi} upper cap for rejection sampling.
-  // Lower bound removed — enforcing lo causes sampler exhaustion after weak early rounds.
-  if (r <= 1) return null; // round 1: accept anything
+// ── Mark Control ─────────────────────────────────────────────
+// Rejection-sampling ceiling that prevents CPU from running above
+// its rated MPR for sustained stretches. Returns null in round 1
+// (accept any result) and tightens the ceiling in long games.
+// Only active in games that include a human player.
+function getMarkControlRange(r, t) {
+  if (r <= 1) return null;
   const s = t / 0.9;
   if (r <= 15) return { lo: 0, hi: 1.20 * s };
   if (r <= 24) return { lo: 0, hi: 1.00 * s };
@@ -970,9 +993,9 @@ function runCpuTurn(){
   const sigmaMultiplier = getAdaptiveSigmaMul(p);
 
   const hasHuman = players.some(q => !q.isCpu);
-  const mprRange = hasHuman ? getCpuMprRange(round, cpu.mpr) : null;
+  const mprRange = hasHuman ? getMarkControlRange(round, cpu.mpr) : null;
 
-  // Rejection-sample 3 darts to land within the target MPR band (human games only)
+  // Mark Control: rejection-sample 3 darts to stay within rated MPR ceiling (human games only)
   let accepted = null;
   if (mprRange) {
     const opts = { missStreak: p.cpuMissStreak, roundForm, dartsThrown: p.dartsThrown, sigmaMultiplier };
@@ -1263,6 +1286,25 @@ function flash(text, color = 'var(--gold)') {
   el.classList.add('show');
   clearTimeout(flash._timer);
   flash._timer = setTimeout(() => el.classList.remove('show'), 1400);
+}
+
+let _broadcastTimer = null;
+function showBroadcastEvent(type, kicker, main, sub, duration) {
+  if (testMode) return;
+  duration = duration || 1600;
+  const el = document.getElementById('broadcast-event');
+  if (!el) return;
+  clearTimeout(_broadcastTimer);
+  el.className = '';
+  void el.offsetWidth;
+  document.getElementById('be-kicker').textContent = kicker;
+  document.getElementById('be-main').textContent = main;
+  document.getElementById('be-sub').textContent = sub || '';
+  el.className = type + ' show';
+  _broadcastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    _broadcastTimer = setTimeout(() => { el.className = ''; }, 160);
+  }, duration);
 }
 // sfxMiss, sfxCheckout, sfxHit — from utils.js
 // initSpeech, speak, spawnConfetti — from utils.js

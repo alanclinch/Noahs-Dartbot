@@ -119,8 +119,10 @@ function generateCpuThrow(target, mpr, opts) {
   // Controls how often the dart lands on the right segment vs neighbours.
   // Curved dropoff anchored at 0.9 MPR (54mm → actual ~0.9 MPR).
   // Floor term of 5 keeps elite players consistent without perfect accuracy.
-  // 0.9→54mm  1.3→33mm  1.8→22mm  3.0→13mm  5.2→8.5mm
-  let sigmaT = Math.min(80, 5 + 49 * Math.pow(0.9 / mpr, 1.5));
+  // Cap lowered to 70mm (was 80) so the weakest CPU (0.5 MPR) lands closer
+  // to its target rating; Mark Control ceiling then prevents overperformance.
+  // 0.5→70mm  0.9→54mm  1.3→33mm  1.8→22mm  3.0→13mm  5.2→8.5mm
+  let sigmaT = Math.min(70, 5 + 49 * Math.pow(0.9 / mpr, 1.5));
   sigmaT /= roundForm;
   sigmaT *= Math.max(0.70, 1 - (missStreak * 0.06));
   if (opts.sigmaMultiplier && opts.sigmaMultiplier !== 1.0) sigmaT *= opts.sigmaMultiplier;

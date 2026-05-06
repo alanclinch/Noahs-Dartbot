@@ -278,6 +278,24 @@ body{
 }
 .stats-btn:hover{border-color:var(--blue);color:var(--blue);}
 
+.setting-row{
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;font-size:14px;color:var(--muted);
+  padding:2px 0;
+}
+.setting-row input[type="checkbox"]{
+  width:16px;height:16px;accent-color:var(--blue);
+  cursor:pointer;flex-shrink:0;
+}
+.setting-stats-btn{
+  background:none;border:none;
+  color:var(--muted);opacity:.55;
+  font-family:'Exo 2',sans-serif;font-size:13px;
+  cursor:pointer;padding:6px 0 0;text-align:left;
+  transition:opacity .15s,color .15s;
+}
+.setting-stats-btn:hover{opacity:1;color:var(--blue);}
+
 /* ---- STATS MODAL ---- */
 .stats-modal-box{
   background:var(--surface);

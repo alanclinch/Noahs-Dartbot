@@ -10,7 +10,7 @@
 <script src="../assets/js/autodarts.js?v=2"></script>
 <script src="../assets/js/utils.js?v=2"></script>
 <script src="../assets/js/bots.js?v=2"></script>
-<link rel="stylesheet" href="../assets/css/cricket3.css?v=2">
+<link rel="stylesheet" href="../assets/css/cricket3.css?v=3">
 </head>
 <body>
 
@@ -38,18 +38,16 @@
     <div id="recent-players" class="recent-players"></div>
   </div>
 
-  <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg2); border:1px solid var(--border2); border-radius:10px; margin-bottom:12px;">
-    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; width:100%;">
-      <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)" style="width:18px;height:18px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;">
-      <div>
-        <div style="font-family:'Orbitron',monospace; font-size:12px; color:var(--amber); font-weight:700; letter-spacing:1px;">TEST MODE</div>
-        <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); margin-top:2px;">No delays · No sound · CPU legs auto-chain instantly</div>
-      </div>
-    </label>
-  </div>
-
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
-  <button class="stats-btn" onclick="showStatsModal()">📊 Stats</button>
+
+  <div class="setup-card">
+    <h3>Settings</h3>
+    <label class="setting-row">
+      <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)">
+      <span>Test Mode</span>
+    </label>
+    <button class="setting-stats-btn" onclick="showStatsModal()">📊 View Stats</button>
+  </div>
 </div>
 
 <!-- CPU MODAL -->
@@ -201,6 +199,11 @@
 
 <div id="confetti"></div>
 <div id="announce"></div>
-<script src="../assets/js/cricket3.js?v=2"></script>
+<div id="broadcast-event" aria-live="polite">
+  <div class="be-kicker" id="be-kicker"></div>
+  <div class="be-main" id="be-main"></div>
+  <div class="be-sub" id="be-sub"></div>
+</div>
+<script src="../assets/js/cricket3.js?v=3"></script>
 </body>
 </html>

@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cricket 3 — Autodarts</title>
+<title>Cricket 5 — Autodarts</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/game.css?v=2">
 <script src="../assets/js/autodarts.js?v=2"></script>
 <script src="../assets/js/utils.js?v=2"></script>
 <script src="../assets/js/bots.js?v=2"></script>
-<link rel="stylesheet" href="../assets/css/cricket3.css?v=3">
+<link rel="stylesheet" href="../assets/css/cricket5.css">
 </head>
 <body>
 
@@ -38,18 +38,16 @@
     <div id="recent-players" class="recent-players"></div>
   </div>
 
-  <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--bg2); border:1px solid var(--border2); border-radius:10px; margin-bottom:12px;">
-    <label style="display:flex; align-items:center; gap:12px; cursor:pointer; width:100%;">
-      <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)" style="width:18px;height:18px;accent-color:var(--amber);cursor:pointer;flex-shrink:0;">
-      <div>
-        <div style="font-family:'Orbitron',monospace; font-size:12px; color:var(--amber); font-weight:700; letter-spacing:1px;">TEST MODE</div>
-        <div style="font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--muted); margin-top:2px;">No delays · No sound · CPU legs auto-chain instantly</div>
-      </div>
-    </label>
-  </div>
-
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
-  <button class="stats-btn" onclick="showStatsModal()">📊 Stats</button>
+
+  <div class="setup-card">
+    <h3>Settings</h3>
+    <label class="setting-row">
+      <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)">
+      <span>Test Mode</span>
+    </label>
+    <button class="setting-stats-btn" onclick="showStatsModal()">📊 View Stats</button>
+  </div>
 </div>
 
 <!-- CPU MODAL -->
@@ -206,6 +204,6 @@
   <div class="be-main" id="be-main"></div>
   <div class="be-sub" id="be-sub"></div>
 </div>
-<script src="../assets/js/cricket3.js?v=3"></script>
+<script src="../assets/js/cricket5.js"></script>
 </body>
 </html>
