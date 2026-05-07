@@ -11,9 +11,9 @@
 // ═══════════════════════════════════════════════════════════
 
 // ── CPU PLAYER ROSTER ────────────────────────────────────────
-// Current PDC world top 10 players (as of 2025-26 season),
-// mapped across the full MPR range for a playable difficulty spread.
-// mpr = marks-per-round; 0.9 (weakest) → 6.0 (world #1)
+// 9 named opponents — 3×3 grid layout in the picker.
+// MPR mapped across the full range for a playable difficulty spread.
+// mpr = marks-per-round; 0.5 (weakest) → 5.2 (world #1).
 // Consistent across all DartBot games.
 const CPU_PLAYERS = [
   { id:'cpu0', name:'Jocky Wilson',       mpr:0.5, flag:'sco'},

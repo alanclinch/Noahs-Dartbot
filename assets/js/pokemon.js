@@ -32,7 +32,7 @@ const CLASS_PASSIVES = {
   Sniper:  'Trebles deal 3.5× in Gym',
   Tank:    'Even heals +10 extra HP',
   Brawler: 'Odd attacks +10 flat bonus',
-  Status:  'Bull hit steals opponent dart',
+  Status:  'Bull hit inflicts burn or paralysis',
 };
 
 // =============================================
@@ -752,7 +752,7 @@ function calcEffect(seg, attacker, defender) {
     const dmg = 80 + boost;
     const si = isStatus ? (Math.random() < .5 ? 'burn' : 'paralyse') : null;
     return { type:'crit', amount:dmg, label:`D25 CRIT!`, mul:2,
-      msg:`CRITICAL HIT! ${dmg} DMG!`, evolTrigger:true, statusInflict: si };
+      msg:`CRITICAL HIT! ${dmg} DMG!`, statusInflict: si };
   }
 
   // Bull (B25)
@@ -900,7 +900,7 @@ function checkEndure(attackerIdx, damage) {
   const oi = 1 - attackerIdx;
   const opp = players[oi];
   if (opp.hp - damage < 0 && opp.hp > 0) {
-    opp.hp = hpAtTurnStart[oi];
+    opp.hp = 1;
     flash('ENDURE!', 'var(--poke-red)');
     speak('Endures the hit!');
     sfxMiss();
@@ -1164,15 +1164,15 @@ function updateScoringGuide() {
       type: 'BULL',
       value: isWild ? 'ITEM' : `25${bStr}`,
       label: isWild
-        ? 'RANDOM ITEM' + (isStat ? ' + DART STEAL' : '')
-        : 'DMG + ITEM' + (isStat ? ' + DART STEAL' : ''),
+        ? 'RANDOM ITEM' + (isStat ? ' + STATUS' : '')
+        : 'DMG + ITEM' + (isStat ? ' + STATUS' : ''),
       valCls: isWild ? 'amber' : 'dmg',
       itemCls: isWild ? 'sg-item-type' : 'sg-dmg',
     },
     {
       type: 'BULLSEYE',
       value: `${80+boost}`,
-      label: 'CRIT + MEGA EVO' + (isStat ? ' + STATUS' : ''),
+      label: 'CRITICAL HIT' + (isStat ? ' + STATUS' : ''),
       valCls: 'gold', itemCls: 'sg-mega',
     },
   ];
@@ -1268,6 +1268,7 @@ function saveState() {
     })),
     currentPlayer, currentDarts: [...currentDarts],
     seenThrows, turnEnded, round, xAttackBonus,
+    finishMode, finishTotal, finishTarget,
   });
 }
 
@@ -1283,6 +1284,9 @@ function undoLastDart() {
   turnEnded      = last.turnEnded;
   round          = last.round;
   xAttackBonus   = last.xAttackBonus;
+  finishMode     = last.finishMode;
+  finishTotal    = last.finishTotal;
+  finishTarget   = last.finishTarget;
   last.players.forEach((saved, i) => {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp;
@@ -1304,6 +1308,7 @@ function undoLastDart() {
     updateDartSlot(idx, d.label, cls);
   });
   updateBattleField();
+  updateScoringGuide();
   const nameEl = document.getElementById('turn-player-name');
   if (nameEl) { nameEl.textContent = players[currentPlayer].name; nameEl.classList.toggle('cpu-turn', players[currentPlayer].isCpu); }
   const nextBtn = document.getElementById('next-player-btn');

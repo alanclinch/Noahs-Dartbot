@@ -5,7 +5,10 @@
       "mcp__plugin_neon_neon__run_sql",
       "mcp__plugin_neon_neon__describe_table_schema",
       "WebSearch",
-      "WebFetch(domain:greasyfork.org)"
+      "WebFetch(domain:greasyfork.org)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }
