@@ -40,13 +40,9 @@ function updateWSUI(on) {
 }
 
 function autodartsReset() {
-  fetch('http://localhost:3180/api/reset', { method: 'POST' })
-    .then(r => console.log('Reset:', r.status))
-    .catch(e => console.warn('Reset failed:', e.message));
+  fetch('http://localhost:3180/api/reset', { method: 'POST' }).catch(() => {});
 }
 
 function autodartsCalibrate() {
-  fetch('http://localhost:3180/api/config/calibration/auto', { method: 'POST' })
-    .then(r => console.log('Calibrate:', r.status))
-    .catch(e => console.warn('Calibrate failed:', e.message));
+  fetch('http://localhost:3180/api/config/calibration/auto', { method: 'POST' }).catch(() => {});
 }
