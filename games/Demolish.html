@@ -350,7 +350,7 @@ body{
     <div id="recent-players" class="recent-players"></div>
   </div>
 
-  <button class="start-btn" id="start-btn" onclick="startGame()" disabled>DEMOLISH!</button>
+  <button class="start-btn" id="start-btn" onclick="newGame()" disabled>DEMOLISH!</button>
 
   <div class="setup-card">
     <h3>Settings</h3>
@@ -478,15 +478,16 @@ body{
 <!-- WINNER -->
 <div id="winner" class="screen">
   <div class="winner-layout">
-    <div class="win-card">
+    <div class="win-card" style="width:100%;">
       <span class="win-trophy">🏆</span>
-      <div class="win-label">Checked Out First!</div>
+      <div class="win-label">CHECKED OUT FIRST!</div>
       <div class="win-name" id="win-name">—</div>
       <div class="win-score" id="win-score"></div>
     </div>
     <div class="win-others" id="win-others"></div>
-    <div class="setup-card" style="margin:0;">
-      <h3>Players</h3>
+    <div id="win-session" style="display:none;color:var(--blue);font-family:'Orbitron',monospace;font-size:14px;letter-spacing:1px;text-align:center;padding:8px 0;"></div>
+    <div class="setup-card" style="margin:0;width:100%;">
+      <h3>Next Match Roster</h3>
       <div id="player-list-winner" style="display:flex;flex-direction:column;gap:8px;"></div>
       <div class="add-btns" style="margin-top:4px;">
         <button class="add-btn" onclick="openHumanModal()">+ Human Player</button>
@@ -494,8 +495,10 @@ body{
       </div>
       <div id="recent-players-winner" class="recent-players"></div>
     </div>
+    <div id="cpu-auto-msg" style="display:none;text-align:center;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:13px;padding:4px 0;"></div>
     <div class="win-buttons">
-      <button class="win-btn win-btn-primary" onclick="nextLeg()">PLAY NEXT LEG</button>
+      <button class="win-btn win-btn-primary" id="next-leg-btn" onclick="nextLeg()" style="font-size:18px;padding:20px;">PLAY NEXT LEG</button>
+      <button class="win-btn" id="cpu-stop-btn" onclick="stopCpuAuto()" style="display:none;border-color:var(--amber);color:var(--amber);">STOP AUTO</button>
       <button class="win-btn win-btn-danger" onclick="goHome()">MENU</button>
     </div>
   </div>
@@ -715,22 +718,15 @@ function sfxBonusMiss() {
   noiz(t, .24, .08, 260, ctx);
 }
 
-let _winMusicInterval = null;
+let _winAudio = null;
 function playWinMusic() {
   stopWinMusic();
-  function fanfare() {
-    const ctx = gAC(), t = ctx.currentTime;
-    [523.3, 659.3, 784, 1046.5].forEach((f, i) => {
-      tone(f, 'triangle', t + i * 0.16, 0.26, 0.30, ctx);
-      tone(f * 1.5, 'sine', t + i * 0.16, 0.07, 0.14, ctx);
-    });
-    noiz(t + 0.5, 0.12, 0.06, 2200, ctx);
-  }
-  fanfare();
-  _winMusicInterval = setInterval(fanfare, 2600);
+  _winAudio = new Audio('https://www.myinstants.com/media/sounds/dart-winner.mp3');
+  _winAudio.volume = 0.9;
+  _winAudio.play().catch(() => {});
 }
 function stopWinMusic() {
-  if (_winMusicInterval) { clearInterval(_winMusicInterval); _winMusicInterval = null; }
+  if (_winAudio) { _winAudio.pause(); _winAudio.currentTime = 0; _winAudio = null; }
 }
 
 function firstName(name) {
@@ -755,6 +751,13 @@ let cpuTurnRunning = false;
 let cpuStartTimer = null;
 let cpuThrowTimer = null;
 let autoAdvanceTimer = null;
+let startingPlayer = 0;
+let legNumber = 0;
+let gameSession = null;
+
+function getSessionKey() {
+  return setupPlayers.map(p => `${p.name}|${p.isCpu ? 1 : 0}`).join(',');
+}
 
 // ══ SETUP UI ══
 function adjScore(d){
@@ -859,6 +862,13 @@ function checkStartBtn() {
 }
 
 // ══ GAME START ══
+function newGame() {
+  gameSession = null;
+  legNumber = 0;
+  startingPlayer = Math.floor(Math.random() * setupPlayers.length);
+  startGame();
+}
+
 function startGame() {
   startScore = _score * _mult;
   players = setupPlayers.map((p, i) => ({
@@ -873,14 +883,14 @@ function startGame() {
     pendingBonus: null,
   }));
   clearTurnTimers();
-  cp=0; darts=[]; seenThrows=0; turnEnded=false; gameActive=true; turnToken++;
+  cp=startingPlayer; darts=[]; seenThrows=0; turnEnded=false; gameActive=true; turnToken++;
   checkedOut=[]; roundCheckedOut=[]; missTimer=null; activeBonus=null; bonusTimers=[];
   document.documentElement.requestFullscreen().catch(() => {});
   showScreen('game');
   buildTowers();
   highlightActive();
   updatePanel();
-  callPlayerName(players[0]);
+  callPlayerName(players[cp]);
   prepareBonusForNextDart(cp);
   if (players[cp].isCpu) scheduleCpuTurn(players[cp], turnToken, 2000);
 }
@@ -1638,7 +1648,8 @@ async function showWin(w) {
   document.getElementById('win-name').textContent = w.name;
   document.getElementById('win-name').style.color = w.color;
   const scoreEl = document.getElementById('win-score');
-  if (scoreEl) scoreEl.textContent = w.totalDartsThrown + ' DARTS';
+  const legStr = legNumber > 0 ? `Leg ${legNumber + 1} · ` : '';
+  if (scoreEl) scoreEl.textContent = `${legStr}${w.totalDartsThrown} darts`;
 
   const othersEl = document.getElementById('win-others');
   if (othersEl) {
@@ -1655,26 +1666,91 @@ async function showWin(w) {
   renderPlayerList();
   renderRecentPlayers();
 
-  for (const p of players) {
-    if (!p.isCpu) {
-      const won = p === w;
-      const pts = startScore - p.score;
-      await saveX01Stat(p.name, p.flag, won, pts, p.totalDartsThrown);
+  // Session tracking
+  const key = getSessionKey();
+  if (!gameSession || gameSession.playerKeys !== key) {
+    gameSession = { playerKeys: key, wins: {} };
+    setupPlayers.forEach(p => { gameSession.wins[p.name] = 0; });
+  }
+  gameSession.wins[w.name] = (gameSession.wins[w.name] || 0) + 1;
+
+  const sessionEl = document.getElementById('win-session');
+  if (sessionEl) {
+    const total = Object.values(gameSession.wins).reduce((a, b) => a + b, 0);
+    if (total > 1) {
+      if (setupPlayers.length === 2) {
+        const [p0, p1] = setupPlayers;
+        sessionEl.textContent = `Series: ${p0.name} ${gameSession.wins[p0.name] || 0} – ${gameSession.wins[p1.name] || 0} ${p1.name}`;
+      } else {
+        sessionEl.textContent = `Series: ${setupPlayers.map(p => `${p.name} ${gameSession.wins[p.name] || 0}`).join(' · ')}`;
+      }
+      sessionEl.style.display = '';
+    } else {
+      sessionEl.style.display = 'none';
     }
   }
+
+  try {
+    for (const p of players) {
+      if (!p.isCpu) {
+        const won = p === w;
+        const pts = startScore - p.score;
+        await saveX01Stat(p.name, p.flag, won, pts, p.totalDartsThrown);
+      }
+    }
+  } catch(e) { console.error('Save error:', e); }
+
   showScreen('winner');
+
+  // CPU vs CPU: auto-advance to next leg
+  const allCpu = setupPlayers.every(p => p.isCpu);
+  if (allCpu) {
+    let secs = 5;
+    const autoEl = document.getElementById('cpu-auto-msg');
+    const stopBtn = document.getElementById('cpu-stop-btn');
+    const nextBtn = document.getElementById('next-leg-btn');
+    if (autoEl) { autoEl.textContent = `Next leg in ${secs}s…`; autoEl.style.display = ''; }
+    if (stopBtn) stopBtn.style.display = '';
+    if (nextBtn) nextBtn.style.display = 'none';
+    window._cpuAutoTimer = setInterval(() => {
+      secs--;
+      if (secs > 0) { if (autoEl) autoEl.textContent = `Next leg in ${secs}s…`; }
+      else { clearInterval(window._cpuAutoTimer); window._cpuAutoTimer = null; nextLeg(); }
+    }, 1000);
+  }
+}
+
+function stopCpuAuto() {
+  if (window._cpuAutoTimer) { clearInterval(window._cpuAutoTimer); window._cpuAutoTimer = null; }
+  const autoEl = document.getElementById('cpu-auto-msg');
+  const stopBtn = document.getElementById('cpu-stop-btn');
+  const nextBtn = document.getElementById('next-leg-btn');
+  if (autoEl) autoEl.style.display = 'none';
+  if (stopBtn) stopBtn.style.display = 'none';
+  if (nextBtn) nextBtn.style.display = '';
 }
 
 function skipTurn(){turnEnded=true;advanceTurn();}
 function quitGame(){if(confirm('Quit game?')){stopWinMusic();clearTurnTimers();gameActive=false;sdActive=false;turnToken++;showScreen('setup');}}
 function nextLeg() {
+  if (window._cpuAutoTimer) { clearInterval(window._cpuAutoTimer); window._cpuAutoTimer = null; }
   stopWinMusic();
   document.getElementById('confetti').innerHTML = '';
-  showScreen('setup');
-  renderPlayerList();
-  renderRecentPlayers();
+  const key = getSessionKey();
+  if (!gameSession || gameSession.playerKeys !== key) {
+    gameSession = null; legNumber = 0;
+    startingPlayer = Math.floor(Math.random() * setupPlayers.length);
+  } else {
+    legNumber++;
+    startingPlayer = (startingPlayer + 1) % setupPlayers.length;
+  }
+  startGame();
 }
-function goHome(){stopWinMusic();window.location.href='../index.html';}
+function goHome(){
+  if (window._cpuAutoTimer) { clearInterval(window._cpuAutoTimer); window._cpuAutoTimer = null; }
+  stopWinMusic();
+  window.location.href='../index.html';
+}
 
 // ══ KEYBOARD ══
 document.addEventListener('keydown',e=>{
