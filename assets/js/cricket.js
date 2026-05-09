@@ -226,6 +226,8 @@ let legNumber = 0;
 let arcadeScore = 0;
 let arcadeWave = 0;
 let arcadeContinueUsed = false;
+let arcadeWaitingForTakeout = false;
+let arcadeWaveTimer = null;
 let advancing = false;
 let takeoutTimer = null;
 let gameSession = null; // { playerKeys: string, wins: {[name]: number} }
@@ -255,6 +257,16 @@ function handleWS(data){
   const event = d.event || '';
   const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
   const tc = Array.isArray(throws) ? throws.length : 0;
+
+  // Arcade: wait for darts to be removed before launching the next wave
+  if (arcadeWaitingForTakeout && event === 'Takeout finished' && numThrows === 0) {
+    if (missTimer) { clearTimeout(missTimer); missTimer = null; }
+    if (arcadeWaveTimer) { clearTimeout(arcadeWaveTimer); arcadeWaveTimer = null; }
+    arcadeWaitingForTakeout = false;
+    seenThrows = 0;
+    launchLeg();
+    return;
+  }
 
   if(gameActive && !players[currentPlayer].isCpu){
     if(tc > seenThrows && !turnEnded){
@@ -493,6 +505,8 @@ function _arcadeSetupCpu() {
 function launchLeg(){
   if (window._cpuAutoTimer) { clearInterval(window._cpuAutoTimer); window._cpuAutoTimer = null; }
   if (takeoutTimer) { clearTimeout(takeoutTimer); takeoutTimer = null; }
+  arcadeWaitingForTakeout = false;
+  if (arcadeWaveTimer) { clearTimeout(arcadeWaveTimer); arcadeWaveTimer = null; }
   cancelSpeech();
   document.getElementById('confetti').innerHTML = '';
   if (gameVariant === 'arcade') {
@@ -637,14 +651,18 @@ function updateScoreboard(){
     const scoreEl = document.getElementById(`pscore-${i}`);
     if(scoreEl){
       if (gameVariant === 'arcade') {
+        const arcadeFontSize = 'clamp(32px,5vw,52px)';
         if (p.isCpu) {
-          scoreEl.textContent = `${p.cpuData ? p.cpuData.mpr : '—'} MPR`;
+          const actualMPR = p.dartsThrown >= 3
+            ? (p.marksThrown / (p.dartsThrown / 3)).toFixed(1)
+            : (p.cpuData ? p.cpuData.mpr.toFixed(1) : '—');
+          scoreEl.textContent = `${actualMPR} MPR`;
           scoreEl.classList.remove('leading');
-          scoreEl.style.fontSize = 'clamp(28px,4vw,52px)';
+          scoreEl.style.fontSize = arcadeFontSize;
         } else {
           scoreEl.textContent = arcadeScore;
           scoreEl.classList.toggle('leading', arcadeScore > 0);
-          scoreEl.style.fontSize = '';
+          scoreEl.style.fontSize = arcadeFontSize;
         }
       } else {
         scoreEl.textContent = p.score;
@@ -1106,13 +1124,30 @@ function runCpuTurn(){
   if(!gameActive) return;
   const p   = players[currentPlayer];
   const cpu = p.cpuData;
+
+  // Arcade: use simple probability model — physics scatter ruins MPR consistency
+  if (gameVariant === 'arcade') {
+    const td = testMode ? 0 : 1000;
+    function doArcadeThrow(cb) {
+      if (!gameActive || turnEnded) { cb && cb(); return; }
+      registerDart(generateArcadeCpuDart(getBestTarget(p), cpu.mpr));
+      cb && cb();
+    }
+    setTimeout(() => doArcadeThrow(() =>
+      setTimeout(() => doArcadeThrow(() =>
+        setTimeout(() => doArcadeThrow(() =>
+          setTimeout(() => advanceTurn(), testMode ? 0 : 800)
+        ), td)), td)), td);
+    return;
+  }
+
   const accuracy = (cpu.mpr - 0.9) / 5.1;
   const formRange = 0.35 - accuracy * 0.25;
   const roundForm = Math.max(0.3, Math.min(2.5, 1 + (Math.random() * 2 - 1) * formRange));
   const sigmaMultiplier = getAdaptiveSigmaMul(p);
 
   const hasHuman = players.some(q => !q.isCpu);
-  const mprRange = (hasHuman || testMode) && gameVariant !== 'arcade' ? getMarkControlRange(round, cpu, p) : null;
+  const mprRange = (hasHuman || testMode) ? getMarkControlRange(round, cpu, p) : null;
 
   // Mark Control: sample up to 25 three-dart combos, accept first that lands in the
   // per-turn marks band. Fall back to the closest attempt so there's never a
@@ -1170,6 +1205,28 @@ function runCpuTurn(){
 }
 
 // generateCpuThrow, getAdjacentNumbers — from bots.js
+
+// ── Arcade CPU model ─────────────────────────────────────────
+// Pure probability model — completely separate from the physics model.
+// Each dart independently hits the current target with probability mpr/3.
+// This guarantees the CPU performs at exactly its rated MPR throughout the
+// game, regardless of which target it is aiming at.
+// mpr ≤ 3 → hit/miss with singles. mpr > 3 → always hits, mix of singles/doubles.
+function generateArcadeCpuDart(target, mpr) {
+  const marksPerDart = mpr / 3; // 0.167 (0.5 MPR) to 1.733 (5.2 MPR)
+  let mul;
+  if (marksPerDart <= 1) {
+    if (Math.random() >= marksPerDart) return { name: 'M', number: 0, multiplier: 0 };
+    mul = 1;
+  } else {
+    // MPR > 3: always hits; double probability = marksPerDart − 1
+    mul = Math.random() < (marksPerDart - 1) ? 2 : 1;
+  }
+  if (target === 25) {
+    return { name: mul === 2 ? 'D25' : 'B25', number: 25, multiplier: mul, bed: mul === 2 ? 'Double' : 'Single' };
+  }
+  return { name: mul === 1 ? `S${target}` : `D${target}`, number: target, multiplier: mul, bed: mul === 2 ? 'Double' : 'SingleOuter' };
+}
 
 function getBestTarget(p){
   const sortHighest = (a, b) => (b === 25 ? 14 : b) - (a === 25 ? 14 : a);
@@ -1402,7 +1459,14 @@ function arcadeWaveWin() {
   arcadeWave++;
   arcadeContinueUsed = false;
   updateArcadeDisplay();
-  setTimeout(() => launchLeg(), testMode ? 50 : 2800);
+  if (testMode) { launchLeg(); return; }
+  // Wait for player to pull out darts before starting next wave (fallback: 10s)
+  arcadeWaitingForTakeout = true;
+  arcadeWaveTimer = setTimeout(() => {
+    arcadeWaitingForTakeout = false;
+    arcadeWaveTimer = null;
+    launchLeg();
+  }, 10000);
 }
 
 function showArcadeRoundSplash(wave, onDone) {
