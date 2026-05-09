@@ -1,5 +1,5 @@
 // =============================================
-// Around the Clock — first to clear 1→20→Bull wins
+// Around the Clock — Classic & Score Attack
 // CPU_PLAYERS, makeFaceSVG, generateCpuThrow — bots.js
 // PLAYER_COLORS, isMiss, dartSpeak, showScreen, initSpeech, speak,
 // cancelSpeech, sfx*, spawnConfetti — utils.js
@@ -8,10 +8,13 @@
 const TARGET_SEQ = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,25];
 const MAX_PLAYERS = 4;
 const MIN_PLAYERS = 1;
-const LS_KEY = 'dartbot_players';
+const LS_KEY = 'dartbot_atc_players';
 
+// =============================================
+// STATE
+// =============================================
 let players = [];
-let variant = 'standard';
+let variant = 'classic';
 let currentPlayer = 0;
 let currentDarts = [];
 let round = 1;
@@ -31,12 +34,120 @@ let cpuTurnTimer = null;
 let turnEnded = false;
 let legNumber = 0;
 let startingPlayer = 0;
+let gameSession = null; // { playerKeys, wins: {name: count} }
+
+// =============================================
+// NEON DB
+// =============================================
+let sql = null;
+
+async function initNeonDB() {
+  try {
+    const { neon } = await import('https://esm.sh/@neondatabase/serverless');
+    let conn = localStorage.getItem('neon_db_string');
+    if (!conn) {
+      conn = prompt("Enter Neon connection string (blank = offline)");
+      if (conn && conn.trim()) {
+        localStorage.setItem('neon_db_string', conn.trim());
+      } else {
+        console.warn('Neon disabled');
+        return;
+      }
+    }
+    sql = neon(conn);
+    try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS flag VARCHAR(10)`; } catch(e) {}
+    renderRecentPlayers();
+  } catch(e) {
+    console.error('Neon init failed', e);
+  }
+}
+
+async function savePlayerStat(name, flag, won, hits, dartsThrown, isCpu = false) {
+  if (!isCpu) {
+    const all = getSavedPlayers();
+    if (!all[name]) all[name] = { games: 0, wins: 0, marks: 0, darts: 0, flag };
+    all[name].games++;
+    if (won) all[name].wins++;
+    all[name].marks += hits;
+    all[name].darts += dartsThrown;
+    all[name].flag = flag;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
+  }
+  if (sql) {
+    try {
+      await sql`INSERT INTO players (name, flag, games, wins, marks, darts, is_cpu)
+        VALUES (${name}, ${flag}, 1, ${won ? 1 : 0}, ${hits}, ${dartsThrown}, ${isCpu})
+        ON CONFLICT (name) DO UPDATE SET
+          flag = EXCLUDED.flag,
+          games = players.games + 1,
+          wins = players.wins + ${won ? 1 : 0},
+          marks = players.marks + ${hits},
+          darts = players.darts + ${dartsThrown}`;
+    } catch(e) { console.error('Neon save error', e); }
+  }
+}
+
+async function loadStatsFromCloud() {
+  if (!sql) { alert('Not connected to cloud'); return; }
+  try {
+    const rows = await sql`SELECT name, flag, games, wins, marks, darts FROM players WHERE is_cpu IS NOT TRUE ORDER BY name`;
+    const all = {};
+    rows.forEach(r => { all[r.name] = { games: r.games, wins: r.wins, marks: r.marks, darts: r.darts, flag: r.flag }; });
+    localStorage.setItem(LS_KEY, JSON.stringify(all));
+    showStatsModal();
+  } catch(e) {
+    console.error('Cloud load error', e);
+    alert('Failed to load stats from cloud.');
+  }
+}
+
+// =============================================
+// WIN MUSIC
+// =============================================
+let _winAudio = null;
+function playWinMusic() {
+  stopWinMusic();
+  _winAudio = new Audio('https://www.myinstants.com/media/sounds/dart-winner.mp3');
+  _winAudio.volume = 0.9;
+  _winAudio.play().catch(() => {});
+}
+function stopWinMusic() {
+  if (_winAudio) { _winAudio.pause(); _winAudio.currentTime = 0; _winAudio = null; }
+}
+
+// =============================================
+// SESSION TRACKING
+// =============================================
+function getSessionKey() {
+  return players.map(p => `${p.name}|${p.isCpu ? 1 : 0}`).join(',');
+}
+
+function updateGameSession(winnerName) {
+  const key = getSessionKey();
+  if (!gameSession || gameSession.playerKeys !== key) {
+    gameSession = { playerKeys: key, wins: {} };
+    players.forEach(p => { gameSession.wins[p.name] = 0; });
+  }
+  if (gameSession.wins[winnerName] !== undefined) {
+    gameSession.wins[winnerName]++;
+  }
+}
+
+function renderSessionScore() {
+  const el = document.getElementById('win-session');
+  if (!el || !gameSession) { if (el) el.style.display = 'none'; return; }
+  const total = Object.values(gameSession.wins).reduce((a, b) => a + b, 0);
+  if (total < 1) { el.style.display = 'none'; return; }
+  const parts = players.map(p => `${escapeHTML(p.name)} <strong>${gameSession.wins[p.name] || 0}</strong>`);
+  el.innerHTML = '<div class="session-score">' + parts.join(' &ndash; ') + '</div>';
+  el.style.display = '';
+}
 
 // =============================================
 // HELPERS
 // =============================================
 function escapeHTML(s) {
-  return String(s).replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
+  return String(s).replace(/[&<>'"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[m]));
 }
 function nextTargetFor(current) {
   const idx = TARGET_SEQ.indexOf(current);
@@ -47,20 +158,22 @@ function targetIndex(t) {
   const idx = TARGET_SEQ.indexOf(t);
   return idx < 0 ? TARGET_SEQ.length : idx;
 }
-function dartAdvances(seg, target, v) {
+function dartAdvancesClassic(seg, target) {
   if (!seg || isMiss(seg)) return false;
   const num = Number(seg.number);
+  if (target === 25) return num === 25;
+  return num === target;
+}
+function scoreAttackPoints(seg, target) {
+  if (!seg || isMiss(seg)) return 0;
+  const num = Number(seg.number);
   const mul = Number(seg.multiplier);
+  if (num !== target) return 0;
   if (target === 25) {
-    if (num !== 25) return false;
-    if (v === 'standard') return true;
-    return mul === 2;
+    // Single Bull = 25 (mul=1), Double Bull = 50 (mul=2)
+    return 25 * (mul >= 1 ? mul : 1);
   }
-  if (num !== target) return false;
-  if (v === 'standard') return true;
-  if (v === 'doubles') return mul === 2;
-  if (v === 'trebles') return mul === 3;
-  return false;
+  return num * mul;
 }
 function speakIf(t, p = false) { if (voiceEnabled) speak(t, p); }
 function sfxIf(fn) { if (sfxEnabled) fn(); }
@@ -83,18 +196,6 @@ function renderFlag(code) {
 function getSavedPlayers() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
 }
-function savePlayerStats(p, won) {
-  if (p.isCpu) return;
-  const all = getSavedPlayers();
-  const s = all[p.name] || { darts: 0, marks: 0, games: 0, wins: 0, flag: p.flag };
-  s.darts += p.dartsThrown;
-  s.marks += p.hits;
-  s.games += 1;
-  if (won) s.wins += 1;
-  s.flag = p.flag;
-  all[p.name] = s;
-  try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
-}
 function savedMPR(s) {
   return s.darts > 0 ? (s.marks / (s.darts / 3)).toFixed(2) : '—';
 }
@@ -108,11 +209,11 @@ function selectVariant(v, btn) {
   if (btn) btn.classList.add('sel');
   const desc = document.getElementById('variant-desc');
   if (desc) desc.textContent =
-    v === 'standard' ? 'Hit each number 1 → 20 then Bull. Any segment counts. First to clear wins.' :
-    v === 'doubles'  ? 'Doubles only. Hit D1 → D2 → … → D20 → D-Bull to clear. First to finish wins.' :
-                       'Trebles only. Hit T1 → T2 → … → T20 then D-Bull to finish. Hardcore mode.';
+    v === 'classic'
+      ? 'Hit each number 1 → 20 then Bull. Any segment counts. First to clear all 21 targets wins.'
+      : 'Fixed 21 rounds — each round targets one number (1 through 20, then Bull). Score points for every dart that hits the current target. Highest score after all 21 rounds wins.';
   const badge = document.getElementById('game-variant-badge');
-  if (badge) badge.textContent = v.toUpperCase();
+  if (badge) badge.textContent = v === 'classic' ? 'CLASSIC' : 'SCORE ATTACK';
 }
 
 // =============================================
@@ -126,7 +227,7 @@ function renderPlayerList() {
         <div class="flag-wrap">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
         <div class="player-row-name">${escapeHTML(p.name)}</div>
         <div class="player-row-badge ${p.isCpu ? 'badge-cpu' : 'badge-human'}">${p.isCpu ? 'CPU ' + p.mpr.toFixed(1) : 'PLAYER'}</div>
-        <button class="remove-btn" onclick="removePlayer(${i})">✕</button>
+        <button class="remove-btn" onclick="removePlayer(${i})">&#x2715;</button>
       </div>
     `).join('');
   });
@@ -166,6 +267,7 @@ function addHuman(name, flag) {
     name, flag: flag || 'sco', isCpu: false,
     color: PLAYER_COLORS[players.length],
     target: 1, hits: 0, dartsThrown: 0,
+    score: 0,
   });
   renderPlayerList();
 }
@@ -195,9 +297,9 @@ function cpuFace(id) {
   const r = (n) => ((seed * 9301 + n * 49297) % 233280) / 233280;
   const styles = ['short','messy','bob','long','slick','bald'];
   const mouths = ['smile','grin','smirk','flat','default'];
-  const skins = ['#f5d7b3','#e3b48a','#c89a72','#a07050','#8e6240'];
-  const hairs = ['#3a2a1a','#1a1a1a','#7a4a2a','#aa8a4a','#cccccc','#e8c060'];
-  const eyes  = ['#3a2a18','#1a1a1a','#3a4a2a','#3a3a8a'];
+  const skins  = ['#f5d7b3','#e3b48a','#c89a72','#a07050','#8e6240'];
+  const hairs  = ['#3a2a1a','#1a1a1a','#7a4a2a','#aa8a4a','#cccccc','#e8c060'];
+  const eyes   = ['#3a2a18','#1a1a1a','#3a4a2a','#3a3a8a'];
   return {
     style: styles[Math.floor(r(1) * styles.length)],
     mouth: mouths[Math.floor(r(2) * mouths.length)],
@@ -216,6 +318,7 @@ function addCpu(id) {
     mpr: c.mpr, face: cpuFace(c.id),
     color: PLAYER_COLORS[players.length],
     target: 1, hits: 0, dartsThrown: 0,
+    score: 0,
   });
   closeCpuModal();
   renderPlayerList();
@@ -256,13 +359,19 @@ function setTestMode(v) { testMode = v; }
 function startGame() {
   if (players.length < MIN_PLAYERS) return;
   legNumber = 0;
+  gameSession = null;
   startingPlayer = Math.floor(Math.random() * players.length);
   document.documentElement.requestFullscreen().catch(() => {});
   launchLeg();
 }
 function launchLeg() {
   legNumber++;
-  players.forEach(p => { p.target = 1; p.hits = 0; p.dartsThrown = 0; });
+  players.forEach(p => {
+    p.target = 1;
+    p.hits = 0;
+    p.dartsThrown = 0;
+    p.score = 0;
+  });
   currentPlayer = startingPlayer;
   startingPlayer = (startingPlayer + 1) % players.length;
   currentDarts = [];
@@ -275,10 +384,12 @@ function launchLeg() {
   throwLog = [];
   missTimer = null;
   lastSegByPlayer = {};
+  stopWinMusic();
   document.getElementById('next-player-btn').style.display = 'none';
   buildBoard();
   showScreen('game');
   updateRound();
+  updateLegBadge();
   beginTurn();
 }
 
@@ -288,24 +399,47 @@ function launchLeg() {
 function buildBoard() {
   const tiles = document.getElementById('atc-tiles');
   tiles.className = 'atc-tiles players-' + players.length;
-  tiles.innerHTML = players.map((p, i) => `
-    <div class="atc-tile" id="atc-tile-${i}">
-      <div class="atc-tile-header">
-        <div class="atc-tile-flag">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
-        <div class="atc-tile-name">${escapeHTML(p.name)}</div>
-        <div class="atc-tile-stats">${p.isCpu ? p.mpr.toFixed(1) + ' MPR' : ''}</div>
+  const badge = document.getElementById('game-variant-badge');
+  if (badge) badge.textContent = variant === 'classic' ? 'CLASSIC' : 'SCORE ATTACK';
+
+  if (variant === 'scoreattack') {
+    tiles.innerHTML = players.map((p, i) => `
+      <div class="atc-tile" id="atc-tile-${i}">
+        <div class="atc-tile-header">
+          <div class="atc-tile-flag">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
+          <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+          <div class="atc-tile-stats">${p.isCpu ? p.mpr.toFixed(1) + ' MPR' : ''}</div>
+        </div>
+        <div class="atc-target-display">
+          <div class="atc-target-label">SCORE</div>
+          <div class="atc-score-num" id="atc-score-${i}">0</div>
+        </div>
+        <div class="atc-tile-footer">
+          <span id="atc-round-${i}">Round 1 / 21</span>
+          <span id="atc-darts-${i}">0 darts</span>
+        </div>
       </div>
-      <div class="atc-target-display">
-        <div class="atc-target-label">TARGET</div>
-        <div class="atc-target-num" id="atc-target-${i}">1</div>
+    `).join('');
+  } else {
+    tiles.innerHTML = players.map((p, i) => `
+      <div class="atc-tile" id="atc-tile-${i}">
+        <div class="atc-tile-header">
+          <div class="atc-tile-flag">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
+          <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+          <div class="atc-tile-stats">${p.isCpu ? p.mpr.toFixed(1) + ' MPR' : ''}</div>
+        </div>
+        <div class="atc-target-display">
+          <div class="atc-target-label">TARGET</div>
+          <div class="atc-target-num" id="atc-target-${i}">1</div>
+        </div>
+        <div class="atc-progress" id="atc-progress-${i}"></div>
+        <div class="atc-tile-footer">
+          <span><span class="progress-text" id="atc-progress-count-${i}">0</span> / 21</span>
+          <span id="atc-darts-${i}">0 darts</span>
+        </div>
       </div>
-      <div class="atc-progress" id="atc-progress-${i}"></div>
-      <div class="atc-tile-footer">
-        <span><span class="progress-text" id="atc-progress-count-${i}">0</span> / 21</span>
-        <span id="atc-darts-${i}">0 darts</span>
-      </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
   players.forEach((_, i) => updatePlayerTile(i, false));
 }
 
@@ -313,52 +447,87 @@ function updatePlayerTile(i, animate = false) {
   const p = players[i];
   const tile = document.getElementById('atc-tile-' + i);
   if (!tile) return;
-  tile.classList.toggle('active', i === currentPlayer && p.target !== 0 && winnerIdx < 0);
-  tile.classList.toggle('winner', p.target === 0);
-  if (p.target === 0 && !tile.querySelector('.atc-trophy')) {
-    const trophy = document.createElement('div');
-    trophy.className = 'atc-trophy';
-    trophy.textContent = '🏆';
-    tile.appendChild(trophy);
-  }
-  const targetEl = document.getElementById('atc-target-' + i);
-  if (targetEl) {
-    if (p.target === 0) {
-      targetEl.textContent = '✓';
-      targetEl.classList.remove('bull-target');
-    } else if (p.target === 25) {
-      targetEl.textContent = 'BULL';
-      targetEl.classList.add('bull-target');
-    } else {
-      targetEl.textContent = String(p.target);
-      targetEl.classList.remove('bull-target');
+
+  if (variant === 'scoreattack') {
+    tile.classList.toggle('active', i === currentPlayer && winnerIdx < 0);
+    tile.classList.remove('winner');
+
+    const scoreEl = document.getElementById('atc-score-' + i);
+    if (scoreEl) {
+      scoreEl.textContent = String(p.score || 0);
+      if (animate) {
+        scoreEl.classList.remove('advanced');
+        void scoreEl.offsetWidth;
+        scoreEl.classList.add('advanced');
+      }
     }
-    if (animate) {
-      targetEl.classList.remove('advanced');
-      void targetEl.offsetWidth;
-      targetEl.classList.add('advanced');
+    const roundEl = document.getElementById('atc-round-' + i);
+    if (roundEl) roundEl.textContent = 'Round ' + round + ' / 21';
+    const dartsEl = document.getElementById('atc-darts-' + i);
+    if (dartsEl) dartsEl.textContent = p.dartsThrown + ' darts';
+  } else {
+    tile.classList.toggle('active', i === currentPlayer && p.target !== 0 && winnerIdx < 0);
+    tile.classList.toggle('winner', p.target === 0);
+    if (p.target === 0 && !tile.querySelector('.atc-trophy')) {
+      const trophy = document.createElement('div');
+      trophy.className = 'atc-trophy';
+      trophy.textContent = '🏆';
+      tile.appendChild(trophy);
     }
+    const targetEl = document.getElementById('atc-target-' + i);
+    if (targetEl) {
+      if (p.target === 0) {
+        targetEl.textContent = '✓';
+        targetEl.classList.remove('bull-target');
+      } else if (p.target === 25) {
+        targetEl.textContent = 'BULL';
+        targetEl.classList.add('bull-target');
+      } else {
+        targetEl.textContent = String(p.target);
+        targetEl.classList.remove('bull-target');
+      }
+      if (animate) {
+        targetEl.classList.remove('advanced');
+        void targetEl.offsetWidth;
+        targetEl.classList.add('advanced');
+      }
+    }
+    const progEl = document.getElementById('atc-progress-' + i);
+    if (progEl) {
+      progEl.innerHTML = TARGET_SEQ.map(t => {
+        const cleared = (p.target === 0) || (targetIndex(t) < targetIndex(p.target));
+        const isCurrent = p.target === t;
+        const isBull = t === 25;
+        const cls = ['atc-progress-cell'];
+        if (cleared) cls.push('cleared');
+        if (isCurrent) cls.push('current');
+        if (isBull) cls.push('bull');
+        return `<div class="${cls.join(' ')}">${isBull ? '★' : t}</div>`;
+      }).join('');
+    }
+    const cnt = document.getElementById('atc-progress-count-' + i);
+    if (cnt) cnt.textContent = p.hits;
+    const dartsEl = document.getElementById('atc-darts-' + i);
+    if (dartsEl) dartsEl.textContent = p.dartsThrown + ' darts';
   }
-  const progEl = document.getElementById('atc-progress-' + i);
-  if (progEl) {
-    progEl.innerHTML = TARGET_SEQ.map(t => {
-      const cleared = (p.target === 0) || (targetIndex(t) < targetIndex(p.target));
-      const isCurrent = p.target === t;
-      const isBull = t === 25;
-      const cls = ['atc-progress-cell'];
-      if (cleared) cls.push('cleared');
-      if (isCurrent) cls.push('current');
-      if (isBull) cls.push('bull');
-      return `<div class="${cls.join(' ')}">${isBull ? '★' : t}</div>`;
-    }).join('');
-  }
-  const cnt = document.getElementById('atc-progress-count-' + i);
-  if (cnt) cnt.textContent = p.hits;
-  const darts = document.getElementById('atc-darts-' + i);
-  if (darts) darts.textContent = p.dartsThrown + ' darts';
 }
+
 function updateAllTiles() {
   players.forEach((_, i) => updatePlayerTile(i, false));
+}
+
+// =============================================
+// LEG BADGE
+// =============================================
+function updateLegBadge() {
+  const el = document.getElementById('leg-badge');
+  if (!el) return;
+  if (legNumber > 1) {
+    el.textContent = 'LEG ' + legNumber;
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 // =============================================
@@ -368,10 +537,17 @@ function beginTurn() {
   if (winnerIdx >= 0) return;
   const p = players[currentPlayer];
   if (!p) return;
-  if (p.target === 0) {
+
+  if (variant === 'classic' && p.target === 0) {
     advanceTurn();
     return;
   }
+
+  if (variant === 'scoreattack') {
+    // Set target for this round
+    p.target = TARGET_SEQ[round - 1];
+  }
+
   currentDarts = [];
   turnEnded = false;
   resetDartSlots();
@@ -394,42 +570,85 @@ function updateTurnDisplay() {
   }
   if (subEl) subEl.textContent = p.isCpu ? 'Computer thinking…' : 'Throw your darts';
 }
+
 function updateTargetDisplay() {
   const p = players[currentPlayer];
   const targetEl = document.getElementById('target-val');
   if (!targetEl || !p) return;
-  if (p.target === 25) {
+  const tgt = variant === 'scoreattack' ? TARGET_SEQ[round - 1] : p.target;
+  if (tgt === 25) {
     targetEl.textContent = 'BULL';
     targetEl.classList.add('bull');
-  } else if (p.target === 0) {
+  } else if (tgt === 0) {
     targetEl.textContent = '✓';
     targetEl.classList.remove('bull');
   } else {
-    targetEl.textContent = String(p.target);
+    targetEl.textContent = String(tgt);
     targetEl.classList.remove('bull');
   }
 }
+
 function updateRound() {
   const r = document.getElementById('round-num');
   if (r) r.textContent = round;
 }
 
+// Classic advanceTurn
 function advanceTurn() {
   if (winnerIdx >= 0) return;
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
+
+  if (variant === 'scoreattack') {
+    advanceTurnScoreAttack();
+    return;
+  }
+
+  // Classic
   let next = (currentPlayer + 1) % players.length;
   if (next <= currentPlayer) {
     round++;
     updateRound();
   }
+  // Skip finished players
   let safety = 0;
-  while (players[next].target === 0 && safety < players.length) {
+  while (players[next] && players[next].target === 0 && safety < players.length) {
     next = (next + 1) % players.length;
+    if (next <= currentPlayer && safety === 0) { round++; updateRound(); }
     safety++;
   }
   currentPlayer = next;
   if (sfxEnabled) sfxNext();
   beginTurn();
+}
+
+// Score Attack advanceTurn
+function advanceTurnScoreAttack() {
+  if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
+  const prevPlayer = currentPlayer;
+  let next = (currentPlayer + 1) % players.length;
+  if (next <= prevPlayer) {
+    // Wrapped — all players done this round
+    round++;
+    updateRound();
+    if (round > 21) {
+      endScoreAttack();
+      return;
+    }
+  }
+  currentPlayer = next;
+  if (sfxEnabled) sfxNext();
+  beginTurn();
+}
+
+function endScoreAttack() {
+  gameActive = false;
+  let bestScore = -1;
+  let bestIdx = 0;
+  players.forEach((p, i) => {
+    if (p.score > bestScore) { bestScore = p.score; bestIdx = i; }
+  });
+  winnerIdx = bestIdx;
+  setTimeout(() => goToWinner(), 800);
 }
 
 function resetDartSlots() {
@@ -454,10 +673,19 @@ function registerDart(seg) {
   if (!gameActive || winnerIdx >= 0) return;
   if (currentDarts.length >= 3) return;
   const p = players[currentPlayer];
-  if (!p || p.target === 0) return;
+  if (!p) return;
+  if (variant === 'classic' && p.target === 0) return;
   saveState();
 
-  const advances = dartAdvances(seg, p.target, variant);
+  if (variant === 'scoreattack') {
+    registerDartScoreAttack(seg, p);
+  } else {
+    registerDartClassic(seg, p);
+  }
+}
+
+function registerDartClassic(seg, p) {
+  const advances = dartAdvancesClassic(seg, p.target);
   const isM = isMiss(seg);
   const label = isM ? 'MISS' : (seg.name || dartSpeak(seg));
   const type = isM ? 'miss' : (advances ? 'scored' : 'hit');
@@ -471,7 +699,6 @@ function registerDart(seg) {
   currentDarts.push({ seg, label, type, advancedTo: p.target });
   fillDartSlot(currentDarts.length - 1, label, type);
 
-  // SFX + voice
   if (advances) {
     if (sfxEnabled) sfxHit();
     speakIf(dartSpeak(seg));
@@ -510,6 +737,49 @@ function registerDart(seg) {
   }
 }
 
+function registerDartScoreAttack(seg, p) {
+  const tgt = TARGET_SEQ[round - 1];
+  const pts = scoreAttackPoints(seg, tgt);
+  const isM = isMiss(seg);
+  const label = isM ? 'MISS' : (seg.name || dartSpeak(seg));
+  const type = isM ? 'miss' : (pts > 0 ? 'scored' : 'hit');
+
+  p.dartsThrown++;
+  if (pts > 0) {
+    p.score = (p.score || 0) + pts;
+    p.hits++;
+  }
+
+  currentDarts.push({ seg, label, type, pts });
+  fillDartSlot(currentDarts.length - 1, label, type);
+
+  if (pts > 0) {
+    if (sfxEnabled) sfxHit();
+    speakIf(dartSpeak(seg));
+    flash('+' + pts, 'var(--green)');
+  } else if (isM) {
+    if (sfxEnabled) sfxMiss();
+    speakIf('Miss');
+  } else {
+    if (sfxEnabled) sfxMiss();
+    speakIf(dartSpeak(seg));
+  }
+
+  updatePlayerTile(currentPlayer, pts > 0);
+
+  // Always advance after 3 darts — no mid-game win
+  if (currentDarts.length >= 3) {
+    turnEnded = true;
+    if (!p.isCpu) {
+      document.getElementById('next-player-btn').style.display = '';
+    } else {
+      cpuTurnTimer = setTimeout(advanceTurn, 1500);
+    }
+  } else if (p.isCpu) {
+    cpuTurnTimer = setTimeout(runCpuTurn, 1100);
+  }
+}
+
 // =============================================
 // MANUAL INPUT
 // =============================================
@@ -522,7 +792,8 @@ function manualDart(num) {
   if (!gameActive || winnerIdx >= 0) return;
   const p = players[currentPlayer];
   if (!p || p.isCpu) return;
-  if (currentDarts.length >= 3 || p.target === 0) return;
+  if (currentDarts.length >= 3) return;
+  if (variant === 'classic' && p.target === 0) return;
   if (num === 0) {
     registerDart({ name: 'M', number: 0, multiplier: 0 });
   } else {
@@ -542,7 +813,7 @@ function manualDart(num) {
 // =============================================
 function saveState() {
   stateHistory.push({
-    players: players.map(p => ({ target: p.target, hits: p.hits, dartsThrown: p.dartsThrown })),
+    players: players.map(p => ({ target: p.target, hits: p.hits, dartsThrown: p.dartsThrown, score: p.score || 0 })),
     currentPlayer,
     currentDarts: currentDarts.slice(),
     round,
@@ -559,6 +830,7 @@ function undoLastDart() {
     players[i].target = s.target;
     players[i].hits = s.hits;
     players[i].dartsThrown = s.dartsThrown;
+    players[i].score = s.score || 0;
   });
   currentPlayer = last.currentPlayer;
   currentDarts = last.currentDarts;
@@ -582,9 +854,11 @@ function runCpuTurn() {
   if (!gameActive || winnerIdx >= 0) return;
   const p = players[currentPlayer];
   if (!p || !p.isCpu) return;
-  if (currentDarts.length >= 3 || p.target === 0) return;
+  if (currentDarts.length >= 3) return;
+  if (variant === 'classic' && p.target === 0) return;
+  const tgt = variant === 'scoreattack' ? TARGET_SEQ[round - 1] : p.target;
   const opts = { prevSeg: lastSegByPlayer[currentPlayer] || null };
-  const seg = generateCpuThrow(p.target, p.mpr, opts) || { name: 'M', number: 0, multiplier: 0 };
+  const seg = generateCpuThrow(tgt, p.mpr, opts) || { name: 'M', number: 0, multiplier: 0 };
   lastSegByPlayer[currentPlayer] = seg;
   registerDart(seg);
 }
@@ -594,21 +868,47 @@ function runCpuTurn() {
 // =============================================
 function goToWinner() {
   const winner = players[winnerIdx];
+
+  // Update session
+  updateGameSession(winner.name);
+
+  // Save stats for all players
+  players.forEach((p, i) => {
+    savePlayerStat(p.name, p.flag, i === winnerIdx, p.hits, p.dartsThrown, p.isCpu);
+  });
+
   document.getElementById('win-name').textContent = winner.name;
-  document.getElementById('win-details').textContent = `${winner.dartsThrown} darts · ${winner.hits} targets cleared · Round ${round}`;
-  const others = players.filter((_, i) => i !== winnerIdx);
-  document.getElementById('win-others').innerHTML = others.map(p => `
-    <div class="win-other-card">
-      <div class="win-other-name">${escapeHTML(p.name)}</div>
-      <div class="win-other-score">${p.hits}/21 · ${p.dartsThrown} darts</div>
-    </div>
-  `).join('');
-  players.forEach((p, i) => savePlayerStats(p, i === winnerIdx));
+
+  if (variant === 'scoreattack') {
+    document.getElementById('win-details').textContent =
+      `Score: ${winner.score} pts · ${winner.dartsThrown} darts · ${winner.hits} hits`;
+    const others = players.filter((_, i) => i !== winnerIdx);
+    document.getElementById('win-others').innerHTML = others.map(p => `
+      <div class="win-other-card">
+        <div class="win-other-name">${escapeHTML(p.name)}</div>
+        <div class="win-other-score">${p.score} pts · ${p.dartsThrown} darts</div>
+      </div>
+    `).join('');
+  } else {
+    document.getElementById('win-details').textContent =
+      `${winner.dartsThrown} darts · ${winner.hits} targets cleared · Round ${round}`;
+    const others = players.filter((_, i) => i !== winnerIdx);
+    document.getElementById('win-others').innerHTML = others.map(p => `
+      <div class="win-other-card">
+        <div class="win-other-name">${escapeHTML(p.name)}</div>
+        <div class="win-other-score">${p.hits}/21 · ${p.dartsThrown} darts</div>
+      </div>
+    `).join('');
+  }
+
+  renderSessionScore();
   renderPlayerList();
   showScreen('winner');
   spawnConfetti();
+  playWinMusic();
   speakIf('Game shot! ' + winner.name + ' wins!', true);
   if (sfxEnabled) sfxCheckout();
+
   const allCpu = players.every(p => p.isCpu);
   document.getElementById('cpu-auto-msg').style.display = allCpu ? '' : 'none';
   document.getElementById('cpu-stop-btn').style.display = allCpu ? '' : 'none';
@@ -618,6 +918,7 @@ function goToWinner() {
     cpuTurnTimer = setTimeout(() => { if (cpuAutoLeg) nextLeg(); }, 5000);
   }
 }
+
 function stopCpuAuto() {
   cpuAutoLeg = false;
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
@@ -627,14 +928,17 @@ function stopCpuAuto() {
 function nextLeg() {
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
   cpuAutoLeg = false;
+  stopWinMusic();
   launchLeg();
 }
 function endGame() {
   gameActive = false;
+  stopWinMusic();
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
   showScreen('setup');
 }
 function goToMenu() {
+  stopWinMusic();
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
   window.location.href = '../index.html';
 }
@@ -672,6 +976,8 @@ function copyLog() { navigator.clipboard.writeText(document.getElementById('log-
 function showStatsModal() {
   const all = getSavedPlayers();
   const el = document.getElementById('stats-content');
+  const cloudBtn = document.getElementById('stats-cloud-btn');
+  if (cloudBtn) cloudBtn.style.display = sql ? '' : 'none';
   const entries = Object.entries(all).sort((a, b) => {
     const mA = a[1].darts > 0 ? a[1].marks / (a[1].darts / 3) : 0;
     const mB = b[1].darts > 0 ? b[1].marks / (b[1].darts / 3) : 0;
@@ -734,8 +1040,12 @@ function handleWS(data) {
       }, 700);
     }
   }
-  if (event === 'Takeout finished' || (throws.length === 0 && seenThrows > 0)) {
+  if (event === 'Takeout finished' && numThrows === 0) {
+    if (missTimer) { clearTimeout(missTimer); missTimer = null; }
     seenThrows = 0;
+    if (gameActive && (currentDarts.length > 0 || turnEnded) && !players[currentPlayer].isCpu) {
+      advanceTurn();
+    }
   }
 }
 
@@ -745,6 +1055,7 @@ function handleWS(data) {
 document.addEventListener('DOMContentLoaded', () => {
   initSpeech();
   initAutodarts(handleWS);
+  initNeonDB();
   const sel = document.querySelector('.variant-btn.sel');
   if (sel) selectVariant(sel.dataset.v, sel);
   renderPlayerList();

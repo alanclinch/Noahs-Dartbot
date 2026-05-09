@@ -104,6 +104,24 @@
   100% { transform: scale(1);   opacity: 1; }
 }
 
+/* ── SCORE ATTACK score display (replaces target in tile) ─── */
+.atc-score-num {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(52px, 10vw, 130px);
+  font-weight: 900;
+  line-height: .95;
+  color: #fff;
+  transition: color .25s;
+}
+.atc-tile.active .atc-score-num {
+  color: var(--green);
+  text-shadow: 0 0 40px rgba(52,211,153,.6);
+}
+.atc-score-num.advanced {
+  animation: targetPop .45s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* ── PROGRESS STRIP ──────────────────────────────────────── */
 .atc-progress {
   display: grid;
   grid-template-columns: repeat(21, 1fr);
@@ -239,6 +257,18 @@
   border: 2px solid var(--border); border-radius: 8px;
 }
 
+/* ── LEG BADGE ───────────────────────────────────────────── */
+.leg-badge {
+  text-align: center;
+  font-family: 'Orbitron', monospace; font-size: 12px;
+  letter-spacing: 3px; color: var(--gold);
+  padding: 6px 10px;
+  border: 2px solid rgba(252,211,77,.4);
+  border-radius: 8px;
+  background: rgba(252,211,77,.07);
+}
+
+/* ── KEYPAD ──────────────────────────────────────────────── */
 .keypad-wrap {
   display: flex; flex-direction: column; gap: 5px;
   background: var(--surface2); border: 2px solid var(--border);
@@ -268,3 +298,21 @@
 .end-btn:hover { border-color: var(--red); color: var(--red); }
 
 .game-ws { display: flex; align-items: center; gap: 8px; margin-top: auto; }
+
+/* ── SESSION SCORE (winner screen) ───────────────────────── */
+#win-session {
+  width: 100%;
+  text-align: center;
+  padding: 10px 0 2px;
+}
+.session-score {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(16px, 3vw, 22px);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 18px rgba(252,211,77,.4);
+}
+.session-score strong {
+  font-size: 1.25em;
+}

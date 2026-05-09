@@ -21,9 +21,8 @@
   <div class="setup-card">
     <h3>Game Variant</h3>
     <div class="variant-grid">
-      <button class="variant-btn sel" data-v="standard" onclick="selectVariant('standard',this)">Standard</button>
-      <button class="variant-btn" data-v="doubles" onclick="selectVariant('doubles',this)">Doubles</button>
-      <button class="variant-btn" data-v="trebles" onclick="selectVariant('trebles',this)">Trebles</button>
+      <button class="variant-btn sel" data-v="classic" onclick="selectVariant('classic',this)">Classic</button>
+      <button class="variant-btn" data-v="scoreattack" onclick="selectVariant('scoreattack',this)">Score Attack</button>
     </div>
     <div class="variant-desc" id="variant-desc">Hit each number 1 → 20 then Bull. Any segment counts. First to clear wins.</div>
   </div>
@@ -130,7 +129,8 @@
       </div>
     </div>
 
-    <div class="variant-badge" id="game-variant-badge">STANDARD</div>
+    <div class="variant-badge" id="game-variant-badge">CLASSIC</div>
+    <div id="leg-badge" class="leg-badge" style="display:none;"></div>
 
     <div>
       <div class="panel-label">Manual Input</div>
@@ -194,6 +194,7 @@
       <div class="win-name" id="win-name">—</div>
       <div class="win-score" id="win-details">—</div>
     </div>
+    <div id="win-session" style="display:none;"></div>
     <div id="win-others"></div>
 
     <div class="setup-card" style="width:100%;margin-top:4px;">
@@ -230,7 +231,8 @@
   <div class="stats-modal-box">
     <h2>PLAYER STATS</h2>
     <div id="stats-content"></div>
-    <div style="display:flex;gap:12px;margin-top:20px;justify-content:center;">
+    <div style="display:flex;gap:12px;margin-top:20px;justify-content:center;flex-wrap:wrap;">
+      <button class="win-btn win-btn-primary" id="stats-cloud-btn" onclick="loadStatsFromCloud()" style="display:none;">&#8635; Load from Cloud</button>
       <button class="win-btn" onclick="closeStatsModal()">CLOSE</button>
     </div>
   </div>
