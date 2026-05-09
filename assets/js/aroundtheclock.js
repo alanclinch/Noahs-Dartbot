@@ -34,6 +34,7 @@ let cpuTurnTimer = null;
 let turnEnded = false;
 let legNumber = 0;
 let startingPlayer = 0;
+let roundFirstPlayer = 0;
 let lastSpokenRound = 0;
 let firstTurnSpoken = false;
 let gameSession = null; // { playerKeys, wins: {name: count} }
@@ -378,6 +379,7 @@ function launchLeg() {
     p.score = 0;
   });
   currentPlayer = startingPlayer;
+  roundFirstPlayer = currentPlayer;
   startingPlayer = (startingPlayer + 1) % players.length;
   currentDarts = [];
   round = 1;
@@ -660,10 +662,9 @@ function advanceTurn() {
 // Score Attack advanceTurn
 function advanceTurnScoreAttack() {
   if (cpuTurnTimer) { clearTimeout(cpuTurnTimer); cpuTurnTimer = null; }
-  const prevPlayer = currentPlayer;
-  let next = (currentPlayer + 1) % players.length;
-  if (next <= prevPlayer) {
-    // Wrapped — all players done this round
+  const next = (currentPlayer + 1) % players.length;
+  if (next === roundFirstPlayer) {
+    // All players have completed this round
     round++;
     updateRound();
     if (round > 21) {
