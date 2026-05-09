@@ -329,7 +329,10 @@ function addCpu(id) {
 // =============================================
 function renderRecentPlayers() {
   const lists = ['recent-players', 'recent-players-winner'].map(id => document.getElementById(id)).filter(Boolean);
-  const all = getSavedPlayers();
+  // Merge from shared key (cricket/other games) and ATC-specific key so all known players appear
+  let shared = {};
+  try { shared = JSON.parse(localStorage.getItem('dartbot_players') || '{}'); } catch {}
+  const all = Object.assign({}, shared, getSavedPlayers());
   const inGame = new Set(players.filter(p => !p.isCpu).map(p => p.name));
   const candidates = Object.entries(all)
     .filter(([n]) => !inGame.has(n))
