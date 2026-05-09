@@ -666,7 +666,8 @@ function updateScoreboard(){
         }
       } else {
         scoreEl.textContent = p.score;
-        scoreEl.style.fontSize = '';
+        const n = players.length;
+        scoreEl.style.fontSize = n <= 2 ? '72px' : n === 3 ? '60px' : '48px';
         scoreEl.classList.toggle('leading', p.score === maxScore && maxScore > 0);
       }
     }
@@ -739,7 +740,7 @@ function drawMarkSVG(marks, canScore = false){
   if(marks === 0) return '';
   const s = 60, cx = s/2, cy = s/2, r = s*0.38;
   let svg = `<svg viewBox="0 0 ${s} ${s}" width="100%" height="100%" style="max-height:60px;" xmlns="http://www.w3.org/2000/svg">`;
-  const c1 = "#60a5fa";
+  const c1 = "#ffffff";
   const c3 = canScore ? "#34d399" : "#f0a030";
   if(marks === 1){
     svg += `<line x1="${cx-r*.5}" y1="${cy+r*.7}" x2="${cx+r*.5}" y2="${cy-r*.7}" stroke="${c1}" stroke-width="5" stroke-linecap="round"/>`;
@@ -802,7 +803,7 @@ function advanceTurn(){
     const next = players[currentPlayer];
     if (!testMode) {
       if (next.isCpu) { if (sfxEnabled) sfxCpuTurn(); }
-      else { if (voiceEnabled && gameVariant !== 'arcade') speak(playerCallName(next)); }
+      else { if (sfxEnabled) sfxNext(); }
     }
     startTurn(); advancing = false;
   }, testMode ? 0 : 600);

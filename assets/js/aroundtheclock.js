@@ -34,6 +34,8 @@ let cpuTurnTimer = null;
 let turnEnded = false;
 let legNumber = 0;
 let startingPlayer = 0;
+let lastSpokenRound = 0;
+let firstTurnSpoken = false;
 let gameSession = null; // { playerKeys, wins: {name: count} }
 
 // =============================================
@@ -387,6 +389,8 @@ function launchLeg() {
   throwLog = [];
   missTimer = null;
   lastSegByPlayer = {};
+  lastSpokenRound = 0;
+  firstTurnSpoken = false;
   stopWinMusic();
   document.getElementById('next-player-btn').style.display = 'none';
   buildBoard();
@@ -410,7 +414,10 @@ function buildBoard() {
       <div class="atc-tile" id="atc-tile-${i}">
         <div class="atc-tile-header">
           <div class="atc-tile-flag">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
-          <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+          <div class="atc-tile-name-block">
+            <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+            <div class="atc-tile-subscore" id="atc-subscore-${i}">0 pts</div>
+          </div>
           <div class="atc-tile-stats">${p.isCpu ? p.mpr.toFixed(1) + ' MPR' : ''}</div>
         </div>
         <div class="atc-target-display">
@@ -428,7 +435,10 @@ function buildBoard() {
       <div class="atc-tile" id="atc-tile-${i}">
         <div class="atc-tile-header">
           <div class="atc-tile-flag">${p.isCpu ? makeFaceSVG(p.face, 36) : renderFlag(p.flag)}</div>
-          <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+          <div class="atc-tile-name-block">
+            <div class="atc-tile-name">${escapeHTML(p.name)}</div>
+            <div class="atc-tile-subscore" id="atc-subscore-${i}">0 / 21</div>
+          </div>
           <div class="atc-tile-stats">${p.isCpu ? p.mpr.toFixed(1) + ' MPR' : ''}</div>
         </div>
         <div class="atc-target-display">
@@ -464,6 +474,8 @@ function updatePlayerTile(i, animate = false) {
         scoreEl.classList.add('advanced');
       }
     }
+    const subEl = document.getElementById('atc-subscore-' + i);
+    if (subEl) subEl.textContent = (p.score || 0) + ' pts';
     const roundEl = document.getElementById('atc-round-' + i);
     if (roundEl) roundEl.textContent = 'Round ' + round + ' / 21';
     const dartsEl = document.getElementById('atc-darts-' + i);
@@ -508,6 +520,8 @@ function updatePlayerTile(i, animate = false) {
         return `<div class="${cls.join(' ')}">${isBull ? '★' : t}</div>`;
       }).join('');
     }
+    const subEl = document.getElementById('atc-subscore-' + i);
+    if (subEl) subEl.textContent = p.hits + ' / 21';
     const cnt = document.getElementById('atc-progress-count-' + i);
     if (cnt) cnt.textContent = p.hits;
     const dartsEl = document.getElementById('atc-darts-' + i);
@@ -558,6 +572,25 @@ function beginTurn() {
   updateTurnDisplay();
   updateTargetDisplay();
   document.getElementById('next-player-btn').style.display = 'none';
+
+  // Speech: name on first turn, target number at start of each round
+  if (!testMode) {
+    let nameDelay = 0;
+    if (!firstTurnSpoken && !p.isCpu) {
+      firstTurnSpoken = true;
+      if (voiceEnabled) speak(`${p.name}, you're up first`);
+      nameDelay = 1800;
+    }
+    if (round > lastSpokenRound) {
+      lastSpokenRound = round;
+      if (voiceEnabled) {
+        const tgt = TARGET_SEQ[round - 1];
+        const numStr = tgt === 25 ? 'Bull' : `Number ${tgt}`;
+        setTimeout(() => speak(numStr), nameDelay > 0 ? nameDelay : 500);
+      }
+    }
+  }
+
   if (p.isCpu) {
     cpuTurnTimer = setTimeout(runCpuTurn, 1300);
   }
@@ -704,16 +737,13 @@ function registerDartClassic(seg, p) {
 
   if (advances) {
     if (sfxEnabled) sfxHit();
-    speakIf(dartSpeak(seg));
     const flashColor = p.target === 0 ? 'var(--gold)' : 'var(--green)';
     const flashText  = p.target === 0 ? 'GAME SHOT!' : (p.target === 25 ? 'BULL NEXT!' : 'TARGET ' + p.target);
     flash(flashText, flashColor);
   } else if (isM) {
     if (sfxEnabled) sfxMiss();
-    speakIf('Miss');
   } else {
     if (sfxEnabled) sfxMiss();
-    speakIf(dartSpeak(seg));
   }
 
   updatePlayerTile(currentPlayer, advances);
@@ -758,14 +788,11 @@ function registerDartScoreAttack(seg, p) {
 
   if (pts > 0) {
     if (sfxEnabled) sfxHit();
-    speakIf(dartSpeak(seg));
     flash('+' + pts, 'var(--green)');
   } else if (isM) {
     if (sfxEnabled) sfxMiss();
-    speakIf('Miss');
   } else {
     if (sfxEnabled) sfxMiss();
-    speakIf(dartSpeak(seg));
   }
 
   updatePlayerTile(currentPlayer, pts > 0);
