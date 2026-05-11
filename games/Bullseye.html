@@ -6,10 +6,10 @@
 <title>Bullseye - Autodarts</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/game.css?v=2">
-<link rel="stylesheet" href="../assets/css/bullseye.css?v=2">
-<script src="../assets/js/autodarts.js?v=2"></script>
-<script src="../assets/js/utils.js?v=2"></script>
+<link rel="stylesheet" href="../assets/css/game.css?v=3">
+<link rel="stylesheet" href="../assets/css/bullseye.css?v=3">
+<script src="../assets/js/autodarts.js?v=3"></script>
+<script src="../assets/js/utils.js?v=3"></script>
 </head>
 <body>
 <div id="setup" class="screen active">
@@ -30,17 +30,6 @@
   </div>
 </div>
 <div id="game" class="screen">
-  <aside class="left-sidebar">
-    <div class="score-tile">
-      <div class="tile-label">Bank</div>
-      <div class="bank-total" id="bank-total">&pound;0</div>
-    </div>
-    <div class="inventory-block">
-      <div class="side-title">Inventory</div>
-      <div id="inventory-list" class="inventory-list"></div>
-    </div>
-    <div class="round-list" id="round-list"></div>
-  </aside>
   <main class="stage">
     <div class="topline">
       <div>
@@ -59,6 +48,22 @@
         <span id="center-target">Faces</span>
       </div>
     </div>
+  </main>
+  <aside class="right-sidebar">
+    <div class="target-card">
+      <div class="side-title">What To Do</div>
+      <div class="round-title-panel" id="round-title-panel">Bully's Category Board</div>
+      <div class="target-copy" id="target-copy">Hit an active category segment to unlock a question.</div>
+    </div>
+    <div class="score-tile">
+      <div class="tile-label">Bank</div>
+      <div class="bank-total" id="bank-total">&pound;0</div>
+    </div>
+    <div class="turn-card">
+      <div class="side-title">Darts</div>
+      <div class="dart-slots" id="dart-slots"></div>
+      <div class="turn-total" id="turn-total">Total: 0</div>
+    </div>
     <div class="manual-panel">
       <div class="manual-header">Manual Input</div>
       <div class="manual-grid" id="manual-grid"></div>
@@ -68,18 +73,11 @@
         <button class="mod-btn miss" onclick="manualDart(0)">Miss</button>
       </div>
     </div>
-  </main>
-  <aside class="right-sidebar">
-    <div class="target-card">
-      <div class="side-title">Current Target</div>
-      <div class="target-main" id="target-main">Aim for Faces</div>
-      <div class="target-copy" id="target-copy">Hit an active category segment to unlock a question.</div>
+    <div class="inventory-block">
+      <div class="side-title">Prizes</div>
+      <div id="inventory-list" class="inventory-list"></div>
     </div>
-    <div class="turn-card">
-      <div class="side-title">Darts</div>
-      <div class="dart-slots" id="dart-slots"></div>
-      <div class="turn-total" id="turn-total">Total: 0</div>
-    </div>
+    <div class="round-list" id="round-list"></div>
     <div class="action-stack" id="action-stack">
       <button class="secondary-btn" onclick="nextPhase()">Skip / Continue</button>
       <button class="danger-btn" onclick="endGame()">End Game</button>
@@ -115,6 +113,6 @@
 </div>
 <div id="announce"></div>
 <div id="confetti"></div>
-<script src="../assets/js/bullseye.js?v=2"></script>
+<script src="../assets/js/bullseye.js?v=3"></script>
 </body>
 </html>
