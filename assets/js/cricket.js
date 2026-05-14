@@ -748,6 +748,52 @@ function runTestSuiteAgain() {
   showTestConfig();
 }
 
+function copyTestResults(btn) {
+  if (!testSuite) return;
+  const mean = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const stddev = arr => {
+    if (arr.length < 2) return 0;
+    const m = mean(arr);
+    return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1));
+  };
+  const rows = Object.values(testSuite.perBot)
+    .filter(b => b.games > 0)
+    .sort((a, b) => a.targetMpr - b.targetMpr);
+  const lines = [
+    `Cricket test suite — preset: ${TEST_PRESETS[testSuite.preset].name}, session ${testSuite.sessionId.slice(0,8)}, ${testSuite.completedGames} games`,
+    '',
+    '| Bot | Target | Actual | Stddev | Δ | Games | Win% |',
+    '|---|---|---|---|---|---|---|',
+    ...rows.map(r => {
+      const avg = r.mprs.length ? mean(r.mprs) : 0;
+      const sd = stddev(r.mprs);
+      const dev = avg - r.targetMpr;
+      const winPct = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0;
+      return `| ${r.name} | ${r.targetMpr.toFixed(1)} | ${avg.toFixed(3)} | ${sd.toFixed(3)} | ${dev >= 0 ? '+' : ''}${dev.toFixed(3)} | ${r.games} | ${winPct}% |`;
+    })
+  ];
+  const text = lines.join('\n');
+  const flash = (msg) => {
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = msg;
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => flash('COPIED ✓'))
+      .catch(() => flash('COPY FAILED'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); flash('COPIED ✓'); }
+    catch { flash('COPY FAILED'); }
+    document.body.removeChild(ta);
+  }
+}
+
 function cancelTestSuite() {
   if (!testSuite) return;
   if (!confirm(`Cancel test suite? ${testSuite.completedGames} games completed so far will still be in Neon.`)) return;
@@ -1421,11 +1467,13 @@ function getMarkControlRange(round, cpu, p) {
   const target = cpu.mpr;
 
   // Deficit: how far behind/ahead of pace are we? Catch up in one round,
-  // but cap the per-turn aim within ±1.0 of target so corrections feel
-  // human rather than robotic.
+  // but cap the per-turn aim near target so corrections feel human rather
+  // than robotic. Cap scales with target so high-MPR bots get the headroom
+  // they need to recover from a bad round (their natural variance is larger).
   const expectedCumulative = round * target;
   const deficit = expectedCumulative - p.marksThrown;
-  let aim = Math.max(target - 1.0, Math.min(target + 1.0, deficit));
+  const cap = Math.max(1.0, target * 0.35);
+  let aim = Math.max(target - cap, Math.min(target + cap, deficit));
 
   // Reactive shift: half the time, nudge aim toward the human's current
   // form. Caps at ±0.3 so the bot is always slower to react than the
