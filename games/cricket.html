@@ -10,7 +10,7 @@
 <script src="../assets/js/autodarts.js?v=2"></script>
 <script src="../assets/js/utils.js?v=2"></script>
 <script src="../assets/js/bots.js?v=2"></script>
-<link rel="stylesheet" href="../assets/css/cricket.css?v=4">
+<link rel="stylesheet" href="../assets/css/cricket.css?v=5">
 </head>
 <body>
 
@@ -53,6 +53,10 @@
         <span>Sound Effects</span>
       </label>
       <label class="setting-row">
+        <input type="checkbox" id="enhanced-graphics-toggle" onchange="setEnhancedGraphics(this.checked)">
+        <span>Enhanced Graphics</span>
+      </label>
+      <label class="setting-row">
         <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)">
         <span>Test Mode</span>
       </label>
@@ -93,6 +97,20 @@
 
 <!-- GAME -->
 <div id="game" class="screen">
+  <div class="enhanced-topbar" aria-hidden="true">
+    <div class="enhanced-brand">
+      <span>DART</span><span>BOT</span>
+      <small>LOCAL DARTS. LIVE SCORING.</small>
+    </div>
+    <div class="enhanced-match-strip">
+      <div class="enhanced-match-cell">MATCH<br><strong>CRICKET</strong></div>
+      <div class="enhanced-match-title">CRICKET</div>
+      <div class="enhanced-match-cell">ROUND<br><strong id="enhanced-round-top">1</strong></div>
+    </div>
+    <div class="enhanced-icons">
+      <span></span><span></span>
+    </div>
+  </div>
   <div id="scoreboard">
     <div class="sb-top" id="sb-top"></div>
     <div class="sb-body" id="sb-body"></div>
@@ -208,6 +226,44 @@
   </div>
 </div>
 
+<!-- TEST SUITE — CONFIG -->
+<div id="test-config" class="screen">
+  <div class="setup-title">TEST SUITE <span>⚙️</span></div>
+  <div class="setup-card">
+    <h3>Pick a preset</h3>
+    <div id="test-preset-list"></div>
+    <div style="display:flex; gap:14px; margin-top:18px;">
+      <button class="win-btn win-btn-primary" onclick="startTestSuite()">RUN</button>
+      <button class="win-btn" onclick="cancelTestConfig()">CANCEL</button>
+    </div>
+  </div>
+  <div class="setup-card" style="font-size:13px; color:var(--muted); line-height:1.5;">
+    Test runs CPU vs CPU only. No humans, no fullscreen, no sound. Results aggregate per bot and save to Neon under a unique session ID so you can filter later. Each leg is safety-capped at 50 rounds.
+  </div>
+</div>
+
+<!-- TEST SUITE — PROGRESS OVERLAY (sits on top of #game while running) -->
+<div id="test-progress-overlay">
+  <div class="tp-card">
+    <div class="tp-label">TEST RUNNING</div>
+    <div class="tp-count" id="test-progress-count">0 / 0</div>
+    <div class="tp-pct" id="test-progress-pct">0%</div>
+    <div class="tp-bar"><div class="tp-bar-fill" id="test-progress-bar-fill"></div></div>
+    <div class="tp-match" id="test-progress-match">—</div>
+    <button class="win-btn win-btn-danger" style="margin-top:18px;" onclick="cancelTestSuite()">CANCEL</button>
+  </div>
+</div>
+
+<!-- TEST SUITE — COMPLETE -->
+<div id="test-complete" class="screen">
+  <div class="setup-title">TEST COMPLETE <span>📊</span></div>
+  <div class="setup-card" id="test-complete-table"></div>
+  <div class="win-buttons">
+    <button class="win-btn win-btn-primary" onclick="runTestSuiteAgain()">RUN AGAIN</button>
+    <button class="win-btn win-btn-danger" onclick="goToMenu()">MENU</button>
+  </div>
+</div>
+
 <!-- ARCADE CONTINUE MODAL -->
 <div id="arcade-continue-modal" class="modal-overlay">
   <div class="cpu-modal-box" style="text-align:center;">
@@ -273,6 +329,6 @@
   <div class="be-main" id="be-main"></div>
   <div class="be-sub" id="be-sub"></div>
 </div>
-<script src="../assets/js/cricket.js?v=4"></script>
+<script src="../assets/js/cricket.js?v=5"></script>
 </body>
 </html>

@@ -149,7 +149,8 @@ function saveQuestionHistory(history) {
 }
 
 function nextQuestion(categoryId) {
-  const questions = FALLBACK_QUESTIONS[categoryId] || FALLBACK_QUESTIONS.general;
+  const externalBank = window.BULLSEYE_QUESTIONS || {};
+  const questions = externalBank[categoryId] || FALLBACK_QUESTIONS[categoryId] || externalBank.general || FALLBACK_QUESTIONS.general;
   const ids = questions.map(questionId);
   const history = loadQuestionHistory();
   const used = Array.isArray(history[categoryId])
@@ -426,7 +427,7 @@ function finishGame(starWon) {
 }
 
 function addDart(seg, label) {
-  state.darts.push({ label: isMiss(seg) ? 'Miss' : dartSpeak(seg), sub: label, score: segScore(seg), miss: isMiss(seg) });
+  state.darts.push({ label: isMiss(seg) ? 'Miss' : dartSpeak(seg), sub: label, score: segScore(seg), miss: isMiss(seg), seg });
 }
 
 function prizeZone(seg) {
@@ -514,11 +515,16 @@ function renderBoard() {
   if (!svg) return;
   svg.innerHTML = '';
   const center = document.getElementById('board-center-readout');
+  const wrap = svg.closest('.board-wrap');
   const phase = state.phase || 'r1';
-  if (center) center.classList.toggle('hidden', phase.startsWith('r1') || phase === 'r3');
-  if (phase.startsWith('r1')) return renderCategoryBoard(svg);
-  if (phase === 'r3') return renderPrizeBoard(svg);
-  renderStandardBoard(svg);
+  const isStandardBoard = !phase.startsWith('r1') && phase !== 'r3';
+  if (wrap) wrap.classList.toggle('standard-board-active', isStandardBoard);
+  svg.classList.toggle('standard-board-overlay', isStandardBoard);
+  if (center) center.classList.add('hidden');
+  if (phase.startsWith('r1')) renderCategoryBoard(svg);
+  else if (phase === 'r3') renderPrizeBoard(svg);
+  else renderStandardBoard(svg);
+  renderDartMarkers(svg, phase);
 }
 
 function renderCategoryBoard(svg) {
@@ -561,16 +567,58 @@ function renderPrizeBoard(svg) {
 }
 
 function renderStandardBoard(svg) {
-  const numbers = STANDARD_NUMBERS;
-  const cx = 210, cy = 210, outer = 196, inner = 52, step = 360 / numbers.length;
-  numbers.forEach((number, i) => {
-    const start = -90 + i * step, end = start + step - 1.2;
-    const fill = i % 2 ? '#22282f' : '#d52d35';
-    svg.insertAdjacentHTML('beforeend', `<path class="board-segment" d="${ringSlicePath(cx, cy, inner, outer, start, end)}" fill="${fill}"></path>`);
-    const mid = polar(cx, cy, 176, start + step / 2);
-    svg.insertAdjacentHTML('beforeend', `<text class="board-label number-label" x="${mid.x}" y="${mid.y}">${number}</text>`);
+  svg.insertAdjacentHTML('beforeend', '<circle cx="210" cy="210" r="207" class="standard-board-hit-area"></circle>');
+}
+
+function renderDartMarkers(svg, phase) {
+  (state.darts || []).forEach((dart, index) => {
+    const point = dartMarkerPoint(dart.seg, index, phase);
+    if (!point) return;
+    const rot = point.angle + 38;
+    const miss = dart.miss ? ' miss' : '';
+    svg.insertAdjacentHTML('beforeend', `
+      <g class="dart-marker${miss}" transform="translate(${point.x} ${point.y}) rotate(${rot})">
+        <line class="dart-shadow" x1="-27" y1="13" x2="6" y2="-2"></line>
+        <line class="dart-shaft" x1="-30" y1="10" x2="5" y2="-2"></line>
+        <path class="dart-flight" d="M -33 8 L -45 1 L -40 15 Z"></path>
+        <circle class="dart-pin" cx="5" cy="-2" r="5"></circle>
+        <text class="dart-count" x="-21" y="-9" transform="rotate(${-rot} -21 -9)">${index + 1}</text>
+      </g>`);
   });
-  svg.insertAdjacentHTML('beforeend', '<circle cx="210" cy="210" r="45" fill="#df3036" stroke="#f3c742" stroke-width="7"></circle><circle cx="210" cy="210" r="19" fill="#f3c742"></circle>');
+}
+
+function dartMarkerPoint(seg, index, phase) {
+  if (isMiss(seg)) return { x: 332 + index * 12, y: 72 + index * 12, angle: 45 };
+  const num = Number(seg && seg.number) || 0;
+  const mult = Number(seg && seg.multiplier) || 1;
+  if (num === 25) {
+    const nudge = [[0, 0], [10, -4], [-8, 7], [4, 11], [-11, -5], [12, 8]][index % 6];
+    return { x: 210 + nudge[0], y: 210 + nudge[1], angle: 25 + index * 18 };
+  }
+
+  if (phase && phase.startsWith('r1')) {
+    const idx = CATEGORY_PAIRS.findIndex(c => c.numbers.includes(num));
+    if (idx < 0) return null;
+    return pointOnBoard(idx, CATEGORY_PAIRS.length, mult >= 3 ? 57 : mult >= 2 ? 93 : 139, index);
+  }
+
+  if (phase === 'r3') {
+    const idx = CATEGORY_PAIRS.findIndex(c => c.numbers.includes(num));
+    if (idx < 0 || idx >= 8) return null;
+    return pointOnBoard(idx, 8, 128, index);
+  }
+
+  const idx = STANDARD_NUMBERS.indexOf(num);
+  if (idx < 0) return null;
+  const radius = mult >= 3 ? 111 : mult >= 2 ? 181 : 145;
+  return pointOnBoard(idx, STANDARD_NUMBERS.length, radius, index);
+}
+
+function pointOnBoard(index, total, radius, dartIndex) {
+  const step = 360 / total;
+  const angle = -90 + index * step + step / 2;
+  const jitter = (dartIndex % 3 - 1) * 5;
+  return { ...polar(210, 210, radius + jitter, angle), angle };
 }
 
 function ringSlicePath(cx, cy, r0, r1, a0, a1) {

@@ -147,6 +147,12 @@ button { cursor: pointer; }
   padding: 0 8px;
 }
 
+.question-credit {
+  margin: 10px 0 0;
+  color: rgba(232, 237, 245, .58);
+  font-size: 9px;
+}
+
 .primary-btn,
 .secondary-btn,
 .danger-btn,
@@ -375,16 +381,38 @@ button { cursor: pointer; }
   pointer-events: none;
 }
 
+.standard-board-image {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  width: min(82vh, 96%);
+  max-width: 900px;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 48px rgba(0, 0, 0, .62));
+  pointer-events: none;
+}
+
+.board-wrap.standard-board-active .standard-board-image {
+  display: block;
+}
+
 .bullseye-board {
-  width: min(78vh, 96%);
+  width: min(82vh, 96%);
   max-width: 900px;
   aspect-ratio: 1;
   filter: drop-shadow(0 30px 48px rgba(0, 0, 0, .62));
+  position: relative;
+  z-index: 2;
+}
+
+.bullseye-board.standard-board-overlay {
+  filter: none;
 }
 
 .board-segment {
-  stroke: rgba(255, 255, 255, .34);
-  stroke-width: 1.4;
+  stroke: rgba(215, 217, 206, .48);
+  stroke-width: .86;
   transition: opacity .2s, filter .2s;
 }
 
@@ -404,6 +432,74 @@ button { cursor: pointer; }
 }
 .board-bull-outer { fill: #202026; stroke: rgba(255,255,255,.55); stroke-width: 1.4; }
 .board-bull-inner { fill: #df4654; stroke: rgba(255,255,255,.55); stroke-width: 1.2; }
+.dart-board-shadow {
+  fill: #080a0b;
+  stroke: rgba(255, 255, 255, .16);
+  stroke-width: 2;
+}
+
+.dart-number-band { fill: #0c0e11; }
+.dart-bed-light { fill: #e0d2b5; }
+.dart-bed-dark { fill: #17191d; }
+.dart-ring-red { fill: #c92b35; }
+.dart-ring-green { fill: #1c8a56; }
+.dart-wire-ring {
+  fill: none;
+  stroke: rgba(230, 232, 221, .58);
+  stroke-width: .9;
+}
+.standard-board-hit-area {
+  fill: transparent;
+  stroke: none;
+}
+
+.dart-marker {
+  pointer-events: none;
+  filter: drop-shadow(0 6px 6px rgba(0, 0, 0, .65));
+}
+
+.dart-shadow {
+  stroke: rgba(0, 0, 0, .5);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.dart-shaft {
+  stroke: #f0f3f7;
+  stroke-width: 3.4;
+  stroke-linecap: round;
+}
+
+.dart-flight {
+  fill: #f8cf3a;
+  stroke: #111820;
+  stroke-width: 1.5;
+}
+
+.dart-pin {
+  fill: #ff4b58;
+  stroke: #fff;
+  stroke-width: 1.6;
+}
+
+.dart-count {
+  fill: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  paint-order: stroke;
+  stroke: #05080b;
+  stroke-width: 3px;
+}
+
+.dart-marker.miss {
+  opacity: .72;
+}
+
+.dart-marker.miss .dart-pin {
+  fill: var(--red);
+}
 .prize-red { fill: #df3036; }
 .prize-black { fill: #25252b; }
 .prize-inner-slice { fill: #111; opacity: .86; }
@@ -457,6 +553,13 @@ button { cursor: pointer; }
 
 .number-label {
   font-size: 13px;
+}
+
+.dart-number {
+  font-size: 15px;
+  fill: #f6f7fb;
+  stroke: rgba(0, 0, 0, .9);
+  stroke-width: 2.8px;
 }
 
 .board-center-readout {

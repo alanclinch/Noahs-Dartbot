@@ -68,6 +68,17 @@ async function initNeonDB() {
     sql = neon(connString);
     console.log('✅ Connected to Neon PostgreSQL Database!');
     try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS flag VARCHAR(10)`; } catch(e) {}
+    try {
+      await sql`CREATE TABLE IF NOT EXISTS test_sessions (
+        id TEXT PRIMARY KEY,
+        preset TEXT NOT NULL,
+        started_at TIMESTAMPTZ DEFAULT NOW(),
+        completed_at TIMESTAMPTZ,
+        total_games INT NOT NULL,
+        completed_games INT NOT NULL DEFAULT 0
+      )`;
+      await sql`ALTER TABLE games ADD COLUMN IF NOT EXISTS test_session_id TEXT`;
+    } catch(e) { console.warn('Test session schema migration:', e); }
     renderRecentPlayers();
   } catch (e) {
     console.error('❌ Failed to connect to Neon DB:', e);
@@ -202,6 +213,7 @@ const VARIANTS = {
 let testMode = false;
 let voiceEnabled = true;
 let sfxEnabled = true;
+let enhancedGraphics = false;
 let gameVariant = 'standard';
 let players = [];
 let currentPlayer = 0;
@@ -226,6 +238,7 @@ let arcadeWaveTimer = null;
 let advancing = false;
 let takeoutTimer = null;
 let gameSession = null; // { playerKeys: string, wins: {[name]: number} }
+let testSuite = null;   // when running benchmark mode — see TEST SUITE section
 
 async function flushThrowsToNeon() {
   if (!sql || pendingThrowsToSave.length === 0) return;
@@ -327,6 +340,7 @@ function setTestMode(val) {
   testMode = val;
   if (val) cancelSpeech();
   try { localStorage.setItem('dartbot_testmode', val ? '1' : '0'); } catch {}
+  checkStartBtn();
 }
 function setVoice(val) {
   voiceEnabled = val;
@@ -336,6 +350,15 @@ function setVoice(val) {
 function setSfx(val) {
   sfxEnabled = val;
   try { localStorage.setItem('dartbot_sfx', val ? '1' : '0'); } catch {}
+}
+function applyEnhancedGraphics() {
+  const gameEl = document.getElementById('game');
+  if (gameEl) gameEl.classList.toggle('enhanced-graphics', enhancedGraphics);
+}
+function setEnhancedGraphics(val) {
+  enhancedGraphics = val;
+  applyEnhancedGraphics();
+  try { localStorage.setItem('dartbot_cricket_enhanced_graphics', val ? '1' : '0'); } catch {}
 }
 
 function buildCpuGrid(){
@@ -455,11 +478,16 @@ function addSavedPlayer(name, flag = 'sco'){
 }
 
 function checkStartBtn(){
-  const valid = gameVariant === 'arcade' ? players.length >= 1 : players.length >= 2;
   const sb = document.getElementById('start-btn');
-  if(sb) sb.disabled = !valid;
   const nb = document.getElementById('next-leg-btn');
-  if(nb) nb.disabled = !valid;
+  if (testMode) {
+    if (sb) { sb.disabled = false; sb.textContent = 'RUN TEST SUITE'; }
+    if (nb) nb.disabled = false;
+    return;
+  }
+  const valid = gameVariant === 'arcade' ? players.length >= 1 : players.length >= 2;
+  if (sb) { sb.disabled = !valid; sb.textContent = 'START GAME'; }
+  if (nb) nb.disabled = !valid;
 }
 
 // =============================================
@@ -470,6 +498,7 @@ function getSessionKey(){
 }
 
 function startGame(){
+  if (testMode) { showTestConfig(); return; }
   if(gameVariant === 'arcade' ? players.length < 1 : players.length < 2) return;
   gameSession = null;
   legNumber = 0;
@@ -483,6 +512,254 @@ function startGame(){
   }
   document.documentElement.requestFullscreen().catch(() => {});
   launchLeg();
+}
+
+// =============================================
+// TEST SUITE — pre-programmed CPU vs CPU benchmark
+// =============================================
+const TEST_PRESETS = {
+  quick: {
+    name: 'Quick',
+    blurb: '510 games · self-play + adjacent pairs',
+    build: () => {
+      const all = CPU_PLAYERS;
+      const matchups = [];
+      all.forEach(c => matchups.push({a: c.id, b: c.id, count: 30}));
+      for (let i = 0; i < all.length - 1; i++) {
+        matchups.push({a: all[i].id, b: all[i+1].id, count: 30});
+      }
+      return matchups;
+    }
+  },
+  standard: {
+    name: 'Standard',
+    blurb: '1170 games · self-play + adjacent + spread',
+    build: () => {
+      const all = CPU_PLAYERS;
+      const matchups = [];
+      all.forEach(c => matchups.push({a: c.id, b: c.id, count: 50}));
+      for (let i = 0; i < all.length - 1; i++) {
+        matchups.push({a: all[i].id, b: all[i+1].id, count: 50});
+      }
+      [['cpu0','cpu3'],['cpu1','cpu4'],['cpu2','cpu5'],['cpu3','cpu8']].forEach(([a,b]) => {
+        matchups.push({a, b, count: 80});
+      });
+      return matchups;
+    }
+  },
+  thorough: {
+    name: 'Thorough',
+    blurb: '2025 games · all unique pairings',
+    build: () => {
+      const all = CPU_PLAYERS;
+      const matchups = [];
+      for (let i = 0; i < all.length; i++) {
+        for (let j = i; j < all.length; j++) {
+          matchups.push({a: all[i].id, b: all[j].id, count: 45});
+        }
+      }
+      return matchups;
+    }
+  }
+};
+
+function showTestConfig() {
+  const sc = document.getElementById('test-config');
+  if (!sc) return;
+  const list = document.getElementById('test-preset-list');
+  list.innerHTML = Object.entries(TEST_PRESETS).map(([key, p], idx) => {
+    const totalGames = p.build().reduce((s, m) => s + m.count, 0);
+    return `<label class="test-preset-row${idx === 1 ? ' sel' : ''}" data-preset="${key}">
+      <input type="radio" name="test-preset" value="${key}"${idx === 1 ? ' checked' : ''}>
+      <div class="test-preset-info">
+        <div class="test-preset-name">${p.name}</div>
+        <div class="test-preset-blurb">${p.blurb} (${totalGames} games)</div>
+      </div>
+    </label>`;
+  }).join('');
+  list.querySelectorAll('.test-preset-row').forEach(row => {
+    row.addEventListener('click', () => {
+      list.querySelectorAll('.test-preset-row').forEach(r => r.classList.remove('sel'));
+      row.classList.add('sel');
+      row.querySelector('input').checked = true;
+    });
+  });
+  showScreen('test-config');
+}
+
+function cancelTestConfig() { showScreen('setup'); }
+
+function startTestSuite() {
+  const chosen = document.querySelector('input[name="test-preset"]:checked');
+  if (!chosen) return;
+  const presetKey = chosen.value;
+  const preset = TEST_PRESETS[presetKey];
+  const matchups = preset.build();
+  const totalGames = matchups.reduce((s, m) => s + m.count, 0);
+  testSuite = {
+    sessionId: crypto.randomUUID(),
+    preset: presetKey,
+    matchups,
+    matchupIdx: 0,
+    gameInMatchup: 0,
+    totalGames,
+    completedGames: 0,
+    perBot: {},   // cpuId -> { games, wins, mprs: [] }
+    startedAt: Date.now()
+  };
+  CPU_PLAYERS.forEach(c => { testSuite.perBot[c.id] = { games: 0, wins: 0, mprs: [], targetMpr: c.mpr, name: c.name, flag: c.flag }; });
+  if (sql) {
+    sql`INSERT INTO test_sessions (id, preset, total_games) VALUES (${testSuite.sessionId}, ${presetKey}, ${totalGames})`
+      .catch(e => console.warn('test_sessions insert failed:', e));
+  }
+  showScreen('game');
+  const overlay = document.getElementById('test-progress-overlay');
+  if (overlay) overlay.style.display = 'flex';
+  runNextTestGame();
+}
+
+function runNextTestGame() {
+  if (!testSuite) return;
+  let mu = testSuite.matchups[testSuite.matchupIdx];
+  while (mu && testSuite.gameInMatchup >= mu.count) {
+    testSuite.matchupIdx++;
+    testSuite.gameInMatchup = 0;
+    mu = testSuite.matchups[testSuite.matchupIdx];
+  }
+  if (!mu) { finishTestSuite(); return; }
+  const cpuA = CPU_PLAYERS.find(c => c.id === mu.a);
+  const cpuB = CPU_PLAYERS.find(c => c.id === mu.b);
+  const sameBot = mu.a === mu.b;
+  gameVariant = 'standard';
+  players = [
+    { name: cpuA.name, color: PLAYER_COLORS[0], flag: cpuA.flag, isCpu: true, cpuData: cpuA, score: 0,
+      marks: {20:0,19:0,18:0,17:0,16:0,15:0,25:0}, dartsThrown: 0, marksThrown: 0, cpuMissStreak: 0 },
+    { name: cpuB.name + (sameBot ? ' (2)' : ''), color: PLAYER_COLORS[1], flag: cpuB.flag, isCpu: true,
+      cpuData: cpuB, score: 0, marks: {20:0,19:0,18:0,17:0,16:0,15:0,25:0},
+      dartsThrown: 0, marksThrown: 0, cpuMissStreak: 0 }
+  ];
+  startingPlayer = testSuite.gameInMatchup % 2;
+  testSuite.gameInMatchup++;
+  testSuite.completedGames++;
+  updateTestProgress();
+  launchLeg();
+}
+
+function updateTestProgress() {
+  if (!testSuite) return;
+  const overlay = document.getElementById('test-progress-overlay');
+  if (!overlay) return;
+  const mu = testSuite.matchups[testSuite.matchupIdx];
+  const cpuA = mu && CPU_PLAYERS.find(c => c.id === mu.a);
+  const cpuB = mu && CPU_PLAYERS.find(c => c.id === mu.b);
+  const pct = Math.round((testSuite.completedGames / testSuite.totalGames) * 100);
+  document.getElementById('test-progress-count').textContent =
+    `${testSuite.completedGames} / ${testSuite.totalGames}`;
+  document.getElementById('test-progress-pct').textContent = `${pct}%`;
+  document.getElementById('test-progress-bar-fill').style.width = `${pct}%`;
+  document.getElementById('test-progress-match').textContent =
+    cpuA && cpuB ? `${cpuA.name} (${cpuA.mpr.toFixed(1)}) vs ${cpuB.name} (${cpuB.mpr.toFixed(1)})` : '';
+}
+
+function recordTestResult(winnerIdx) {
+  if (!testSuite) return;
+  const winnerId = players[winnerIdx] && players[winnerIdx].cpuData && players[winnerIdx].cpuData.id;
+  const seenIds = new Set();
+  players.forEach((p) => {
+    const id = p.cpuData && p.cpuData.id;
+    if (!id) return;
+    const slot = testSuite.perBot[id];
+    if (!slot) return;
+    // Count game once per bot (self-play has two slots with same id).
+    if (!seenIds.has(id)) {
+      slot.games++;
+      if (id === winnerId) slot.wins++;
+      seenIds.add(id);
+    }
+    // Record every instance's MPR so self-play contributes two samples.
+    if (p.dartsThrown >= 3) slot.mprs.push(p.marksThrown / (p.dartsThrown / 3));
+  });
+  if (sql) {
+    sql`UPDATE test_sessions SET completed_games = ${testSuite.completedGames} WHERE id = ${testSuite.sessionId}`
+      .catch(() => {});
+  }
+}
+
+async function finishTestSuite() {
+  const overlay = document.getElementById('test-progress-overlay');
+  if (overlay) overlay.style.display = 'none';
+  if (sql && testSuite) {
+    sql`UPDATE test_sessions SET completed_at = NOW(), completed_games = ${testSuite.completedGames} WHERE id = ${testSuite.sessionId}`
+      .catch(() => {});
+  }
+  renderTestComplete();
+  showScreen('test-complete');
+  // testSuite is kept around so the user can read the results screen.
+}
+
+function renderTestComplete() {
+  if (!testSuite) return;
+  const el = document.getElementById('test-complete-table');
+  if (!el) return;
+  const rows = Object.values(testSuite.perBot)
+    .filter(b => b.games > 0)
+    .sort((a, b) => a.targetMpr - b.targetMpr);
+  const mean = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const stddev = arr => {
+    if (arr.length < 2) return 0;
+    const m = mean(arr);
+    return Math.sqrt(arr.reduce((s, v) => s + (v - m) ** 2, 0) / (arr.length - 1));
+  };
+  const verdict = dev => {
+    const a = Math.abs(dev);
+    if (a < 0.1) return { cls: 'tc-good', text: '✓' };
+    if (a < 0.25) return { cls: 'tc-warn', text: '~' };
+    return { cls: 'tc-bad', text: '✗' };
+  };
+  el.innerHTML = `
+    <table class="test-table">
+      <thead><tr>
+        <th>Bot</th><th>Target</th><th>Actual</th><th>Stddev</th><th>Δ</th><th>Games</th><th>Win %</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const avg = r.mprs.length ? mean(r.mprs) : 0;
+        const sd = stddev(r.mprs);
+        const dev = avg - r.targetMpr;
+        const v = verdict(dev);
+        const winPct = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0;
+        return `<tr>
+          <td class="tc-name">${escapeHTML(r.name)}</td>
+          <td>${r.targetMpr.toFixed(1)}</td>
+          <td>${avg.toFixed(3)}</td>
+          <td>${sd.toFixed(3)}</td>
+          <td class="${v.cls}">${dev >= 0 ? '+' : ''}${dev.toFixed(3)} ${v.text}</td>
+          <td>${r.games}</td>
+          <td>${winPct}%</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+    <div class="test-complete-meta">
+      Session <code>${testSuite.sessionId.slice(0,8)}</code> · ${testSuite.completedGames} games · preset: ${TEST_PRESETS[testSuite.preset].name}
+    </div>`;
+}
+
+function runTestSuiteAgain() {
+  testSuite = null;
+  showTestConfig();
+}
+
+function cancelTestSuite() {
+  if (!testSuite) return;
+  if (!confirm(`Cancel test suite? ${testSuite.completedGames} games completed so far will still be in Neon.`)) return;
+  if (sql) {
+    sql`UPDATE test_sessions SET completed_at = NOW(), completed_games = ${testSuite.completedGames} WHERE id = ${testSuite.sessionId}`
+      .catch(() => {});
+  }
+  gameActive = false;
+  testSuite = null;
+  const overlay = document.getElementById('test-progress-overlay');
+  if (overlay) overlay.style.display = 'none';
+  showScreen('setup');
 }
 
 function _arcadeSetupCpu() {
@@ -528,6 +805,7 @@ function launchLeg(){
   gameId = crypto.randomUUID();
   buildScoreboard();
   showScreen('game');
+  applyEnhancedGraphics();
   enterFullscreen();
   if (gameVariant === 'arcade' && !testMode) {
     updateScoreboard();
@@ -590,6 +868,7 @@ function buildScoreboard(){
       <div class="sb-flag-corner">${renderFlag(p.flag)}</div>
       <div class="sb-pname" title="${escapeHTML(p.name)}" style="font-size:${nameFontSize}">${escapeHTML(p.name)}</div>
       <div class="sb-score-big" id="pscore-${i}" style="font-size:${scoreFontSize}">0</div>
+      <div class="enhanced-player-stats" id="pstats-${i}"></div>
       <div class="sb-mpr" id="pmpr-${i}" style="font-size:${mprFontSize}">MPR —</div>
     </div>`;
   const numLabel = `<div class="sb-num-label"></div>`;
@@ -620,7 +899,7 @@ function buildScoreboard(){
          </svg>`
       : num;
     const numCell = `<div class="sb-num-cell" id="numcell-${num}" style="font-size:${numFontSize}">${numCellContent}</div>`;
-    const mCell = (i) => `<div class="sb-mark-cell" id="mcell-${num}-${i}">
+    const mCell = (i) => `<div class="sb-mark-cell" id="mcell-${num}-${i}" data-label="${num === 25 ? 'BULL' : num}">
         <div class="mark-wrap">
           <div class="mark-closed-line" id="closedline-${num}-${i}"></div>
           <div class="mark-svg-wrap" id="marksvg-${num}-${i}"></div>
@@ -675,6 +954,16 @@ function updateScoreboard(){
         mprEl.textContent = `MPR ${mpr}`;
       }
     }
+    const statEl = document.getElementById(`pstats-${i}`);
+    if (statEl) {
+      const mpr = p.dartsThrown >= 3 ? (p.marksThrown / (p.dartsThrown / 3)).toFixed(2) : '-';
+      const closed = NUMBERS.filter(num => p.marks[num] >= 3).length;
+      statEl.innerHTML = `
+        <div><span>MPR</span><strong>${mpr}</strong></div>
+        <div><span>MARKS</span><strong>${p.marksThrown}</strong></div>
+        <div><span>CLOSED</span><strong>${closed}/7</strong></div>
+      `;
+    }
     const hdrEl = document.getElementById(`phdr-${i}`);
     if(hdrEl) hdrEl.classList.toggle('active-col', i === currentPlayer);
 
@@ -726,12 +1015,15 @@ function updateScoreboard(){
 
   // Round
   document.getElementById('round-num').textContent = round;
+  const enhancedRoundTop = document.getElementById('enhanced-round-top');
+  if (enhancedRoundTop) enhancedRoundTop.textContent = round;
 
   // Arcade display
   updateArcadeDisplay();
 }
 
 function drawMarkSVG(marks, canScore = false){
+  if (enhancedGraphics) return drawEnhancedMarkSVG(marks, canScore);
   if(marks === 0) return '';
   const s = 60, cx = s/2, cy = s/2, r = s*0.38;
   let svg = `<svg viewBox="0 0 ${s} ${s}" width="100%" height="100%" style="max-height:60px;" xmlns="http://www.w3.org/2000/svg">`;
@@ -749,6 +1041,21 @@ function drawMarkSVG(marks, canScore = false){
   }
   svg += '</svg>';
   return svg;
+}
+
+function drawEnhancedMarkSVG(marks, canScore = false){
+  const filled = Math.max(0, Math.min(3, Number(marks) || 0));
+  const scoringClass = canScore ? ' scoring' : '';
+  const pips = [0,1,2].map(i => {
+    const cls = i < filled ? 'filled' : 'empty';
+    const x = 18 + i * 30;
+    return `<g class="${cls}" transform="translate(${x} 28)">
+      <circle r="11"></circle>
+      <circle r="5"></circle>
+      <path d="M-15 0H-6M6 0H15M0-15V-6M0 6V15"></path>
+    </g>`;
+  }).join('');
+  return `<svg class="enhanced-mark-svg${scoringClass}" viewBox="0 0 96 56" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
 }
 
 // =============================================
@@ -792,6 +1099,17 @@ function advanceTurn(){
   let next = (currentPlayer + 1) % players.length;
   turnsCompleted++;
   round = Math.floor(turnsCompleted / players.length) + 1;
+  // Safety cap for test suite — prevent infinite legs between weak bots.
+  if (testSuite && round > 50) {
+    const ranking = players.map((p, i) => ({
+      i,
+      closed: NUMBERS.filter(n => p.marks[n] >= 3).length,
+      score: p.score
+    })).sort((a, b) => b.closed - a.closed || b.score - a.score);
+    advancing = false;
+    endWithWinner(ranking[0].i);
+    return;
+  }
   currentPlayer = next;
   updateScoreboard();
   setTimeout(() => {
@@ -856,7 +1174,7 @@ function registerDart(seg, coords = null){
     };
     if (!p.isCpu && coords && !testMode) {
       pendingThrowsToSave.push(throwRecord);
-    } else if (p.isCpu && !dartIsMiss) {
+    } else if (p.isCpu && !dartIsMiss && !testSuite) {
       pendingThrowsToSave.push(throwRecord);
     }
   }
@@ -1095,25 +1413,37 @@ function getAdaptiveSigmaMul(p){
 }
 
 // ── Mark Control ─────────────────────────────────────────────
-// Returns a per-turn marks band [lo, hi] that keeps the CPU close to
-// their rated MPR. Works on marks-this-turn (0–9) rather than cumulative
-// projected MPR. Correction is capped at ±scale so extreme deviation
-// can never push lo/hi outside a physically achievable range.
-// Only active in games with a human player.
+// Deficit-tracking aim with optional reactive shift toward human form.
+// Returns { lo, hi, aim } where aim is the preferred marks-this-turn value
+// and [lo, hi] is the integer band the sampler is allowed to accept from.
 function getMarkControlRange(round, cpu, p) {
   if (round <= 1 || p.dartsThrown < 3) return null;
   const target = cpu.mpr;
-  const actual = p.marksThrown / (p.dartsThrown / 3);
-  const dev = actual - target;
-  const scale = round <= 8 ? 1.1 : round <= 20 ? 0.9 : 0.7;
-  // Cap each correction term to ±scale so lo/hi can't go out of reach
-  const upCorr   = Math.min(scale, Math.max(0, -dev) * 1.5); // raises floor when below target
-  const downCorr = Math.min(scale, Math.max(0, dev)  * 1.0); // drops ceiling when above target
-  const lo = Math.max(0, target - scale + upCorr);
-  const hi = target + scale - downCorr;
-  const loInt = Math.ceil(lo);
-  const hiInt = Math.max(loInt + 1, Math.min(9, Math.floor(hi)));
-  return { lo: loInt, hi: hiInt };
+
+  // Deficit: how far behind/ahead of pace are we? Catch up in one round,
+  // but cap the per-turn aim within ±1.0 of target so corrections feel
+  // human rather than robotic.
+  const expectedCumulative = round * target;
+  const deficit = expectedCumulative - p.marksThrown;
+  let aim = Math.max(target - 1.0, Math.min(target + 1.0, deficit));
+
+  // Reactive shift: half the time, nudge aim toward the human's current
+  // form. Caps at ±0.3 so the bot is always slower to react than the
+  // human is to set the pace.
+  const humans = players.filter(q => !q.isCpu && q.dartsThrown >= 6);
+  if (humans.length > 0 && Math.random() < 0.5) {
+    const humanMprs = humans.map(h => h.marksThrown / (h.dartsThrown / 3));
+    const avgHumanMpr = humanMprs.reduce((a, b) => a + b, 0) / humanMprs.length;
+    const reactiveShift = Math.max(-0.3, Math.min(0.3, (avgHumanMpr - target) * 0.3));
+    aim = Math.max(0, Math.min(9, aim + reactiveShift));
+  }
+
+  // Range around aim. Wider early (more variance allowed) and narrower
+  // late in long legs (tighter convergence to target).
+  const scale = round <= 8 ? 1.2 : round <= 20 ? 1.0 : 0.8;
+  const loInt = Math.max(0, Math.floor(aim - scale));
+  const hiInt = Math.max(loInt, Math.min(9, Math.ceil(aim + scale)));
+  return { lo: loInt, hi: hiInt, aim };
 }
 
 function runCpuTurn(){
@@ -1151,8 +1481,8 @@ function runCpuTurn(){
   let accepted = null;
   if (mprRange) {
     const opts = { missStreak: p.cpuMissStreak, roundForm, dartsThrown: p.dartsThrown, sigmaMultiplier };
-    const mid = (mprRange.lo + mprRange.hi) / 2;
-    let bestSegs = null, bestDiff = Infinity;
+    let bestInRange = null, bestInRangeDiff = Infinity;
+    let bestAny = null, bestAnyDiff = Infinity;
     for (let attempt = 0; attempt < 25; attempt++) {
       const segs = [];
       let simPrev = null;
@@ -1166,11 +1496,13 @@ function runCpuTurn(){
         if (!s || !CRICKET_SET.has(s.number)) return sum;
         return sum + s.multiplier;
       }, 0);
-      const diff = Math.abs(newMarks - mid);
-      if (diff < bestDiff) { bestDiff = diff; bestSegs = segs; }
-      if (newMarks >= mprRange.lo && newMarks <= mprRange.hi) { accepted = segs; break; }
+      const diff = Math.abs(newMarks - mprRange.aim);
+      if (diff < bestAnyDiff) { bestAnyDiff = diff; bestAny = segs; }
+      if (newMarks >= mprRange.lo && newMarks <= mprRange.hi && diff < bestInRangeDiff) {
+        bestInRangeDiff = diff; bestInRange = segs;
+      }
     }
-    if (!accepted) accepted = bestSegs;
+    accepted = bestInRange || bestAny;
   }
 
   let dartIdx = 0;
@@ -1288,9 +1620,10 @@ async function saveGameToNeon(winnerIdx) {
   const winner = players[winnerIdx];
   const totalRounds = Math.ceil(turnsCompleted / players.length);
   try {
+    const testSid = testSuite ? testSuite.sessionId : null;
     await sql`
-      INSERT INTO games (game_id, variant, leg_number, session_id, winner_name, total_rounds)
-      VALUES (${gameId}, ${gameVariant}, ${legNumber}, ${getSessionKey()}, ${winner.name}, ${totalRounds})
+      INSERT INTO games (game_id, variant, leg_number, session_id, winner_name, total_rounds, test_session_id)
+      VALUES (${gameId}, ${gameVariant}, ${legNumber}, ${getSessionKey()}, ${winner.name}, ${totalRounds}, ${testSid})
       ON CONFLICT (game_id) DO NOTHING
     `;
     for (const p of players) {
@@ -1345,6 +1678,18 @@ async function endWithWinner(idx){
     } else {
       arcadeWaveWin();
     }
+    return;
+  }
+  // Test suite path — skip winner screen, save data, move to next leg.
+  if (testSuite) {
+    recordTestResult(idx);
+    try {
+      await Promise.all(players.map((p, i) =>
+        savePlayerStat(p.name, p.flag, i === idx, p.marksThrown, p.dartsThrown, p.isCpu)));
+      await flushThrowsToNeon();
+      await saveGameToNeon(idx);
+    } catch(e) { console.error('Test save error:', e); }
+    setTimeout(runNextTestGame, 0);
     return;
   }
   const winner = players[idx];
@@ -1682,14 +2027,19 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   voiceEnabled = localStorage.getItem('dartbot_voice_enabled') !== '0';
   sfxEnabled   = localStorage.getItem('dartbot_sfx')   !== '0';
+  enhancedGraphics = localStorage.getItem('dartbot_cricket_enhanced_graphics') === '1';
   const vcb = document.getElementById('voice-toggle');
   const scb = document.getElementById('sfx-toggle');
+  const ecb = document.getElementById('enhanced-graphics-toggle');
   if (vcb) vcb.checked = voiceEnabled;
   if (scb) scb.checked = sfxEnabled;
+  if (ecb) ecb.checked = enhancedGraphics;
+  applyEnhancedGraphics();
   initNeonDB();
   buildCpuGrid();
   renderRecentPlayers();
   initSpeech();
   initAutodarts(handleWS);
+  checkStartBtn();
   window.addEventListener('resize', () => { if(gameActive) updateScoreboard(); });
 });
