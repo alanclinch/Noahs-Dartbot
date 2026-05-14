@@ -134,7 +134,22 @@ function generateCpuThrow(target, mpr, opts) {
   // Calibrated to give ~1-2 multiples per 30 rounds at 0.9, ~3-4 at 1.8:
   //   P(|radial drift| > 27.5mm) ≈ 2×Φ(-27.5/σR)
   //   0.9→σR=12.4mm→2.3/30rds  1.3→σR=13.0mm→3.1/30rds  1.8→σR=13.7mm→4.0/30rds
-  const sigmaR = Math.max(8, Math.min(18, 11 + mpr * 1.5));
+  let sigmaR = Math.max(8, Math.min(18, 11 + mpr * 1.5));
+
+  // ── Cricket-specific tuning ──────────────────────────────────
+  // Gated on opts.cricketAim so X01/Demolish/etc. are untouched.
+  // (1) Angular accuracy tightened 7% — compensates for the ~5–10% MPR
+  //     undershoot seen across all bots in cricket test runs.
+  // (2) For high-MPR bots (3.7+), radial sigma blends down to 6mm so darts
+  //     actually land in the 8mm-wide treble ring. Default sigmaR was tuned
+  //     for X01 single-outer aim; on treble aim it scatters out.
+  if (opts.cricketAim) {
+    sigmaT *= 0.93;
+    if (mpr >= 3.7) {
+      const t = Math.min(1, (mpr - 3.7) / 1.5);
+      sigmaR = sigmaR * (1 - t) + 6 * t;
+    }
+  }
 
   // ── Aim point ────────────────────────────────────────────────
   // Cricket: blend aim from single outer (134.5mm) at low MPR to treble centre (103.5mm) at
