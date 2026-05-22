@@ -328,38 +328,87 @@ function tierForScore(s) {
   return null;
 }
 
-// Dart hit — layered: laser zap + bass thump + impact noise crack. Tiered
-// by score so a S1 sounds different from a T20, not just quieter.
-function sfxLaser(score) {
+// Dart hit — dispatches on multiplier so doubles and trebles get their own
+// distinct signatures (longer, more flourish), not just a louder single.
+// Singles still tier by score so a S1 sounds different from a S20.
+function sfxLaser(score, mult = 1) {
   if (!canSfx()) return;
+  if (mult === 3) return sfxLaserTreble(score);
+  if (mult === 2) return sfxLaserDouble(score);
+  return sfxLaserSingle(score);
+}
+
+// SINGLE — short, punchy. ~250ms total. Tiered by raw score.
+function sfxLaserSingle(score) {
   const ctx = gAC(), t = ctx.currentTime;
   const tier = tierForScore(score) || 'sm';
-  // 1) Laser zap — pitch sweep, slightly cleaner than before.
   const dur = Math.min(0.07 + score * 0.005, 0.20);
   const startF = 1100 + score * 35, endF = 180 + score * 8;
   const zapVol = Math.min(0.16 + score * 0.010, 0.36);
   dSweep(startF, endF, 'sawtooth', t, dur, zapVol);
   dSweep(startF * 1.5, endF * 1.5, 'sine', t, dur * 0.7, zapVol * 0.35);
-  // 2) Impact thump — bass body lands a hair after the zap. Tiered hard so
-  //    the brain notices steps, not a gradient.
   const thump = {
     sm: { f: 240, dur: 0.16, vol: 0.20 },
     md: { f: 150, dur: 0.26, vol: 0.42 },
     lg: { f:  95, dur: 0.42, vol: 0.62 },
   }[tier];
   dThump(t + 0.025, thump.f, thump.dur, thump.vol, tier === 'lg' ? 0.35 : 0.22);
-  // 3) Noise crack — debris transient, brighter and louder on big hits.
   const crack = {
     sm: { dur: 0.08, vol: 0.08, ff: 1400 },
     md: { dur: 0.16, vol: 0.20, ff: 1800 },
     lg: { dur: 0.26, vol: 0.34, ff: 2600 },
   }[tier];
   dNoise(t + 0.02, crack.dur, crack.vol, crack.ff, 'lowpass', 1.0, tier === 'lg' ? 0.30 : 0.12);
-  // 4) Big-hit only — sub-bass tail + a short bright glitter through bandpass.
-  if (tier === 'lg') {
-    dTone(48, 'sine', t + 0.04, 0.55, 0.32, 0.30);
-    dNoise(t + 0.12, 0.22, 0.10, 4500, 'bandpass', 3, 0.20);
-  }
+}
+
+// DOUBLE — ~480ms. Double-tap laser, fatter bass, a clear sustained "ping"
+// chime so the ear immediately registers "that was a double".
+function sfxLaserDouble(score) {
+  const ctx = gAC(), t = ctx.currentTime;
+  // 1) Two-shot laser, ascending — second zap is higher and shorter.
+  dSweep(1100, 240, 'sawtooth', t, 0.16, 0.36);
+  dSweep(1650, 360, 'sine',     t, 0.12, 0.18);
+  dSweep(1500, 380, 'sawtooth', t + 0.10, 0.14, 0.30);
+  dSweep(2250, 560, 'sine',     t + 0.10, 0.10, 0.16);
+  // 2) Bigger bass thump — 130 Hz, longer decay than a single.
+  dThump(t + 0.04, 130, 0.40, 0.55, 0.32);
+  // 3) Sustained chime — the unmistakable "double" signature. Slight detune
+  //    on the second osc gives the ping a metallic chorus quality.
+  dTone(880, 'sine',     t + 0.08, 0.36, 0.26, 0.45);
+  dTone(884, 'triangle', t + 0.08, 0.36, 0.14, 0.45);
+  dTone(1318.5, 'sine',  t + 0.10, 0.30, 0.16, 0.40);
+  // 4) Bright shimmer tail through a tight bandpass — adds air.
+  dNoise(t + 0.16, 0.32, 0.10, 5200, 'bandpass', 4, 0.35);
+}
+
+// TREBLE — ~620ms. Three-shot ascending laser, deep sub-bass, a triumphant
+// major arpeggio (G–B–D) with a sustained held top note + crystalline tail.
+// This should feel like "I just hit treble twenty" from across the room.
+function sfxLaserTreble(score) {
+  const ctx = gAC(), t = ctx.currentTime;
+  // 1) Triple-tap laser — three ascending pitch sweeps, tight spacing.
+  dSweep(1000, 220, 'sawtooth', t,         0.15, 0.36);
+  dSweep(1500, 320, 'sine',     t,         0.10, 0.16);
+  dSweep(1400, 360, 'sawtooth', t + 0.085, 0.13, 0.32);
+  dSweep(2100, 540, 'sine',     t + 0.085, 0.09, 0.16);
+  dSweep(1800, 480, 'sawtooth', t + 0.17,  0.12, 0.30);
+  dSweep(2700, 720, 'sine',     t + 0.17,  0.08, 0.14);
+  // 2) Deep bass — 70 Hz body + 40 Hz sub for floor-shaking weight.
+  dThump(t + 0.05, 70, 0.55, 0.70, 0.40);
+  dTone(40, 'sine', t + 0.05, 0.85, 0.38, 0.35);
+  // 3) Triumph arpeggio — G4 → B4 → D5, held overlapping. Sine + triangle
+  //    layered for a slightly horn-like character.
+  const notes = [392.0, 493.9, 587.3];
+  notes.forEach((f, i) => {
+    const startT = t + 0.10 + i * 0.09;
+    const dur = i === 2 ? 0.35 : 0.20;
+    dTone(f,     'sine',     startT, dur, 0.22, 0.50);
+    dTone(f * 2, 'triangle', startT, dur * 0.9, 0.10, 0.40);
+  });
+  // 4) Crystalline shimmer tail — high bandpass noise with long reverb send.
+  dNoise(t + 0.18, 0.42, 0.13, 5800, 'bandpass', 4, 0.55);
+  // 5) Sub-rumble tail — keeps the low end ringing under the arpeggio.
+  dTone(48, 'sine', t + 0.18, 0.55, 0.22, 0.30);
 }
 
 // Override sfxNext for Demolish (shadows utils.sfxNext).
@@ -373,10 +422,55 @@ function sfxNextLocal() {
   noiz(t, .28, .08, 900, ctx);
 }
 
-function sfxBonusReady() {
+// Bonus-incoming siren — two sweeping cycles (440→1100→440 Hz), urgent,
+// attention-grabbing. Fires the moment the dart-before-the-bonus lands so
+// the player knows the next dart is the target. ~1.1s, deliberately loud.
+function sfxBonusSiren() {
   if (!canSfx()) return;
   const ctx = gAC(), t = ctx.currentTime;
-  [880, 1174.7, 1568].forEach((f, i) => tone(f, 'triangle', t + i * .07, .16, .16, ctx));
+  // Attack — sharp transient so it cuts through whatever sound is dying.
+  dNoise(t, 0.05, 0.20, 2400, 'bandpass', 2, 0.20);
+  const sweepDur = 0.28;
+  for (let i = 0; i < 2; i++) {
+    const up = t + i * sweepDur * 2;
+    const dn = up + sweepDur;
+    // Up-sweep: sawtooth for piercing edge + square octave for grit.
+    dSweep(440, 1100, 'sawtooth', up, sweepDur, 0.34, 0.28);
+    dSweep(880, 2200, 'square',   up, sweepDur, 0.11, 0.22);
+    // Down-sweep.
+    dSweep(1100, 440, 'sawtooth', dn, sweepDur, 0.34, 0.28);
+    dSweep(2200, 880, 'square',   dn, sweepDur, 0.11, 0.22);
+  }
+  // Sub-rumble under the whole thing — adds threat weight.
+  dTone(80, 'sine', t, 1.15, 0.22, 0.30);
+}
+
+// Bomb-armed sting — three low pulses + filtered rumble. Threatening,
+// "incoming" vibe. Routes through master so the reverb tail blooms.
+function sfxBombReady() {
+  if (!canSfx()) return;
+  const ctx = gAC(), t = ctx.currentTime;
+  for (let i = 0; i < 3; i++) {
+    const dt = t + i * 0.11;
+    dTone(220, 'sawtooth', dt, 0.09, 0.26, 0.18);
+    dTone(110, 'sine',     dt, 0.11, 0.22, 0.22);
+  }
+  dNoise(t, 0.42, 0.08, 600, 'lowpass', 0.7, 0.25);
+  dTone(55, 'sine', t, 0.55, 0.18, 0.30);
+}
+
+// Heal-armed cue — bright ascending chime, soothing. Major arpeggio +
+// crystalline high-bandpass shimmer tail.
+function sfxHealReady() {
+  if (!canSfx()) return;
+  const ctx = gAC(), t = ctx.currentTime;
+  const notes = [523.3, 659.3, 783.99, 1046.5]; // C5–E5–G5–C6
+  notes.forEach((f, i) => {
+    const dt = t + i * 0.07;
+    dTone(f,     'sine',     dt, 0.34, 0.18, 0.55);
+    dTone(f * 2, 'triangle', dt, 0.22, 0.07, 0.45);
+  });
+  dNoise(t + 0.14, 0.30, 0.06, 4800, 'bandpass', 5, 0.50);
 }
 
 function sfxBonusHit() {
@@ -707,6 +801,7 @@ function buildTowers() {
       <div class="checkout-hint" id="ch-${i}"></div>`;
     area.appendChild(wrap);
     updateBuildingExtras(i);
+    refreshArmedRow(i);
   });
 }
 
@@ -746,7 +841,7 @@ function registerDart(score, seg) {
     updatePanel();
     setTimeout(() => restoreGems(cp), 350); return;
   }
-  sfxLaser(s);
+  sfxLaser(s, seg ? Number(seg.multiplier || 1) : 1);
   const destroyedScore = startScore - newScore;
   const targetRemoved = Math.min(TOTAL_BLOCKS, Math.floor((destroyedScore / startScore) * TOTAL_BLOCKS));
   const checkoutIdx = cp; // capture before animation — cp can change if WS Takeout fires mid-animation
@@ -792,7 +887,7 @@ function removeGems(pidx, targetRemoved, cb, opts = {}) {
         el.classList.add('removing');
         setTimeout(()=>{el.classList.add('gone');el.classList.remove('removing');},200);
       }
-      if(++done===ids.length) setTimeout(cb,60);
+      if(++done===ids.length){ refreshArmedRow(pidx); setTimeout(cb,60); }
     }, fireDelay + i*stagger);
   });
 }
@@ -861,7 +956,7 @@ function repairGems(pidx, targetRemoved, cb) {
         el.classList.add('repairing');
         setTimeout(()=>el.classList.remove('repairing'),280);
       }
-      if(++done===ids.length) setTimeout(cb,80);
+      if(++done===ids.length){ refreshArmedRow(pidx); setTimeout(cb,80); }
     }, fireDelay + i*stagger);
   });
 }
@@ -877,7 +972,27 @@ function restoreGems(pidx) {
     }
   });
   updateBuildingExtras(pidx);
+  refreshArmedRow(pidx);
 }
+
+// Mark the row of the next gem to be destroyed as "armed" — pulses gold to
+// telegraph what's about to fall. Call after any change in gemsRemoved.
+function refreshArmedRow(pidx) {
+  const p = players[pidx];
+  if (!p) return;
+  // Clear previous armed flags on this tower.
+  document.querySelectorAll(`#tsw-${pidx} .gem.armed`).forEach(el => el.classList.remove('armed'));
+  if (p.checkedOut || p.gemsRemoved >= TOTAL_BLOCKS) return;
+  const next = GEM_LIST[p.gemsRemoved];
+  if (!next) return;
+  // Arm every remaining gem in the same row (typically 1–12 gems).
+  for (let id = p.gemsRemoved; id < TOTAL_BLOCKS; id++) {
+    if (GEM_LIST[id].row !== next.row) break;
+    const el = document.getElementById(`g-${pidx}-${id}`);
+    if (el && !el.classList.contains('gone')) el.classList.add('armed');
+  }
+}
+function refreshAllArmed() { players.forEach((_, i) => refreshArmedRow(i)); }
 
 function updateBuildingExtras(pidx) {
   const p = players[pidx];
@@ -913,8 +1028,11 @@ function fireLaser(pidx, ids, mode = 'attack') {
   const dy = endY - startY;
   const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90;
 
-  barrel.style.transform = `rotate(${Math.max(-42, Math.min(42, angle))}deg)`;
+  const clamped = Math.max(-42, Math.min(42, angle));
+  barrel.style.setProperty('--aim-angle', clamped + 'deg');
   turret.classList.remove('fire');
+  // Charge-up: muzzle glow ramps + barrel braces. Cleared right before fire.
+  turret.classList.add('charging');
   line.classList.remove('fire');
   const isRepair = mode === 'repair';
   line.style.stroke = isRepair ? '#86efac' : '';
@@ -926,6 +1044,7 @@ function fireLaser(pidx, ids, mode = 'attack') {
     line.setAttribute('x2', endX.toFixed(1));
     line.setAttribute('y2', endY.toFixed(1));
     void line.getBoundingClientRect();
+    turret.classList.remove('charging');
     turret.classList.add('fire');
     line.classList.add('fire');
     setTimeout(() => {
@@ -950,7 +1069,7 @@ function aimShipAtPlayer(pidx) {
   const dx = targetX - (start.x - pf.left);
   const dy = targetY - (start.y - pf.top);
   const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90;
-  barrel.style.transform = `rotate(${Math.max(-42, Math.min(42, angle))}deg)`;
+  barrel.style.setProperty('--aim-angle', Math.max(-42, Math.min(42, angle)) + 'deg');
 }
 
 function svgPointToScreen(el, x, y) {
@@ -1073,7 +1192,8 @@ function prepareBonusForDart(playerIdx, dartIdx) {
     if (!warnedBonus) return;
     warnedBonus.dartIdx = dartIdx + 1;
     p.pendingBonus = warnedBonus;
-    showBonusWarning();
+    // Visual warning only — siren plays on the bonus dart itself (below).
+    showBonusWarning(warnedBonus.type);
     return;
   }
 
@@ -1193,8 +1313,14 @@ function showBonusPopup(bonus) {
   document.getElementById('bonus-title').textContent = isHeal ? 'REBUILD' : 'BOMB';
   document.getElementById('bonus-main').textContent = bonus.targetNumber;
   document.getElementById('bonus-sub').textContent = 'TARGET';
+  // Restart the entry animation: removing .show drops the class-bound
+  // animation, the reflow + re-add restarts it cleanly.
+  pop.classList.remove('show');
+  void pop.offsetWidth;
   pop.classList.add('show');
-  sfxBonusReady();
+  // Siren fires when the bonus pop-up appears — i.e. right before the
+  // player throws the bonus dart. Loudest cue in the game.
+  sfxBonusSiren();
 }
 
 function showBonusResult(text, detail, color) {
@@ -1227,17 +1353,20 @@ function hideBonusPopup() {
   document.getElementById('bonus-sub').style.color = '';
 }
 
-function showBonusWarning() {
+function showBonusWarning(type) {
   const el = document.getElementById('bonus-warning');
   if (!el) return;
-  el.textContent = 'UPCOMING BONUS';
+  const isHeal = type === 'heal';
+  el.textContent = isHeal ? '⚠ INCOMING REBUILD' : '⚠ INCOMING BOMB';
+  el.classList.remove('heal','demolish');
+  el.classList.add(isHeal ? 'heal' : 'demolish');
   el.classList.add('show');
 }
 
 function hideBonusWarning() {
   const el = document.getElementById('bonus-warning');
   if (!el) return;
-  el.classList.remove('show');
+  el.classList.remove('show','heal','demolish');
 }
 
 // ══ CHECKOUT ══
@@ -1249,7 +1378,42 @@ function handleCheckout(idx) {
   lockWinAndPlayMusic();
   showOverlay(idx,'checkout'); spawnConfetti();
   const sc=document.getElementById('ts-'+idx);if(sc)sc.className='tower-score checkout';
-  setTimeout(()=>showWin(p), 400);
+  // Victory volley — turret demolishes the loser's remaining tower before
+  // the win card shows. All sfx are gated by canSfx() which returns false
+  // during winLock, so this is purely visual + the running win music.
+  runVictoryVolley(idx, () => showWin(p));
+}
+
+// Find the non-winner with the most gems still standing and pound it with
+// 3–5 lasered bomb-bursts in quick succession. Calls `onComplete` when the
+// last animation has settled (or immediately if there's nothing to destroy).
+function runVictoryVolley(winnerIdx, onComplete) {
+  let target = -1, mostRemaining = -1;
+  players.forEach((pp, i) => {
+    if (i === winnerIdx || pp.checkedOut) return;
+    const remaining = TOTAL_BLOCKS - pp.gemsRemoved;
+    if (remaining > mostRemaining) { mostRemaining = remaining; target = i; }
+  });
+  if (target < 0 || mostRemaining <= 0) {
+    setTimeout(onComplete, 600); // brief beat so the checkout text reads
+    return;
+  }
+  const tp = players[target];
+  // 3 shots for small remaining towers, up to 5 for nearly-full towers.
+  const shots = Math.min(5, Math.max(3, Math.ceil(mostRemaining / 50)));
+  const interval = 320;
+  for (let s = 0; s < shots; s++) {
+    setTimeout(() => {
+      const remaining = TOTAL_BLOCKS - tp.gemsRemoved;
+      if (remaining <= 0) return;
+      // Distribute the remaining gems across the remaining shots so the
+      // last shot empties the tower.
+      const chunk = Math.ceil(remaining / (shots - s));
+      const newTotal = Math.min(TOTAL_BLOCKS, tp.gemsRemoved + chunk);
+      removeGems(target, newTotal, () => {}, { bomb: true });
+    }, s * interval);
+  }
+  setTimeout(onComplete, shots * interval + 700);
 }
 
 function advanceTurn() {
@@ -1281,6 +1445,9 @@ function advanceTurn() {
 function highlightActive() {
   document.querySelectorAll('.tower-score').forEach((el,i)=>{
     if(!players[i].checkedOut) el.className='tower-score'+(i===cp?' active':'');
+  });
+  document.querySelectorAll('.tower-wrap').forEach((el,i)=>{
+    el.classList.toggle('active', i===cp && !players[i].checkedOut);
   });
   setTimeout(() => aimShipAtPlayer(cp), 80);
 }
@@ -1415,6 +1582,11 @@ function toggleKeypadMod(mul) {
   document.getElementById('kp-mod-treble').classList.toggle('active', keypadMod === 3);
 }
 function manualDart(num) {
+  // Drop button focus so pressing space/enter later doesn't re-click this
+  // keypad button (browser default behaviour). Belt to the keydown handler's
+  // braces.
+  const ae = document.activeElement;
+  if (ae && ae.tagName === 'BUTTON' && ae.blur) ae.blur();
   if (!gameActive || turnEnded || darts.length >= 3) return;
   if (num === 0) {
     registerDart(null, { name: 'M0', number: 0, multiplier: 0 });
@@ -1631,7 +1803,20 @@ function goHome(){
 
 // ══ KEYBOARD ══
 document.addEventListener('keydown',e=>{
-  if(e.key===' '||e.key==='Enter'){if(gameActive||turnEnded)advanceTurn();return;}
+  // If an input or textarea has focus, let it handle the key (e.g. player
+  // name modal). Only intercept when focus is loose or on a non-input.
+  const ae = document.activeElement;
+  const inText = ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA');
+  if(e.key===' '||e.key==='Enter'){
+    if(inText)return;
+    // Stop browsers from firing a synthetic click on whichever keypad button
+    // currently has focus (the cause of phantom S-number darts on space).
+    e.preventDefault();
+    if(ae && ae.tagName === 'BUTTON' && ae.blur) ae.blur();
+    if(gameActive||turnEnded)advanceTurn();
+    return;
+  }
+  if(inText)return;
   const n=parseInt(e.key);
   if(!isNaN(n)&&n>=0&&n<=9){
     const s=n===0?null:{number:n,multiplier:1,name:'S'+n,bed:'SingleOuter'};

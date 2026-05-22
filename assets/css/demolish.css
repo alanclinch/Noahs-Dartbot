@@ -54,8 +54,18 @@ body{
 }
 .central-turret .ship-bob{animation:shipBob 2.4s ease-in-out infinite;}
 .central-turret .turret-barrel{
-  transform-box:fill-box;transform-origin:50% 0%;transition:transform .18s ease-out;
+  transform-box:fill-box;transform-origin:50% 0%;
+  transform:rotate(var(--aim-angle,0deg));
+  transition:transform .18s ease-out;
 }
+/* During the aim window the muzzle glows up — charge-up tell before each shot. */
+.central-turret #ship-muzzle{transition:filter .15s ease-out;}
+.central-turret.charging #ship-muzzle{
+  filter:drop-shadow(0 0 10px #fcd34d) drop-shadow(0 0 22px #ff8040);
+}
+.central-turret.charging .turret-barrel{animation:barrelCharge .22s ease-in forwards;}
+/* On fire: keep the aim, but recoil the barrel back into the ship body and bounce out. */
+.central-turret.fire .turret-barrel{animation:barrelRecoil .44s cubic-bezier(.18,.89,.32,1.28);}
 .central-turret.fire .turret-core{animation:turretKick .24s ease-out;}
 @keyframes shipCruise{
   0%{transform:translateX(-235px);}
@@ -63,6 +73,17 @@ body{
 }
 @keyframes shipBob{0%,100%{transform:translateY(0);}50%{transform:translateY(9px);}}
 @keyframes turretKick{0%{transform:translateY(0);}35%{transform:translateY(5px);}100%{transform:translateY(0);}}
+@keyframes barrelCharge{
+  0%  {transform:rotate(var(--aim-angle,0deg)) translateY(0) scaleY(1);}
+  100%{transform:rotate(var(--aim-angle,0deg)) translateY(1.5px) scaleY(1.06);}
+}
+@keyframes barrelRecoil{
+  0%  {transform:rotate(var(--aim-angle,0deg)) translateY(0)  scaleY(1);}
+  14% {transform:rotate(var(--aim-angle,0deg)) translateY(-9px) scaleY(.86);}
+  40% {transform:rotate(var(--aim-angle,0deg)) translateY(3px) scaleY(1.04);}
+  70% {transform:rotate(var(--aim-angle,0deg)) translateY(-2px) scaleY(.98);}
+  100%{transform:rotate(var(--aim-angle,0deg)) translateY(0)  scaleY(1);}
+}
 
 /* ── LASER ── */
 .stage-laser{position:absolute;inset:0;z-index:15;pointer-events:none;width:100%;height:100%;}
@@ -80,7 +101,13 @@ body{
 
 /* ── TOWERS ── */
 .tower-wrap{display:flex;flex-direction:column;align-items:center;gap:0;flex:1;
-  min-width:0;height:100%;justify-content:space-between;padding-top:10px;}
+  min-width:0;height:100%;justify-content:space-between;padding-top:10px;
+  position:relative;border-radius:14px;
+  transition:filter .35s ease, transform .25s ease;}
+.tower-wrap.active .tower-name{
+  color:var(--gold);
+  text-shadow:0 0 14px rgba(252,211,77,.45);
+}
 .tower-head{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
 .tower-score{font-family:'Orbitron',monospace;font-size:clamp(28px,4vw,60px);
   line-height:1;text-align:center;color:var(--text);flex-shrink:0;transition:color .3s;}
@@ -102,6 +129,11 @@ body{
 .gem{transition:opacity .1s,filter .1s;}
 .gem.removing{animation:blockFade .2s ease-out forwards;}
 .gem.repairing{animation:blockRepair .28s ease-out forwards;}
+.gem.armed:not(.gone):not(.removing) polygon{animation:gemArmedPulse 1.7s ease-in-out infinite;}
+@keyframes gemArmedPulse{
+  0%,100%{stroke:rgba(6,12,26,.76);stroke-width:.42;filter:brightness(1);}
+  50%{stroke:rgba(255,225,140,.95);stroke-width:1.0;filter:brightness(1.35);}
+}
 .gem.gone{opacity:0!important;pointer-events:none;}
 .gem.gone.repairing{opacity:1!important;}
 .building-extra{transition:opacity .18s,filter .18s;}
@@ -174,6 +206,23 @@ body{
   text-align:center;font-family:'Orbitron',monospace;opacity:0;transition:opacity .16s,transform .16s;
 }
 .bonus-pop.show{opacity:1;transform:translateX(-50%) scale(1);}
+/* Bomb slams in red and shakes; heal blooms green and overshoots gently. */
+.bonus-pop.show.demolish{animation:bonusSlamBomb .55s cubic-bezier(.34,1.56,.64,1);}
+.bonus-pop.show.heal{animation:bonusBloomHeal .60s ease-out;}
+@keyframes bonusSlamBomb{
+  0%  {opacity:0;transform:translateX(-50%) scale(1.7) rotate(-4deg);}
+  28% {opacity:1;transform:translateX(-50%) scale(.88) rotate(3deg);}
+  46% {transform:translateX(-50%) scale(1.08) rotate(-2deg);}
+  62% {transform:translateX(-50%) scale(.97) rotate(1deg);}
+  78% {transform:translateX(-50%) scale(1.03);}
+  100%{opacity:1;transform:translateX(-50%) scale(1);}
+}
+@keyframes bonusBloomHeal{
+  0%  {opacity:0;transform:translateX(-50%) scale(.25);filter:brightness(2);}
+  35% {opacity:1;transform:translateX(-50%) scale(1.18);filter:brightness(1.3);}
+  65% {transform:translateX(-50%) scale(.97);filter:brightness(1.1);}
+  100%{opacity:1;transform:translateX(-50%) scale(1);filter:brightness(1);}
+}
 .bonus-pop.demolish{border-color:rgba(248,113,113,.9);box-shadow:0 0 38px rgba(248,113,113,.24);
   background:linear-gradient(180deg,rgba(69,10,10,.96),rgba(20,24,45,.94));}
 .bonus-pop.heal{border-color:rgba(52,211,153,.9);box-shadow:0 0 38px rgba(52,211,153,.24);
@@ -191,13 +240,23 @@ body{
 .bonus-sub{font-family:'Exo 2',sans-serif;font-size:18px;font-weight:900;margin-top:8px;color:#fff;
   letter-spacing:2px;text-transform:uppercase;}
 .bonus-warning{
-  position:absolute;left:50%;top:184px;transform:translateX(-50%);
-  z-index:29;pointer-events:none;padding:10px 18px;border-radius:999px;
+  position:absolute;left:50%;top:184px;transform:translateX(-50%) scale(.9);
+  z-index:29;pointer-events:none;padding:12px 22px;border-radius:999px;
   border:2px solid rgba(252,211,77,.55);background:rgba(10,24,45,.86);
-  font-family:'Orbitron',monospace;font-size:14px;letter-spacing:3px;color:var(--gold);
+  font-family:'Orbitron',monospace;font-size:16px;letter-spacing:3px;font-weight:700;color:var(--gold);
   opacity:0;transition:opacity .16s;
 }
-.bonus-warning.show{opacity:1;}
+.bonus-warning.show{opacity:1;animation:bonusWarnPulse .55s ease-in-out infinite alternate;}
+.bonus-warning.show.demolish{color:var(--red);border-color:rgba(248,113,113,.95);
+  background:linear-gradient(180deg,rgba(69,10,10,.92),rgba(10,20,40,.92));
+  box-shadow:0 0 28px rgba(248,113,113,.45);}
+.bonus-warning.show.heal{color:var(--green);border-color:rgba(52,211,153,.95);
+  background:linear-gradient(180deg,rgba(6,78,59,.92),rgba(10,20,40,.92));
+  box-shadow:0 0 28px rgba(52,211,153,.45);}
+@keyframes bonusWarnPulse{
+  from{transform:translateX(-50%) scale(1);   filter:brightness(1);}
+  to  {transform:translateX(-50%) scale(1.08);filter:brightness(1.35);}
+}
 
 /* ── SIDE PANEL ── */
 .side-panel{
