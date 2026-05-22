@@ -1453,10 +1453,129 @@ function highlightActive() {
 }
 
 // ══ CPU TURN ══
-function getCpuTarget(remaining) {
-  if (remaining === 50 || remaining === 25) return 25;
-  if (remaining <= 20) return remaining;
-  return 20;
+
+// PPR-calibrated sigma per CPU. Locked in by tools/calibrate-demolish-bot.js;
+// re-run that script if the scatter model changes. Bots aim at the treble
+// centre (103.5mm) and use these tangential sigmas plus sigmaR = max(5,σ·.6).
+// Targets are an even 10-PPR spread from beginner (10) to world-class (90).
+const DEMOLISH_PPR_TABLE = {
+  cpu0: { ppr: 10, sigma: 199.95 }, // Jocky Wilson — simulated 13 PPR (sigma floored, misses the board often by design)
+  cpu1: { ppr: 20, sigma: 131.94 }, // John Lowe
+  cpu2: { ppr: 30, sigma: 79.34  }, // Eric Bristow
+  cpu3: { ppr: 40, sigma: 37.58  }, // Peter Wright
+  cpu4: { ppr: 50, sigma: 25.20  }, // Gary Anderson
+  cpu5: { ppr: 60, sigma: 19.69  }, // Luke Littler
+  cpu6: { ppr: 70, sigma: 16.70  }, // Luke Humphries
+  cpu7: { ppr: 80, sigma: 14.28  }, // Michael van Gerwen
+  cpu8: { ppr: 90, sigma: 12.44  }, // Phil Taylor
+};
+
+// Standard double-out checkout table (170–2). Copied wholesale from
+// assets/js/x01.js — duplicated intentionally so Demolish doesn't depend on
+// the unfinished X01 module. When X01 ships, factor this into a shared file.
+const DEMOLISH_CHECKOUTS = {
+    170: "T20 T20 Bull", 167: "T20 T19 Bull", 164: "T20 T18 Bull", 161: "T20 T17 Bull", 160: "T20 T20 D20",
+    158: "T20 T20 D19", 157: "T20 T19 D20", 156: "T20 T20 D18", 155: "T20 T19 D19", 154: "T20 T18 D20",
+    153: "T20 T19 D18", 152: "T20 T20 D16", 151: "T20 T17 D20", 150: "T20 T18 D18", 149: "T20 T19 D16",
+    148: "T20 T16 D20", 147: "T20 T17 D18", 146: "T20 T18 D16", 145: "T20 T15 D20", 144: "T20 T20 D12",
+    143: "T20 T17 D16", 142: "T20 T14 D20", 141: "T20 T19 D12", 140: "T20 T20 D10", 139: "T19 T14 D20",
+    138: "T20 T18 D12", 137: "T19 T16 D16", 136: "T20 T20 D8", 135: "T20 T17 D12", 134: "T20 T14 D16",
+    133: "T20 T19 D8", 132: "T20 T16 D12", 131: "T20 T13 D16", 130: "T20 T20 D5", 129: "T19 T16 D12",
+    128: "T18 T14 D16", 127: "T20 T17 D8", 126: "T19 T19 D6", 125: "Bull T17 D12", 124: "T20 T16 D8",
+    123: "T19 T16 D9", 122: "T18 T18 D7", 121: "T20 T15 D8", 120: "T20 S20 D20", 119: "T19 T14 D10",
+    118: "T20 S18 D20", 117: "T20 S17 D20", 116: "T20 S16 D20", 115: "T20 S15 D20", 114: "T20 S14 D20",
+    113: "T20 S13 D20", 112: "T20 S12 D20", 111: "T20 S11 D20", 110: "T20 Bull", 109: "T19 S12 D20",
+    108: "T20 S8 D20", 107: "T19 S10 D20", 106: "T20 S6 D20", 105: "T20 S5 D20", 104: "T18 S14 D20",
+    103: "T19 S6 D20", 102: "T20 S2 D20", 101: "T17 S10 D20", 100: "T20 D20", 99: "T19 S10 D16",
+    98: "T20 D19", 97: "T19 D20", 96: "T20 D18", 95: "T19 D19", 94: "T18 D20", 93: "T19 D18", 92: "T20 D16",
+    91: "T17 D20", 90: "T20 D15", 89: "T19 D16", 88: "T20 D14", 87: "T17 D18", 86: "T18 D16", 85: "T19 D14",
+    84: "T20 D12", 83: "T17 D16", 82: "T14 D20", 81: "T19 D12", 80: "T20 D10", 79: "T19 D11", 78: "T18 D12",
+    77: "T19 D10", 76: "T20 D8", 75: "T17 D12", 74: "T14 D16", 73: "T19 D8", 72: "T16 D12", 71: "T13 D16",
+    70: "T20 D5", 69: "T19 D6", 68: "T20 D4", 67: "T17 D8", 66: "T10 D18", 65: "T19 D4", 64: "T16 D8",
+    63: "T13 D12", 62: "T10 D16", 61: "T15 D8", 60: "S20 D20", 59: "S19 D20", 58: "S18 D20", 57: "S17 D20",
+    56: "S16 D20", 55: "S15 D20", 54: "S14 D20", 53: "S13 D20", 52: "S12 D20", 51: "S11 D20", 50: "S10 D20",
+    49: "S9 D20", 48: "S8 D20", 47: "S7 D20", 46: "S6 D20", 45: "S5 D20", 44: "S4 D20", 43: "S3 D20",
+    42: "S2 D20", 41: "S1 D20", 40: "D20", 39: "S7 D16", 38: "D19", 37: "S5 D16", 36: "D18", 35: "S3 D16",
+    34: "D17", 33: "S1 D16", 32: "D16", 31: "S15 D8", 30: "D15", 29: "S13 D8", 28: "D14", 27: "S11 D8",
+    26: "D13", 25: "S9 D8", 24: "D12", 23: "S7 D8", 22: "D11", 21: "S5 D8", 20: "D10", 19: "S3 D8",
+    18: "D9", 17: "S1 D8", 16: "D8", 15: "S7 D4", 14: "D7", 13: "S5 D4", 12: "D6", 11: "S3 D4", 10: "D5",
+    9: "S1 D4", 8: "D4", 7: "S3 D2", 6: "D3", 5: "S1 D2", 4: "D2", 3: "S1 D1", 2: "D1"
+};
+
+function getDemolishCheckout(score) {
+  if (score > 170 || score < 2) return null;
+  return DEMOLISH_CHECKOUTS[score] || null;
+}
+
+// Convert one checkout dart label ("T20", "D16", "Bull", "S7") to a target
+// { number, aimR } — number tells the scatter sim which segment to aim at,
+// aimR puts the dart in the right *ring* (treble vs single outer vs double).
+// aimROverride=undefined for the bull skips the override entirely.
+function checkoutDartTarget(checkoutPath, dartInTurn) {
+  const darts = checkoutPath.split(' ');
+  const dart = darts[dartInTurn];
+  if (!dart) return null;
+  if (dart.includes('Bull')) return { number: 25, aimR: undefined };
+  const num = parseInt(dart.replace(/[TDS]/, ''), 10);
+  // Treble band 99–107mm (centre 103.5). Double band 162–170mm (centre 166).
+  // Single outer fills 107–162mm — aim 134.5 to centre it.
+  const aimR = dart.startsWith('T') ? 103.5
+             : dart.startsWith('D') ? 166
+             : 134.5;
+  return { number: num, aimR };
+}
+
+// Look up the calibrated sigma for a CPU. Falls back to a mid-tier value
+// if the id is unknown so we never crash an unrecognised opponent.
+function getDemolishSigma(cpuId) {
+  const t = DEMOLISH_PPR_TABLE[cpuId];
+  return t ? t.sigma : 25.0;
+}
+
+// Demolish target selection — bonus → checkout → SD → T20. NOT a generic
+// X01 bot; the bonus logic is the Demolish-specific bit, and the sigma
+// gating ("only chase a bonus if you can hit it") is what stops weak bots
+// from looking silly trying for the 3 on bonus dart and missing the board.
+// Returns { number, aimR } so the caller can put the dart in the right
+// ring (e.g. doubles at 166mm, trebles at 103.5mm).
+function chooseDemolishTarget(player, dartInTurn) {
+  // 1) Bonus targeting — only chase if it makes strategic sense AND the bot
+  //    is accurate enough to realistically hit a specific number.
+  if (activeBonus
+      && activeBonus.playerIdx === cp
+      && activeBonus.dartIdx === dartInTurn) {
+    const sigma = getDemolishSigma(player.cpuData.id);
+    const accurateEnough = sigma <= 20; // 50 PPR and above
+    if (accurateEnough) {
+      const chase = () => ({ number: activeBonus.targetNumber, aimR: 134.5 });
+      if (activeBonus.type === 'demolish') {
+        const worthBombing = players.some((opp, i) =>
+          i !== cp && !opp.checkedOut
+          && (TOTAL_BLOCKS - opp.gemsRemoved) / TOTAL_BLOCKS > 0.30);
+        if (worthBombing) return chase();
+      } else if (activeBonus.type === 'heal') {
+        const ownDamage = player.gemsRemoved / TOTAL_BLOCKS;
+        if (ownDamage > 0.25) return chase();
+      }
+    }
+    // Ignore the bonus — fall through to default scoring.
+  }
+
+  // 2) Checkout — if in range and a path exists, follow it. Each dart in
+  //    the path picks its own ring (treble for setup, double to finish).
+  if (player.score <= 170 && player.score >= 2) {
+    const path = getDemolishCheckout(player.score);
+    if (path) {
+      const t = checkoutDartTarget(path, dartInTurn);
+      if (t) return t;
+    }
+  }
+
+  // 3) Sudden Death — bull is the best single-dart EV.
+  if (sdActive) return { number: 25, aimR: undefined };
+
+  // 4) Default — T20 in the treble ring.
+  return { number: 20, aimR: 103.5 };
 }
 
 function runCpuTurn() {
@@ -1478,9 +1597,18 @@ function runCpuTurn() {
         return;
       }
       const soFar = darts.reduce((a,d)=>a+d.score,0);
-      const remaining = p.turnStart - soFar;
-      const target = getCpuTarget(remaining);
-      const seg = generateCpuThrow(target, p.cpuData.mpr, { prevSeg, dartsThrown: p.totalDartsThrown });
+      const dartInTurn = darts.length;
+      const liveScore = p.turnStart - soFar;
+      const scoreSnapshot = { ...p, score: liveScore };
+      const aim = chooseDemolishTarget(scoreSnapshot, dartInTurn);
+      const sigma = getDemolishSigma(p.cpuData.id);
+      const seg = generateCpuThrow(aim.number, p.cpuData.mpr, {
+        prevSeg,
+        dartsThrown: p.totalDartsThrown,
+        sigmaOverride: sigma,
+        sigmaROverride: Math.max(5, sigma * 0.6),
+        aimROverride: aim.aimR,
+      });
       prevSeg = seg;
       if (seg && seg.number) {
         registerDart(seg.number * (seg.multiplier || 1), seg);
@@ -1526,7 +1654,16 @@ function activateSD(i) {
 }
 function runSDCpuThrow(p) {
   if (!sdActive||!gameActive) return;
-  const seg = generateCpuThrow(20, p.cpuData.mpr, { dartsThrown: p.totalDartsThrown });
+  // SD: aim bull. For top tiers the calibrated sigma + tight sigmaR gives
+  // them a real shot at D25; weak tiers will scatter wildly, which is the
+  // intended SD drama.
+  const sigma = getDemolishSigma(p.cpuData.id);
+  const seg = generateCpuThrow(25, p.cpuData.mpr, {
+    dartsThrown: p.totalDartsThrown,
+    sigmaOverride: sigma,
+    sigmaROverride: Math.max(5, sigma * 0.6),
+    // aimROverride irrelevant for bull (target=25 skips aimR logic).
+  });
   const score = seg && seg.number ? seg.number*(seg.multiplier||1) : 0;
   registerSDDart(score, seg||null);
 }

@@ -176,11 +176,13 @@ body{
   70%{opacity:1;transform:translate(-50%,-125%) scale(1);}
   100%{opacity:0;transform:translate(-50%,-155%) scale(.92);}
 }
-.checkout-hint{flex-shrink:0;text-align:center;padding:5px 4px 2px;min-height:32px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
-.ch-label{font-family:'Share Tech Mono',monospace;font-size:clamp(12px,1.4vw,20px);
+/* min-height is sized to the empty-state slot the checkout hint will fill
+   when it appears, so the tower never shifts up when the suggestion shows. */
+.checkout-hint{flex-shrink:0;text-align:center;padding:6px 4px 2px;min-height:90px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;}
+.ch-label{font-family:'Share Tech Mono',monospace;font-size:clamp(20px,2.4vw,34px);
   letter-spacing:2px;text-transform:uppercase;color:var(--gold);opacity:.7;}
-.ch-combo{font-family:'Orbitron',monospace;font-size:clamp(12px,1.4vw,20px);font-weight:700;
+.ch-combo{font-family:'Orbitron',monospace;font-size:clamp(20px,2.4vw,34px);font-weight:700;
   color:var(--gold);letter-spacing:1px;text-shadow:0 0 10px rgba(252,211,77,.45);}
 .tower-overlay{position:absolute;top:25%;left:50%;transform:translate(-50%,-50%);
   pointer-events:none;z-index:10;white-space:nowrap;}

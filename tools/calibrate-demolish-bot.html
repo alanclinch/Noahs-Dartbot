@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Demolish Bot Calibration</title>
+<style>
+  body{font-family:system-ui,sans-serif;background:#0e1e38;color:#e6f0ff;padding:24px;line-height:1.5;}
+  h1{font-size:20px;letter-spacing:2px;color:#fcd34d;}
+  button{background:#1e5090;color:#fff;border:0;border-radius:8px;
+    padding:12px 22px;font-size:14px;cursor:pointer;letter-spacing:2px;}
+  button:hover{filter:brightness(1.15);}
+  pre{background:#0a1830;border:1px solid #2c4d72;border-radius:8px;
+    padding:14px 16px;margin-top:14px;white-space:pre-wrap;color:#cde;}
+  .note{font-size:13px;opacity:.7;}
+</style>
+<script src="../assets/js/bots.js"></script>
+</head>
+<body>
+<h1>DEMOLISH BOT CALIBRATION</h1>
+<p class="note">Binary-searches sigma per PPR target. ~30s on a modern laptop.
+Output is the DEMOLISH_PPR_TABLE constant to paste into <code>assets/js/demolish.js</code>.
+Same logic as <code>tools/calibrate-demolish-bot.js</code>; either run is canonical.</p>
+<button id="run">Run Calibration</button>
+<pre id="out">Click "Run Calibration" to start.</pre>
+<script>
+const TARGETS = [
+  { id:'cpu0', name:'Jocky Wilson',       ppr:10 },
+  { id:'cpu1', name:'John Lowe',          ppr:20 },
+  { id:'cpu2', name:'Eric Bristow',       ppr:30 },
+  { id:'cpu3', name:'Peter Wright',       ppr:40 },
+  { id:'cpu4', name:'Gary Anderson',      ppr:50 },
+  { id:'cpu5', name:'Luke Littler',       ppr:60 },
+  { id:'cpu6', name:'Luke Humphries',     ppr:70 },
+  { id:'cpu7', name:'Michael van Gerwen', ppr:80 },
+  { id:'cpu8', name:'Phil Taylor',        ppr:90 },
+];
+
+function simulatePPR(sigma, darts = 6000) {
+  let total = 0;
+  const sigmaR = Math.max(5, sigma * 0.6);
+  for (let i = 0; i < darts; i++) {
+    const seg = generateCpuThrow(20, 5.2, {
+      sigmaOverride: sigma,
+      sigmaROverride: sigmaR,
+      aimROverride: 103.5,
+    });
+    if (seg && seg.number) total += seg.number * (seg.multiplier || 1);
+  }
+  return total / (darts / 3);
+}
+function findSigma(targetPPR) {
+  let lo = 2, hi = 200, best = 100, bestErr = Infinity;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const sample = Math.abs(bestErr) < 3 ? 30000 : 6000;
+    const ppr = simulatePPR(mid, sample);
+    const err = ppr - targetPPR;
+    if (Math.abs(err) < Math.abs(bestErr)) { bestErr = err; best = mid; }
+    if (Math.abs(err) <= 0.5 && sample >= 30000) return { sigma: mid, ppr };
+    if (ppr > targetPPR) lo = mid; else hi = mid;
+  }
+  return { sigma: best, ppr: simulatePPR(best, 30000) };
+}
+
+document.getElementById('run').addEventListener('click', () => {
+  const out = document.getElementById('out');
+  out.textContent = 'Running...\n';
+  // Defer so the page can repaint before the synchronous loop blocks it.
+  setTimeout(() => {
+    const results = [];
+    for (const t of TARGETS) {
+      const { sigma, ppr } = findSigma(t.ppr);
+      results.push({ id: t.id, name: t.name, target: t.ppr, sigma, ppr });
+      out.textContent += `${t.name.padEnd(22)} target ${String(t.ppr).padStart(2)} PPR  →  sigma=${sigma.toFixed(2)}mm  ppr=${ppr.toFixed(2)}\n`;
+    }
+    out.textContent += '\nconst DEMOLISH_PPR_TABLE = {\n';
+    for (const r of results) {
+      out.textContent += `  ${r.id}: { ppr: ${r.target}, sigma: ${r.sigma.toFixed(2)} }, // ${r.name} — ${r.ppr.toFixed(1)} PPR\n`;
+    }
+    out.textContent += '};\n';
+  }, 50);
+});
+</script>
+</body>
+</html>

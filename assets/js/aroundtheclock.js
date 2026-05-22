@@ -341,7 +341,7 @@ function addCpu(id) {
   if (players.some(p => p.isCpu && p.name === c.name)) return;
   players.push({
     name: c.name, flag: c.flag, isCpu: true,
-    mpr: c.mpr, face: cpuFace(c.id),
+    cpuId: c.id, mpr: c.mpr, face: cpuFace(c.id),
     color: PLAYER_COLORS[players.length],
     target: 1, hits: 0, dartsThrown: 0,
     score: 0,
@@ -1019,7 +1019,12 @@ function runCpuTurn() {
   if (currentDarts.length >= 3) return;
   if (variant === 'classic' && p.target === 0) return;
   const tgt = inDeadHeat ? 25 : (variant === 'scoreattack' ? TARGET_SEQ[round - 1] : p.target);
-  const opts = { prevSeg: lastSegByPlayer[currentPlayer] || null };
+  const tier = (typeof BOT_TIERS !== 'undefined' && BOT_TIERS[p.cpuId]) || { sigma: 30 };
+  const opts = {
+    sigmaOverride: tier.sigma,
+    cricketAim: variant === 'scoreattack',
+    prevSeg: lastSegByPlayer[currentPlayer] || null,
+  };
   const seg = generateCpuThrow(tgt, p.mpr, opts) || { name: 'M', number: 0, multiplier: 0 };
   lastSegByPlayer[currentPlayer] = seg;
   registerDart(seg);

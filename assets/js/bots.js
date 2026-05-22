@@ -27,6 +27,23 @@ const CPU_PLAYERS = [
   { id:'cpu8', name:'Phil Taylor',        mpr:5.2, flag:'eng'},
 ];
 
+// ── BOT TIERS ────────────────────────────────────────────────
+// Per-CPU sigma values tuned by feel for games that opt in via
+// generateCpuThrow's sigmaOverride. Cricket never reads this; its
+// MPR-based formula stays canonical. Around the Clock (and future
+// non-Cricket games) look up tier sigma here.
+const BOT_TIERS = {
+  cpu0: { sigma: 85 }, // Jocky Wilson
+  cpu1: { sigma: 55 }, // John Lowe
+  cpu2: { sigma: 38 }, // Eric Bristow
+  cpu3: { sigma: 26 }, // Peter Wright
+  cpu4: { sigma: 18 }, // Gary Anderson
+  cpu5: { sigma: 13 }, // Luke Littler
+  cpu6: { sigma:  9 }, // Luke Humphries
+  cpu7: { sigma:  7 }, // Michael van Gerwen
+  cpu8: { sigma:  5 }, // Phil Taylor
+};
+
 // ── FACE SVG GENERATOR ───────────────────────────────────────
 function makeFaceSVG(f, size = 50) {
   const s = size, cx = s / 2, cy = s / 2, r = s * 0.42;
@@ -122,7 +139,16 @@ function generateCpuThrow(target, mpr, opts) {
   // Cap lowered to 70mm (was 80) so the weakest CPU (0.5 MPR) lands closer
   // to its target rating; Mark Control ceiling then prevents overperformance.
   // 0.5→70mm  0.9→54mm  1.3→33mm  1.8→22mm  3.0→13mm  5.2→8.5mm
-  let sigmaT = Math.min(70, 5 + 49 * Math.pow(0.9 / mpr, 1.5));
+  // sigmaOverride lets games (e.g. Demolish) calibrate to their own scoring
+  // metric (PPR) without disturbing Cricket's MPR-based defaults. Cricket
+  // never passes it and is unaffected. The override replaces the initial
+  // sigma; roundForm / missStreak / sigmaMultiplier / yip still apply below.
+  let sigmaT;
+  if (opts.sigmaOverride !== undefined) {
+    sigmaT = opts.sigmaOverride;
+  } else {
+    sigmaT = Math.min(70, 5 + 49 * Math.pow(0.9 / mpr, 1.5));
+  }
   sigmaT /= roundForm;
   sigmaT *= Math.max(0.70, 1 - (missStreak * 0.06));
   if (opts.sigmaMultiplier && opts.sigmaMultiplier !== 1.0) sigmaT *= opts.sigmaMultiplier;
@@ -136,7 +162,12 @@ function generateCpuThrow(target, mpr, opts) {
   // Calibrated to give ~1-2 multiples per 30 rounds at 0.9, ~3-4 at 1.8:
   //   P(|radial drift| > 27.5mm) ≈ 2×Φ(-27.5/σR)
   //   0.9→σR=12.4mm→2.3/30rds  1.3→σR=13.0mm→3.1/30rds  1.8→σR=13.7mm→4.0/30rds
-  let sigmaR = Math.max(8, Math.min(18, 11 + mpr * 1.5));
+  // sigmaROverride is the same additive escape hatch as sigmaOverride —
+  // Demolish needs it to make high-PPR bots reliably land in the 8mm-wide
+  // treble band. Cricket never sets it.
+  let sigmaR = (opts.sigmaROverride !== undefined)
+    ? opts.sigmaROverride
+    : Math.max(8, Math.min(18, 11 + mpr * 1.5));
 
   // ── Cricket-specific tuning ──────────────────────────────────
   // Gated on opts.cricketAim so X01/Demolish/etc. are untouched.
@@ -170,6 +201,10 @@ function generateCpuThrow(target, mpr, opts) {
     } else {
       aimR = 134.5;
     }
+    // aimROverride lets Demolish point the bot at the treble centre (103.5mm)
+    // so high-PPR tiers can land trebles consistently. Additive — Cricket
+    // and X01 never set it and behave exactly as before.
+    if (opts.aimROverride !== undefined) aimR = opts.aimROverride;
     aimTheta = getSectorAngle(target);
   }
 
