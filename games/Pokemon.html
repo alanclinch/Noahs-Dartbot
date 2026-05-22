@@ -41,9 +41,24 @@
 
   <div class="setup-card">
     <h3>Settings</h3>
-    <div class="setting-actions" style="margin-top:0;padding-top:0;border-top:none;">
+    <div class="settings-grid">
+      <label class="setting-row">
+        <input type="checkbox" id="voice-toggle" onchange="setVoice(this.checked)" checked>
+        <span>Voice Caller</span>
+      </label>
+      <label class="setting-row">
+        <input type="checkbox" id="sfx-toggle" onchange="setSfx(this.checked)" checked>
+        <span>Sound Effects</span>
+      </label>
+      <label class="setting-row">
+        <input type="checkbox" id="test-mode-toggle" onchange="setTestMode(this.checked)">
+        <span>Test Mode (2 humans, silent, fast)</span>
+      </label>
+    </div>
+    <div class="setting-actions">
       <button class="setting-action-btn" onclick="window.location.href='../index.html'">Main Menu</button>
       <button class="setting-action-btn" onclick="showStatsModal()">View Stats</button>
+      <button class="setting-action-btn" onclick="promptNeonString()">Connect DB</button>
     </div>
   </div>
 </div>
@@ -267,7 +282,10 @@
     </div>
 
     <button class="end-btn" id="next-player-btn" onclick="advanceTurn()" style="display:none;border-color:var(--green);color:var(--green);">NEXT PLAYER →</button>
-    <button class="end-btn" onclick="showLog()" style="border-color:var(--amber);color:var(--amber);">Show Throw Log</button>
+    <div style="display:flex;gap:6px;">
+      <button class="end-btn" onclick="showLog()" style="flex:1;font-size:11px;border-color:var(--amber);color:var(--amber);">Throw Log</button>
+      <button class="end-btn" onclick="showKeyHelp()" style="flex:1;font-size:11px;border-color:var(--blue);color:var(--blue);">? Keys</button>
+    </div>
     <button class="end-btn" onclick="endGame()">End Game</button>
   </div>
 </div>
@@ -317,6 +335,26 @@
     <div id="stats-content"></div>
     <div style="display:flex;gap:12px;margin-top:20px;justify-content:center;">
       <button class="win-btn" onclick="closeStatsModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- KEYBOARD HELP MODAL -->
+<div id="key-help-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);">
+  <div style="background:var(--bg2,#111);border:2px solid var(--border2,#333);border-radius:14px;padding:24px 28px;max-width:560px;color:var(--text,#eee);font-family:'Share Tech Mono',monospace;line-height:1.7;">
+    <h2 style="color:var(--blue);font-family:'Orbitron',monospace;margin:0 0 14px;">KEYBOARD SHORTCUTS</h2>
+    <div><b>1–9, 0</b> &nbsp;→ numbers 1–10 (0 = ten)</div>
+    <div><b>Q W E R T Y U I O P</b> &nbsp;→ numbers 11–20</div>
+    <div><b>Shift</b>+number → DOUBLE that number</div>
+    <div><b>Ctrl</b>+number → TREBLE that number</div>
+    <div>(or click the on-screen DOUBLE/TREBLE buttons for sticky mode)</div>
+    <div><b>B</b> &nbsp;→ Bull (25) &nbsp;·&nbsp; <b>Shift+B</b> → Bullseye (D25)</div>
+    <div><b>M</b> &nbsp;→ Miss</div>
+    <div><b>Backspace</b> &nbsp;→ Undo last dart</div>
+    <div><b>Enter / Space</b> &nbsp;→ Advance to next player</div>
+    <div style="margin-top:10px;color:var(--muted);font-size:12px;">Test Mode allows you to play both sides yourself. Number/letter keys also work during the draft phase.</div>
+    <div style="text-align:center;margin-top:18px;">
+      <button class="win-btn" onclick="closeKeyHelp()">CLOSE</button>
     </div>
   </div>
 </div>

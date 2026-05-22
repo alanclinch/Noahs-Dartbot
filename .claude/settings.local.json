@@ -8,7 +8,8 @@
       "WebFetch(domain:greasyfork.org)",
       "Bash(git add *)",
       "Bash(git push *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(node --check c:/Projects/DartBot/assets/js/pokemon.js)"
     ]
   }
 }

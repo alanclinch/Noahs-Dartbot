@@ -1464,7 +1464,13 @@ function getAdaptiveSigmaMul(p){
 // and [lo, hi] is the integer band the sampler is allowed to accept from.
 function getMarkControlRange(round, cpu, p) {
   if (round <= 1 || p.dartsThrown < 3) return null;
-  const target = cpu.mpr;
+  // Internal target is 6% above rated MPR — compensates for mark control's
+  // structural asymmetric bias (when behind, physics can't always produce
+  // enough marks to fully recover; when ahead, physics easily produces low
+  // marks). Empirically derived from Standard test suite runs: every bot
+  // ended ~5–8% under target without this adjustment. The bias is invisible
+  // to the player — they still see Eric Bristow as "1.3 MPR" in the UI.
+  const target = cpu.mpr * 1.06;
 
   // Deficit: how far behind/ahead of pace are we? Catch up in one round,
   // but cap the per-turn aim near target so corrections feel human rather

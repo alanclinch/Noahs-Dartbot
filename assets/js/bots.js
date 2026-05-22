@@ -126,7 +126,9 @@ function generateCpuThrow(target, mpr, opts) {
   sigmaT /= roundForm;
   sigmaT *= Math.max(0.70, 1 - (missStreak * 0.06));
   if (opts.sigmaMultiplier && opts.sigmaMultiplier !== 1.0) sigmaT *= opts.sigmaMultiplier;
-  if (Math.random() < 0.03) sigmaT *= (1.5 + Math.random()); // occasional yip
+  // Yip is suppressed for cricket — it contributed a flat ~3% downward MPR bias
+  // across all bots. X01/Demolish still get the realistic occasional bad throw.
+  if (!opts.cricketAim && Math.random() < 0.03) sigmaT *= (1.5 + Math.random());
 
   // ── Radial sigma (ring scatter) ──────────────────────────────
   // Controls how often the dart drifts into the treble or double ring.
@@ -138,17 +140,18 @@ function generateCpuThrow(target, mpr, opts) {
 
   // ── Cricket-specific tuning ──────────────────────────────────
   // Gated on opts.cricketAim so X01/Demolish/etc. are untouched.
-  // (1) Angular accuracy tightened 7% — compensates for the ~5–10% MPR
-  //     undershoot seen across all bots in cricket test runs.
-  // (2) For high-MPR bots (3.7+), radial sigma blends down to 6mm so darts
-  //     actually land in the 8mm-wide treble ring. Default sigmaR was tuned
-  //     for X01 single-outer aim; on treble aim it scatters out.
-  if (opts.cricketAim) {
-    sigmaT *= 0.93;
-    if (mpr >= 3.7) {
-      const t = Math.min(1, (mpr - 3.7) / 1.5);
-      sigmaR = sigmaR * (1 - t) + 6 * t;
-    }
+  // For high-MPR bots (3.7+), radial sigma blends down to 6mm so darts
+  // actually land in the 8mm-wide treble ring. Default sigmaR was tuned
+  // for X01 single-outer aim; on treble aim it scatters out.
+  // (sigmaT tightening was tried at 0.93 and did nothing measurable for
+  // low bots — reverted in favour of removing the yip above.)
+  if (opts.cricketAim && mpr >= 3.7) {
+    // Sharp ramp (divisor 0.5) so MPR 4.4 reaches the sigmaR floor (6mm)
+    // alongside Phil at 5.2. vG was physics-limited at ~4.24 MPR with the
+    // previous 9.6mm sigmaR — too wide to land trebles reliably. 3.7
+    // (Humphries) is unchanged at t=0; 5.2 (Phil) already at floor.
+    const t = Math.min(1, (mpr - 3.7) / 0.5);
+    sigmaR = sigmaR * (1 - t) + 6 * t;
   }
 
   // ── Aim point ────────────────────────────────────────────────
@@ -158,8 +161,12 @@ function generateCpuThrow(target, mpr, opts) {
   let aimR = 0, aimTheta = 0;
   if (target !== 25) {
     if (opts.cricketAim) {
-      const t = Math.max(0, Math.min(1, (mpr - 0.5) / 4.7));
-      aimR = 134.5 - 31 * t; // 134.5mm @ MPR 0.5 → 103.5mm @ MPR 5.2
+      // Snap aim onto the treble centre once the bot is good enough to live
+      // there. Divisor 3.2 (was 4.7) means MPR 3.7+ all aim at treble centre
+      // exactly (103.5mm); lower MPR bots gradually slide from single outer
+      // (134.5mm @ MPR 0.5) toward treble.
+      const t = Math.max(0, Math.min(1, (mpr - 0.5) / 3.2));
+      aimR = 134.5 - 31 * t;
     } else {
       aimR = 134.5;
     }

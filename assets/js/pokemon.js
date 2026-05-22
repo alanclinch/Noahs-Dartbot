@@ -62,6 +62,62 @@ let finishMode = false;
 let finishTarget = 0;
 let finishTotal = 0;
 
+// Test/audio settings
+let testMode = false;
+let voiceEnabled = true;
+let sfxEnabled = true;
+
+// Audio wrappers — silence speech/sfx in test mode or when toggled off
+function aSpeak(text, priority) {
+  if (testMode || !voiceEnabled) return;
+  speak(text, priority);
+}
+function aSfx(fn) {
+  if (testMode || !sfxEnabled || !fn) return;
+  fn();
+}
+// Timing helper — collapse animation/voice delays in test mode
+function tDelay(ms) { return testMode ? 0 : ms; }
+
+function setTestMode(val) {
+  testMode = val;
+  if (val) cancelSpeech();
+  try { localStorage.setItem('dartbot_testmode', val ? '1' : '0'); } catch {}
+}
+function setVoice(val) {
+  voiceEnabled = val;
+  if (!val) cancelSpeech();
+  try { localStorage.setItem('dartbot_voice_enabled', val ? '1' : '0'); } catch {}
+}
+function setSfx(val) {
+  sfxEnabled = val;
+  try { localStorage.setItem('dartbot_sfx_enabled', val ? '1' : '0'); } catch {}
+}
+
+function showKeyHelp() {
+  const m = document.getElementById('key-help-modal');
+  if (m) m.style.display = 'flex';
+}
+function closeKeyHelp() {
+  const m = document.getElementById('key-help-modal');
+  if (m) m.style.display = 'none';
+}
+
+// Prompt for Neon DB string when user clicks the Settings button
+async function promptNeonString() {
+  const cur = localStorage.getItem('neon_db_string') || '';
+  const v = prompt('Enter your Neon Database Connection String for cloud stats:\n(Leave blank to play offline)', cur);
+  if (v === null) return;
+  if (v.trim() === '') {
+    localStorage.removeItem('neon_db_string');
+    alert('Neon DB cleared — running offline.');
+    return;
+  }
+  localStorage.setItem('neon_db_string', v.trim());
+  await initNeonDB();
+  alert('Neon DB connected.');
+}
+
 // =============================================
 // UTILITIES
 // =============================================
@@ -97,14 +153,9 @@ let sql = null;
 
 async function initNeonDB() {
   try {
+    const connString = localStorage.getItem('neon_db_string');
+    if (!connString) return; // No prompt — user must click "Connect DB" in Settings
     const { neon } = await import('https://esm.sh/@neondatabase/serverless');
-    let connString = localStorage.getItem('neon_db_string');
-    if (!connString) {
-      connString = prompt("Enter your Neon Database Connection String for cloud stats:\n(Leave blank to play offline)");
-      if (connString && connString.trim() !== '') {
-        localStorage.setItem('neon_db_string', connString.trim());
-      } else { return; }
-    }
     sql = neon(connString);
     try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS avg_cp FLOAT`; } catch(e) {}
     try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS match_pokemon VARCHAR(50)`; } catch(e) {}
@@ -395,7 +446,7 @@ function registerDraftThrow(seg) {
   if (!draftPhase) return;
   const num = seg ? Number(seg.number) : 0;
   if (!num || num < 1 || num > 20) {
-    sfxMiss();
+    aSfx(sfxMiss);
     flash('Miss! Try again.', 'var(--muted)');
     return;
   }
@@ -411,7 +462,7 @@ function registerDraftThrow(seg) {
   }
 
   players[draftStep].pokemon = poke;
-  speak(`${poke.name}!`);
+  aSpeak(`${poke.name}!`);
 
   if (draftStep === 0) {
     draftStep = 1;
@@ -426,11 +477,11 @@ function registerDraftThrow(seg) {
         }
         const pick = remaining[rand(0, remaining.length - 1)];
         registerDraftThrow({ number: pick, multiplier: 1, name: 'S' + pick });
-      }, 900);
+      }, tDelay(900));
     }
   } else {
     // Both picked
-    setTimeout(() => completeDraft(), 800);
+    setTimeout(() => completeDraft(), tDelay(800));
   }
 }
 
@@ -441,7 +492,7 @@ function completeDraft() {
   setTimeout(() => {
     showScreen('game');
     startBattle();
-  }, 2500);
+  }, tDelay(2500));
 }
 
 function buildVSScreen() {
@@ -524,14 +575,14 @@ function startTurn() {
   if (p.status === 'burn') {
     p.hp = Math.max(0, p.hp - 20);
     flash('BURN DAMAGE! -20 HP', 'var(--poke-red)');
-    speak('Burn damage!');
-    sfxStatus();
+    aSpeak('Burn damage!');
+    aSfx(sfxStatus);
   }
 
   // Paralyse: 2 darts only
   if (p.status === 'paralyse') {
     p._maxDartsThisTurn = 2;
-    speak('Paralysed! 2 darts only.');
+    aSpeak('Paralysed! 2 darts only.');
     flash('PARALYSED! 2 DARTS', 'var(--amber)');
   }
 
@@ -549,7 +600,7 @@ function startTurn() {
     p._maxDartsThisTurn = Math.max(1, p._maxDartsThisTurn - 1);
     p.dartLostNext = false;
     flash('DART STOLEN! Fewer darts this turn.', '#a78bfa');
-    speak('A dart was stolen!');
+    aSpeak('A dart was stolen!');
   }
 
   // Finish mode: opponent has ≤ 20 HP — must hit exactly
@@ -560,7 +611,7 @@ function startTurn() {
   if (oppForFinish.hp > 0 && oppForFinish.hp <= 20) {
     finishMode = true;
     finishTarget = oppForFinish.hp;
-    sfxFinishMode();
+    aSfx(sfxFinishMode);
     flash(`FINISH! Hit ${finishTarget} exactly!`, 'var(--poke-yellow)');
   }
 
@@ -569,10 +620,11 @@ function startTurn() {
   if (nameEl) { nameEl.textContent = p.name; nameEl.classList.toggle('cpu-turn', p.isCpu); }
   const subEl = document.getElementById('turn-sub');
   if (subEl) subEl.textContent = p.isCpu ? 'Computer thinking...' : (finishMode ? `Hit ${finishTarget} EXACTLY` : 'Throw your darts');
+  applyTurnIndicator();
 
   updateBattleField();
   updateScoringGuide();
-  if (p.isCpu) setTimeout(() => runCpuTurn(), finishMode ? 1500 : 2000);
+  if (p.isCpu) setTimeout(() => runCpuTurn(), tDelay(finishMode ? 1500 : 2000));
 }
 
 function advanceTurn() {
@@ -595,10 +647,10 @@ function advanceTurn() {
   if (guide) guide.classList.remove('visible');
   setTimeout(() => {
     const callName = players[currentPlayer].isCpu ? players[currentPlayer].name.split(' ')[0] : players[currentPlayer].name;
-    speak(callName);
+    aSpeak(callName);
     startTurn();
     advancing = false;
-  }, 600);
+  }, tDelay(600));
 }
 
 function resetDartSlots() {
@@ -639,14 +691,14 @@ function registerDart(seg) {
       const healAmt = mul === 2 ? 50 : 25;
       p.hp = Math.min(p.maxHp, p.hp + healAmt);
       p.totalHeal += healAmt;
-      sfxPokeHeal();
+      aSfx(sfxPokeHeal);
       flash(`+${healAmt} HP (${mul === 2 ? 'Bullseye' : 'Bull'} Heal!)`, 'var(--hp-green)');
-      speak(`${healAmt} healed!`);
+      aSpeak(`${healAmt} healed!`);
       currentDarts.push({ label: `+${healAmt}HP`, type: 'heal', amount: healAmt, mul });
       updateDartSlot(dartIdx, `+${healAmt}HP`, 'heal');
       updateBattleField();
     } else if (!num || num === 0) {
-      sfxMiss();
+      aSfx(sfxMiss);
       flash('Miss!', 'var(--muted)');
       currentDarts.push({ label: 'Miss', type: 'miss', amount: 0, mul: 0 });
       updateDartSlot(dartIdx, 'Miss', 'miss');
@@ -655,9 +707,9 @@ function registerDart(seg) {
       finishTotal += num;
       if (finishTotal > finishTarget) {
         // Bust
-        sfxBust();
+        aSfx(sfxBust);
         flash('BUST! No finish!', 'var(--poke-red)');
-        speak('Bust!');
+        aSpeak('Bust!');
         currentDarts.push({ label: 'BUST!', type: 'miss', amount: 0, mul });
         updateDartSlot(dartIdx, 'BUST!', 'miss');
         endFinishTurn();
@@ -665,17 +717,17 @@ function registerDart(seg) {
       } else if (finishTotal === finishTarget) {
         // Win!
         players[1 - currentPlayer].hp = 0;
-        sfxPokeDamage();
+        aSfx(sfxPokeDamage);
         flash(`FINISH! ${finishTarget} EXACTLY! 🎯`, 'var(--gold)');
-        speak('Finish!');
+        aSpeak('Finish!');
         currentDarts.push({ label: `${num}✓`, type: 'crit', amount: num, mul });
         updateDartSlot(dartIdx, `${num}✓`, 'scored');
         updateBattleField();
         turnEnded = true;
-        setTimeout(() => endWithWinner(currentPlayer), 800);
+        setTimeout(() => endWithWinner(currentPlayer), tDelay(800));
         return;
       } else {
-        sfxPokeDamage();
+        aSfx(sfxPokeDamage);
         const rem = finishTarget - finishTotal;
         flash(`${num} hit — need ${rem} more`, 'var(--amber)');
         currentDarts.push({ label: `${num} (${finishTotal})`, type: 'hit', amount: num, mul });
@@ -716,7 +768,7 @@ function registerDart(seg) {
       const nextBtn = document.getElementById('next-player-btn');
       if (nextBtn) nextBtn.style.display = '';
     } else {
-      setTimeout(() => advanceTurn(), 800);
+      setTimeout(() => advanceTurn(), tDelay(800));
     }
   }
 }
@@ -728,7 +780,7 @@ function endFinishTurn() {
     const nextBtn = document.getElementById('next-player-btn');
     if (nextBtn) nextBtn.style.display = '';
   } else {
-    setTimeout(() => advanceTurn(), 800);
+    setTimeout(() => advanceTurn(), tDelay(800));
   }
 }
 
@@ -829,27 +881,27 @@ function applyEffect(result, attackerIdx) {
       opp.hp = Math.max(0, opp.hp - result.amount);
       attacker.totalDmg += result.amount;
     }
-    sfxPokeDamage();
+    aSfx(sfxPokeDamage);
     flash(`-${result.amount} HP`, 'var(--poke-red)');
-    speak(`${result.amount} damage!`);
+    aSpeak(`${result.amount} damage!`);
   } else if (result.type === 'heal') {
     const healed = Math.min(attacker.maxHp - attacker.hp, result.amount);
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + result.amount);
     attacker.totalHeal += healed;
-    sfxPokeHeal();
+    aSfx(sfxPokeHeal);
     flash(`+${result.amount} HP`, 'var(--hp-green)');
-    speak(`Healed ${result.amount}!`);
+    aSpeak(`Healed ${result.amount}!`);
   } else if (result.type === 'crit') {
     wasEndured = checkEndure(pi, result.amount);
     if (!wasEndured) {
       opp.hp = Math.max(0, opp.hp - result.amount);
       attacker.totalDmg += result.amount;
     }
-    sfxPokeCrit();
+    aSfx(sfxPokeCrit);
     flash(`CRITICAL HIT! -${result.amount}`, '#ff4444');
-    speak(`Critical hit! ${result.amount} damage!`);
+    aSpeak(`Critical hit! ${result.amount} damage!`);
     if (result.statusInflict) {
-      setTimeout(() => applyStatus(oi, result.statusInflict), 400);
+      setTimeout(() => applyStatus(oi, result.statusInflict), tDelay(400));
     }
   } else if (result.type === 'bull') {
     if (result.item) applyItem(result.item, attacker);
@@ -860,12 +912,12 @@ function applyEffect(result, attackerIdx) {
         attacker.totalDmg += result.amount;
       }
     }
-    sfxBull();
+    aSfx(sfxBull);
     if (result.statusInflict) {
-      setTimeout(() => applyStatus(oi, result.statusInflict), 600);
+      setTimeout(() => applyStatus(oi, result.statusInflict), tDelay(600));
     }
   } else if (result.type === 'miss') {
-    sfxMiss();
+    aSfx(sfxMiss);
     flash('Miss!', 'var(--muted)');
   }
 
@@ -882,17 +934,17 @@ function applyItem(item, player) {
     player.hp = Math.min(player.maxHp, player.hp + 60);
     player.totalHeal += 60;
     flash('+60 HP (Potion!)', 'var(--hp-green)');
-    speak('Potion!');
-    sfxPokeHeal();
+    aSpeak('Potion!');
+    aSfx(sfxPokeHeal);
   } else if (item === 'xattack') {
     xAttackBonus = 15;
     flash('X-Attack! +15 DMG', 'var(--amber)');
-    speak('X Attack!');
+    aSpeak('X Attack!');
   } else if (item === 'statuscure') {
     player.status = null;
     player.statusDurtn = 0;
     flash('Status Cured!', 'var(--green)');
-    speak('Status Cure!');
+    aSpeak('Status Cure!');
   }
 }
 
@@ -902,8 +954,8 @@ function checkEndure(attackerIdx, damage) {
   if (opp.hp - damage < 0 && opp.hp > 0) {
     opp.hp = 1;
     flash('ENDURE!', 'var(--poke-red)');
-    speak('Endures the hit!');
-    sfxMiss();
+    aSpeak('Endures the hit!');
+    aSfx(sfxMiss);
     return true;
   }
   return false;
@@ -916,8 +968,8 @@ function applyStatus(victimIdx, statusType) {
   const label = statusType === 'burn' ? 'BURNED!' : 'PARALYSED!';
   const color = statusType === 'burn' ? 'var(--poke-red)' : 'var(--amber)';
   flash(label, color);
-  speak(statusType === 'burn' ? 'Burned!' : 'Paralysed!');
-  sfxStatus();
+  aSpeak(statusType === 'burn' ? 'Burned!' : 'Paralysed!');
+  aSfx(sfxStatus);
   updateBattleField();
 }
 
@@ -963,8 +1015,8 @@ function triggerEvolution(playerIdx) {
   }
 
   flash(`MEGA EVOLUTION! ${p.pokemon.mname}!`, 'var(--gold)');
-  speak(`${p.pokemon.name} evolved into ${p.pokemon.mname}!`);
-  sfxEvolution();
+  aSpeak(`${p.pokemon.name} evolved into ${p.pokemon.mname}!`);
+  aSfx(sfxEvolution);
 }
 
 // =============================================
@@ -975,7 +1027,7 @@ function checkWin() {
   if (opp.hp <= 0) {
     opp.hp = 0;
     updateBattleField();
-    setTimeout(() => endWithWinner(currentPlayer), 600);
+    setTimeout(() => endWithWinner(currentPlayer), tDelay(600));
     return true;
   }
   return false;
@@ -995,8 +1047,8 @@ function stopWinMusic() {
 async function endWithWinner(idx) {
   gameActive = false;
   const winner = players[idx], loser = players[1 - idx];
-  playWinMusic();
-  speak(`${winner.name} wins!`, true);
+  if (!testMode && sfxEnabled) playWinMusic();
+  aSpeak(`${winner.name} wins!`, true);
 
   const avgCp = p => p.cpTurns > 0 ? Math.round((p.totalDmg + p.totalHeal) / p.cpTurns) : 0;
   const winnerCp = avgCp(winner);
@@ -1019,7 +1071,7 @@ async function endWithWinner(idx) {
     if (!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, avgCp(p), p.pokemon.name, gameMode);
   });
 
-  spawnConfetti();
+  if (!testMode) spawnConfetti();
   showScreen('winner');
 }
 
@@ -1090,6 +1142,25 @@ function updateBattleField() {
     const az = document.querySelector('.action-zone');
     if (az) az.classList.toggle('finish-mode', finishMode);
   }
+  applyTurnIndicator();
+}
+
+function applyTurnIndicator() {
+  // Color-code the active player banner and battle side
+  const info = document.querySelector('#poke-panel .turn-info');
+  if (info) {
+    info.classList.remove('turn-p0', 'turn-p1');
+    if (gameActive) info.classList.add('turn-p' + currentPlayer);
+    if (players[0]) info.style.setProperty('--p1-color', players[0].color);
+    if (players[1]) info.style.setProperty('--p2-color', players[1].color);
+  }
+  [0, 1].forEach(i => {
+    const side = document.getElementById(`poke-side-${i}`);
+    if (!side) return;
+    side.classList.remove('active-side-p0', 'active-side-p1');
+    if (gameActive && i === currentPlayer) side.classList.add('active-side-p' + i);
+    if (players[i]) side.style.setProperty(i === 0 ? '--p1-color' : '--p2-color', players[i].color);
+  });
 }
 
 function setActionZone(main, sub) {
@@ -1247,10 +1318,10 @@ function runCpuTurn() {
         if (gameActive && !turnEnded) {
           turnEnded = true;
           checkEvolution(currentPlayer);
-          setTimeout(() => advanceTurn(), 800);
+          setTimeout(() => advanceTurn(), tDelay(800));
         }
-      }), 1000);
-    }), 1000);
+      }), tDelay(1000));
+    }), tDelay(1000));
   });
 }
 
@@ -1328,7 +1399,9 @@ function manualDraft(num) {
   if (!draftPhase || draftStep > 1) return;
   if (draftStep === 1 && players[1].isCpu) return;
   if (num < 1 || num > 20) return;
-  registerDraftThrow({ number: num, multiplier: 1, name: 'S' + num });
+  const seg = { number: num, multiplier: 1, name: 'S' + num };
+  throwLog.push({ segment: seg, source: 'manual', phase: 'draft', player: draftStep, ts: Date.now() });
+  registerDraftThrow(seg);
 }
 
 function manualDart(num) {
@@ -1341,16 +1414,19 @@ function manualDart(num) {
     return;
   }
   if (num === 0) {
+    throwLog.push({ segment: null, source: 'manual', phase: 'battle', player: currentPlayer, ts: Date.now() });
     registerDart(null);
   } else {
     let mul = keypadMod;
     if (num === 25 && mul === 3) mul = 1;
     const nameMap = { 1:'S', 2:'D', 3:'T' };
-    registerDart({
+    const seg = {
       number: num, multiplier: mul,
       name: num === 25 ? (mul === 2 ? 'D25' : 'B25') : `${nameMap[mul]}${num}`,
       bed: num === 25 ? 'Single' : (mul === 2 ? 'Double' : mul === 3 ? 'Triple' : 'SingleOuter'),
-    });
+    };
+    throwLog.push({ segment: seg, source: 'manual', phase: 'battle', player: currentPlayer, ts: Date.now() });
+    registerDart(seg);
   }
   if (keypadMod !== 1) toggleKeypadMod(keypadMod);
 }
@@ -1491,16 +1567,92 @@ function sfxBust() {
 // =============================================
 // KEYBOARD SHORTCUTS
 // =============================================
+// Map letter keys (Q-P row) to dart numbers 11–20
+const LETTER_TO_NUM = { q:11, w:12, e:13, r:14, t:15, y:16, u:17, i:18, o:19, p:20 };
+
+function _throwManual(num, mul) {
+  if (num === 0) {
+    if (draftPhase) return;
+    manualDart(0);
+    return;
+  }
+  if (draftPhase) {
+    if (num >= 1 && num <= 20) manualDraft(num);
+    return;
+  }
+  if (!gameActive || turnEnded || players[currentPlayer].isCpu) return;
+  // Use transient mul if provided; otherwise fall through to manualDart (respects sticky keypadMod)
+  if (mul && mul !== 1) {
+    const savedMod = keypadMod;
+    keypadMod = mul;
+    manualDart(num);
+    keypadMod = savedMod;
+    // Reset the on-screen toggle indicator (manualDart only resets if it was non-1)
+    document.getElementById('mod-double').classList.toggle('active', keypadMod === 2);
+    document.getElementById('mod-treble').classList.toggle('active', keypadMod === 3);
+  } else {
+    manualDart(num);
+  }
+}
+
 document.addEventListener('keydown', e => {
-  if (e.key === ' ' || e.key === 'Enter') {
+  // Ignore when typing into inputs/textareas (name field, log textarea, etc.)
+  const tgt = e.target;
+  if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.isContentEditable)) return;
+
+  // Modals open? Close on Escape.
+  if (e.key === 'Escape') {
+    closeLog();
+    closeKeyHelp();
+    return;
+  }
+
+  const key = e.key;
+  const lower = key.toLowerCase();
+
+  // Enter / Space → advance turn (only when applicable)
+  if (key === 'Enter' || key === ' ') {
     if (draftPhase) return;
     if (gameActive && !players[currentPlayer].isCpu && (turnEnded || currentDarts.length > 0)) {
+      e.preventDefault();
       advanceTurn();
     }
     return;
   }
-  if (e.key === '0' && gameActive && !players[currentPlayer].isCpu) {
-    registerDart(null);
+
+  // Backspace → undo
+  if (key === 'Backspace') {
+    if (gameActive) { e.preventDefault(); undoLastDart(); }
+    return;
+  }
+
+  // Miss
+  if (lower === 'm') { e.preventDefault(); _throwManual(0); return; }
+
+  // Bull / Bullseye
+  if (lower === 'b') {
+    if (draftPhase) return;
+    e.preventDefault();
+    _throwManual(25, e.shiftKey ? 2 : 1);
+    return;
+  }
+
+  // Number row 1–9, 0 → 1–10
+  if (/^[0-9]$/.test(key)) {
+    const num = key === '0' ? 10 : Number(key);
+    const mul = e.ctrlKey ? 3 : (e.shiftKey ? 2 : 1);
+    e.preventDefault();
+    _throwManual(num, mul);
+    return;
+  }
+
+  // Letter row → 11–20
+  if (lower in LETTER_TO_NUM) {
+    const num = LETTER_TO_NUM[lower];
+    const mul = e.ctrlKey ? 3 : (e.shiftKey ? 2 : 1);
+    e.preventDefault();
+    _throwManual(num, mul);
+    return;
   }
 });
 
@@ -1508,6 +1660,17 @@ document.addEventListener('keydown', e => {
 // INIT
 // =============================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Load persisted settings before initialising audio/UI
+  voiceEnabled = localStorage.getItem('dartbot_voice_enabled') !== '0';
+  sfxEnabled   = localStorage.getItem('dartbot_sfx_enabled')   !== '0';
+  testMode     = localStorage.getItem('dartbot_testmode') === '1';
+  const vcb = document.getElementById('voice-toggle');
+  const scb = document.getElementById('sfx-toggle');
+  const tcb = document.getElementById('test-mode-toggle');
+  if (vcb) vcb.checked = voiceEnabled;
+  if (scb) scb.checked = sfxEnabled;
+  if (tcb) tcb.checked = testMode;
+
   initNeonDB();
   buildCpuGrid();
   renderRecentPlayers();
