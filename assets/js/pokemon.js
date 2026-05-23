@@ -6,26 +6,26 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Bulbasaur',  cls:'Tank',    baseHp:425, sid:1,   msid:2,   mname:'Ivysaur'},
-  {id:2,  name:'Charmander', cls:'Brawler', baseHp:375, sid:4,   msid:5,   mname:'Charmeleon'},
-  {id:3,  name:'Squirtle',   cls:'Sniper',  baseHp:350, sid:7,   msid:8,   mname:'Wartortle'},
-  {id:4,  name:'Treecko',    cls:'Tank',    baseHp:425, sid:252, msid:253, mname:'Grovyle'},
-  {id:5,  name:'Torchic',    cls:'Brawler', baseHp:375, sid:255, msid:256, mname:'Combusken'},
-  {id:6,  name:'Mudkip',     cls:'Sniper',  baseHp:350, sid:258, msid:259, mname:'Marshtomp'},
-  {id:7,  name:'Turtwig',    cls:'Tank',    baseHp:425, sid:387, msid:388, mname:'Grotle'},
-  {id:8,  name:'Chimchar',   cls:'Brawler', baseHp:375, sid:390, msid:391, mname:'Monferno'},
-  {id:9,  name:'Piplup',     cls:'Sniper',  baseHp:350, sid:393, msid:394, mname:'Prinplup'},
-  {id:10, name:'Chespin',    cls:'Tank',    baseHp:425, sid:650, msid:651, mname:'Quilladin'},
-  {id:11, name:'Fennekin',   cls:'Brawler', baseHp:375, sid:653, msid:654, mname:'Braixen'},
-  {id:12, name:'Froakie',    cls:'Sniper',  baseHp:350, sid:656, msid:657, mname:'Frogadier'},
-  {id:13, name:'Rowlet',     cls:'Tank',    baseHp:425, sid:722, msid:723, mname:'Dartrix'},
-  {id:14, name:'Litten',     cls:'Brawler', baseHp:375, sid:725, msid:726, mname:'Torracat'},
-  {id:15, name:'Popplio',    cls:'Sniper',  baseHp:350, sid:728, msid:729, mname:'Brionne'},
-  {id:16, name:'Sprigatito', cls:'Tank',    baseHp:425, sid:906, msid:907, mname:'Floragato'},
-  {id:17, name:'Fuecoco',    cls:'Brawler', baseHp:375, sid:909, msid:910, mname:'Crocalor'},
-  {id:18, name:'Quaxly',     cls:'Sniper',  baseHp:350, sid:912, msid:913, mname:'Quaxwell'},
-  {id:19, name:'Eevee',      cls:'Status',  baseHp:360, sid:133, msid:134, mname:'Vaporeon'},
-  {id:20, name:'Pikachu',    cls:'Sniper',  baseHp:350, sid:25,  msid:26,  mname:'Raichu'},
+  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      cls:'Tank',    baseHp:425, sid:1,   msid:2,   mname:'Ivysaur'},
+  {id:2,  name:'Charmander', vname:'Char-man-der',       cls:'Brawler', baseHp:375, sid:4,   msid:5,   mname:'Charmeleon'},
+  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          cls:'Sniper',  baseHp:350, sid:7,   msid:8,   mname:'Wartortle'},
+  {id:4,  name:'Treecko',    vname:'Tree-ko',            cls:'Tank',    baseHp:425, sid:252, msid:253, mname:'Grovyle'},
+  {id:5,  name:'Torchic',    vname:'Tor-chik',           cls:'Brawler', baseHp:375, sid:255, msid:256, mname:'Combusken'},
+  {id:6,  name:'Mudkip',     vname:'Mud-kip',            cls:'Sniper',  baseHp:350, sid:258, msid:259, mname:'Marshtomp'},
+  {id:7,  name:'Turtwig',    vname:'Tur-twig',           cls:'Tank',    baseHp:425, sid:387, msid:388, mname:'Grotle'},
+  {id:8,  name:'Chimchar',   vname:'Chun-char',          cls:'Brawler', baseHp:375, sid:390, msid:391, mname:'Monferno'},
+  {id:9,  name:'Piplup',     vname:'Pip-lup',            cls:'Sniper',  baseHp:350, sid:393, msid:394, mname:'Prinplup'},
+  {id:10, name:'Chespin',    vname:'Ches-pin',           cls:'Tank',    baseHp:425, sid:650, msid:651, mname:'Quilladin'},
+  {id:11, name:'Fennekin',   vname:'Fen-nih-kin',        cls:'Brawler', baseHp:375, sid:653, msid:654, mname:'Braixen'},
+  {id:12, name:'Froakie',    vname:'Frow-kee',           cls:'Sniper',  baseHp:350, sid:656, msid:657, mname:'Frogadier'},
+  {id:13, name:'Rowlet',     vname:'Row-let',            cls:'Tank',    baseHp:425, sid:722, msid:723, mname:'Dartrix'},
+  {id:14, name:'Litten',     vname:'Lit-ten',            cls:'Brawler', baseHp:375, sid:725, msid:726, mname:'Torracat'},
+  {id:15, name:'Popplio',    vname:'Pop-lee-oh',         cls:'Sniper',  baseHp:350, sid:728, msid:729, mname:'Brionne'},
+  {id:16, name:'Sprigatito', vname:'Spree-gah-tee-toe',  cls:'Tank',    baseHp:425, sid:906, msid:907, mname:'Floragato'},
+  {id:17, name:'Fuecoco',    vname:'Fweh-ko-ko',         cls:'Brawler', baseHp:375, sid:909, msid:910, mname:'Crocalor'},
+  {id:18, name:'Quaxly',     vname:'Kwax-lee',           cls:'Sniper',  baseHp:350, sid:912, msid:913, mname:'Quaxwell'},
+  {id:19, name:'Eevee',      vname:'Ee-vee',             cls:'Status',  baseHp:360, sid:133, msid:134, mname:'Vaporeon'},
+  {id:20, name:'Pikachu',    vname:'Pee-kah-choo',       cls:'Sniper',  baseHp:350, sid:25,  msid:26,  mname:'Raichu'},
 ];
 
 const CLASS_PASSIVES = {
@@ -117,6 +117,7 @@ function escapeHTML(str) {
   return String(str).replace(/[&<>'"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));
 }
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function voicePokemonName(poke) { return poke && (poke.vname || poke.name); }
 
 function spriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -446,7 +447,7 @@ function registerDraftThrow(seg) {
   }
 
   players[draftStep].pokemon = poke;
-  aSpeak(`${poke.name}!`);
+  aSpeak(`${voicePokemonName(poke)}!`);
 
   if (draftStep === 0) {
     draftStep = 1;
@@ -1007,7 +1008,7 @@ function triggerEvolution(playerIdx) {
   }
 
   flash(`MEGA EVOLUTION! ${p.pokemon.mname}!`, 'var(--gold)');
-  aSpeak(`${p.pokemon.name} evolved into ${p.pokemon.mname}!`);
+  aSpeak(`${voicePokemonName(p.pokemon)} evolved into ${p.pokemon.mname}!`);
   aSfx(sfxEvolution);
 }
 
