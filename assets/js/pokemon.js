@@ -1078,8 +1078,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   p.evolved = true;
   p.stage = targetStage;
   const newName = playerPokemonStageName(p);
-  p.maxHp += 25 * stageGain;
-  p.hp = Math.min(p.hp + 25 * stageGain, p.maxHp);
+  p.maxHp += 50 * stageGain;
+  p.hp = Math.min(p.hp + 50 * stageGain, p.maxHp);
   p.dmgBoost += 5 * stageGain;
 
   const img = document.getElementById(`sprite-${playerIdx}`);
