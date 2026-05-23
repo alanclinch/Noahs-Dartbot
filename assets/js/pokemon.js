@@ -6,26 +6,26 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      cls:'Tank',    baseHp:425, sid:1,   msid:2,   mname:'Ivysaur'},
-  {id:2,  name:'Charmander', vname:'Char-man-der',       cls:'Brawler', baseHp:375, sid:4,   msid:5,   mname:'Charmeleon'},
-  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          cls:'Sniper',  baseHp:350, sid:7,   msid:8,   mname:'Wartortle'},
-  {id:4,  name:'Treecko',    vname:'Tree-ko',            cls:'Tank',    baseHp:425, sid:252, msid:253, mname:'Grovyle'},
-  {id:5,  name:'Torchic',    vname:'Tor-chik',           cls:'Brawler', baseHp:375, sid:255, msid:256, mname:'Combusken'},
-  {id:6,  name:'Mudkip',     vname:'Mud-kip',            cls:'Sniper',  baseHp:350, sid:258, msid:259, mname:'Marshtomp'},
-  {id:7,  name:'Turtwig',    vname:'Tur-twig',           cls:'Tank',    baseHp:425, sid:387, msid:388, mname:'Grotle'},
-  {id:8,  name:'Chimchar',   vname:'Chun-char',          cls:'Brawler', baseHp:375, sid:390, msid:391, mname:'Monferno'},
-  {id:9,  name:'Piplup',     vname:'Pip-lup',            cls:'Sniper',  baseHp:350, sid:393, msid:394, mname:'Prinplup'},
-  {id:10, name:'Chespin',    vname:'Ches-pin',           cls:'Tank',    baseHp:425, sid:650, msid:651, mname:'Quilladin'},
-  {id:11, name:'Fennekin',   vname:'Fen-nih-kin',        cls:'Brawler', baseHp:375, sid:653, msid:654, mname:'Braixen'},
-  {id:12, name:'Froakie',    vname:'Frow-kee',           cls:'Sniper',  baseHp:350, sid:656, msid:657, mname:'Frogadier'},
-  {id:13, name:'Rowlet',     vname:'Row-let',            cls:'Tank',    baseHp:425, sid:722, msid:723, mname:'Dartrix'},
-  {id:14, name:'Litten',     vname:'Lit-ten',            cls:'Brawler', baseHp:375, sid:725, msid:726, mname:'Torracat'},
-  {id:15, name:'Popplio',    vname:'Pop-lee-oh',         cls:'Sniper',  baseHp:350, sid:728, msid:729, mname:'Brionne'},
-  {id:16, name:'Sprigatito', vname:'Spree-gah-tee-toe',  cls:'Tank',    baseHp:425, sid:906, msid:907, mname:'Floragato'},
-  {id:17, name:'Fuecoco',    vname:'Fweh-ko-ko',         cls:'Brawler', baseHp:375, sid:909, msid:910, mname:'Crocalor'},
-  {id:18, name:'Quaxly',     vname:'Kwax-lee',           cls:'Sniper',  baseHp:350, sid:912, msid:913, mname:'Quaxwell'},
-  {id:19, name:'Eevee',      vname:'Ee-vee',             cls:'Status',  baseHp:360, sid:133, msid:134, mname:'Vaporeon'},
-  {id:20, name:'Pikachu',    vname:'Pee-kah-choo',       cls:'Sniper',  baseHp:350, sid:25,  msid:26,  mname:'Raichu'},
+  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      types:['Grass','Poison'], cls:'Tank',    baseHp:425, sid:1,   msid:2,   fsid:3,   mname:'Ivysaur',    fname:'Venusaur'},
+  {id:2,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:375, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
+  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          types:['Water'],          cls:'Sniper',  baseHp:350, sid:7,   msid:8,   fsid:9,   mname:'Wartortle',  fname:'Blastoise'},
+  {id:4,  name:'Treecko',    vname:'Tree-ko',            types:['Grass'],          cls:'Tank',    baseHp:425, sid:252, msid:253, fsid:254, mname:'Grovyle',    fname:'Sceptile'},
+  {id:5,  name:'Torchic',    vname:'Tor-chik',           types:['Fire'],           cls:'Brawler', baseHp:375, sid:255, msid:256, fsid:257, mname:'Combusken',  fname:'Blaziken',  ftypes:['Fire','Fighting']},
+  {id:6,  name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:350, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
+  {id:7,  name:'Turtwig',    vname:'Tur-twig',           types:['Grass'],          cls:'Tank',    baseHp:425, sid:387, msid:388, fsid:389, mname:'Grotle',     fname:'Torterra',  ftypes:['Grass','Ground']},
+  {id:8,  name:'Chimchar',   vname:'Chun-char',          types:['Fire'],           cls:'Brawler', baseHp:375, sid:390, msid:391, fsid:392, mname:'Monferno',   fname:'Infernape', ftypes:['Fire','Fighting']},
+  {id:9,  name:'Piplup',     vname:'Pip-lup',            types:['Water'],          cls:'Sniper',  baseHp:350, sid:393, msid:394, fsid:395, mname:'Prinplup',   fname:'Empoleon',  ftypes:['Water','Steel']},
+  {id:10, name:'Chespin',    vname:'Ches-pin',           types:['Grass'],          cls:'Tank',    baseHp:425, sid:650, msid:651, fsid:652, mname:'Quilladin',  fname:'Chesnaught',ftypes:['Grass','Fighting']},
+  {id:11, name:'Fennekin',   vname:'Fen-nih-kin',        types:['Fire'],           cls:'Brawler', baseHp:375, sid:653, msid:654, fsid:655, mname:'Braixen',    fname:'Delphox',   ftypes:['Fire','Psychic']},
+  {id:12, name:'Froakie',    vname:'Frow-kee',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:656, msid:657, fsid:658, mname:'Frogadier',  fname:'Greninja',  ftypes:['Water','Dark']},
+  {id:13, name:'Rowlet',     vname:'Row-let',            types:['Grass','Flying'], cls:'Tank',    baseHp:425, sid:722, msid:723, fsid:724, mname:'Dartrix',    fname:'Decidueye', ftypes:['Grass','Ghost']},
+  {id:14, name:'Litten',     vname:'Lit-ten',            types:['Fire'],           cls:'Brawler', baseHp:375, sid:725, msid:726, fsid:727, mname:'Torracat',   fname:'Incineroar',ftypes:['Fire','Dark']},
+  {id:15, name:'Popplio',    vname:'Pop-lee-oh',         types:['Water'],          cls:'Sniper',  baseHp:350, sid:728, msid:729, fsid:730, mname:'Brionne',    fname:'Primarina', ftypes:['Water','Fairy']},
+  {id:16, name:'Sprigatito', vname:'Spree-gah-tee-toe',  types:['Grass'],          cls:'Tank',    baseHp:425, sid:906, msid:907, fsid:908, mname:'Floragato',  fname:'Meowscarada',ftypes:['Grass','Dark']},
+  {id:17, name:'Fuecoco',    vname:'Fweh-ko-ko',         types:['Fire'],           cls:'Brawler', baseHp:375, sid:909, msid:910, fsid:911, mname:'Crocalor',   fname:'Skeledirge',ftypes:['Fire','Ghost']},
+  {id:18, name:'Quaxly',     vname:'Kwax-lee',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:912, msid:913, fsid:914, mname:'Quaxwell',   fname:'Quaquaval', ftypes:['Water','Fighting']},
+  {id:19, name:'Eevee',      vname:'Ee-vee',             types:['Normal'],         cls:'Status',  baseHp:360, sid:133, msid:134, fsid:134, mname:'Vaporeon',   fname:'Vaporeon',  ftypes:['Water']},
+  {id:20, name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:350, sid:25,  msid:26,  fsid:26,  mname:'Raichu',     fname:'Raichu'},
 ];
 
 const CLASS_PASSIVES = {
@@ -118,6 +118,27 @@ function escapeHTML(str) {
 }
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function voicePokemonName(poke) { return poke && (poke.vname || poke.name); }
+function pokemonStageName(poke, stage = 1) {
+  if (!poke) return '';
+  if (stage >= 3) return poke.fname || poke.mname || poke.name;
+  if (stage >= 2) return poke.mname || poke.name;
+  return poke.name;
+}
+function pokemonStageTypes(poke, stage = 1) {
+  if (!poke) return [];
+  if (stage >= 3 && poke.ftypes) return poke.ftypes;
+  if (stage >= 2 && poke.mtypes) return poke.mtypes;
+  return poke.types || [];
+}
+function pokemonTypeLabel(poke, stage = 1) {
+  return pokemonStageTypes(poke, stage).join(' / ') || 'Pokemon';
+}
+function typeAdvantageMultiplier(attacker, defender) {
+  const attackTypes = pokemonStageTypes(attacker.pokemon, attacker.stage);
+  const defendTypes = pokemonStageTypes(defender.pokemon, defender.stage);
+  const beats = { Fire:'Grass', Grass:'Water', Water:'Fire' };
+  return attackTypes.some(t => defendTypes.includes(beats[t])) ? 1.2 : 1;
+}
 
 function spriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
@@ -135,7 +156,9 @@ function useRemotePokemonSprites() {
 
 function pokemonSpriteUrl(poke, evolved) {
   if (!useRemotePokemonSprites()) return fallbackSpriteUrl(poke.cls);
-  return spriteUrl(evolved ? poke.msid : poke.sid);
+  const stage = typeof evolved === 'number' ? evolved : (evolved ? 2 : 1);
+  const id = stage >= 3 ? (poke.fsid || poke.msid || poke.sid) : (stage >= 2 ? poke.msid : poke.sid);
+  return spriteUrl(id);
 }
 
 function pokemonImgAttrs(poke, evolved) {
@@ -257,7 +280,7 @@ function addCpuPlayer(id) {
 function makePlayer(name, color, flag, isCpu, cpuData) {
   return {
     name, color, flag, isCpu, cpuData,
-    pokemon: null, hp: 0, maxHp: 0,
+    pokemon: null, hp: 0, maxHp: 0, stage: 1,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
     totalDmg: 0, totalHeal: 0, cpTurns: 0,
@@ -375,7 +398,7 @@ function launchLeg() {
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
-    p.pokemon = null; p.hp = 0; p.maxHp = 0;
+    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -422,7 +445,7 @@ function buildDraftGrid() {
       <div class="draft-num">${n}</div>
       <img class="draft-sprite" ${pokemonImgAttrs(poke, false)} alt="${escapeHTML(poke.name)}" loading="lazy">
       <div class="draft-pname">${escapeHTML(poke.name)}</div>
-      <div class="draft-class-badge cls-${poke.cls}">${poke.cls}</div>`;
+      <div class="draft-class-badge cls-${poke.cls}">${pokemonTypeLabel(poke)}</div>`;
     grid.appendChild(card);
   }
 }
@@ -524,13 +547,13 @@ function buildBattleUI() {
     const sideEl = document.getElementById(`poke-side-${i}`);
     if (!sideEl) return;
     sideEl.querySelector('.poke-player-tag').textContent = p.name.toUpperCase();
-    sideEl.querySelector('.poke-name-tag').textContent = p.pokemon.name.toUpperCase();
+    sideEl.querySelector('.poke-name-tag').textContent = pokemonStageName(p.pokemon, p.stage).toUpperCase();
     const evNameEl = sideEl.querySelector('.poke-evolved-name');
     if (evNameEl) evNameEl.textContent = '';
     const ptEl = sideEl.querySelector('.passive-tag');
-    if (ptEl) ptEl.textContent = CLASS_PASSIVES[p.pokemon.cls];
+    if (ptEl) ptEl.textContent = pokemonTypeLabel(p.pokemon, p.stage);
     const img = document.getElementById(`sprite-${i}`);
-    setPokemonSprite(img, p.pokemon, false);
+    setPokemonSprite(img, p.pokemon, p.stage);
     const badge = document.getElementById(`evolved-badge-${i}`);
     if (badge) badge.classList.remove('visible');
     const statusBadge = document.getElementById(`status-badge-${i}`);
@@ -736,6 +759,7 @@ function registerDart(seg) {
 
   // ── NORMAL MODE ──────────────────────────────────────
   const result = calcEffect(seg, p, players[1 - currentPlayer]);
+  applyTypeAdvantage(result, p, players[1 - currentPlayer]);
   const wasEndured = applyEffect(result, currentPlayer);
 
   const label = result.label || (result.type === 'miss' ? 'Miss' : String(result.amount));
@@ -860,6 +884,16 @@ function calcEffect(seg, attacker, defender) {
   return { type:'miss', amount:0, label:'Miss', mul:0 };
 }
 
+function applyTypeAdvantage(result, attacker, defender) {
+  const canBoost = ['damage', 'crit', 'bull'].includes(result.type) && result.amount > 0;
+  if (!canBoost || typeAdvantageMultiplier(attacker, defender) === 1) return;
+  result.amount = Math.round(result.amount * 1.2);
+  result.typeBonus = true;
+  if (result.type === 'damage') result.label = `${result.label.split(' ')[0]} -${result.amount} ADV`;
+  if (result.type === 'crit') result.label = 'D25 ADV!';
+  if (result.type === 'bull') result.label = 'B25 ADV';
+}
+
 // =============================================
 // APPLY EFFECT
 // =============================================
@@ -875,8 +909,8 @@ function applyEffect(result, attackerIdx) {
       attacker.totalDmg += result.amount;
     }
     aSfx(sfxPokeDamage);
-    flash(`-${result.amount} HP`, 'var(--poke-red)');
-    aSpeak(`${result.amount} damage!`);
+    flash(`${result.typeBonus ? 'TYPE ADVANTAGE! ' : ''}-${result.amount} HP`, 'var(--poke-red)');
+    aSpeak(`${result.amount} damage${result.typeBonus ? ', type advantage!' : '!'}`);
   } else if (result.type === 'heal') {
     const healed = Math.min(attacker.maxHp - attacker.hp, result.amount);
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + result.amount);
@@ -891,8 +925,8 @@ function applyEffect(result, attackerIdx) {
       attacker.totalDmg += result.amount;
     }
     aSfx(sfxPokeCrit);
-    flash(`CRITICAL HIT! -${result.amount}`, '#ff4444');
-    aSpeak(`Critical hit! ${result.amount} damage!`);
+    flash(`${result.typeBonus ? 'TYPE ADVANTAGE! ' : ''}CRITICAL HIT! -${result.amount}`, '#ff4444');
+    aSpeak(`Critical hit! ${result.amount} damage${result.typeBonus ? ', type advantage!' : '!'}`);
     if (result.statusInflict) {
       setTimeout(() => applyStatus(oi, result.statusInflict), tDelay(400));
     }
@@ -904,6 +938,7 @@ function applyEffect(result, attackerIdx) {
         opp.hp = Math.max(0, opp.hp - result.amount);
         attacker.totalDmg += result.amount;
       }
+      if (result.typeBonus) flash(`TYPE ADVANTAGE! -${result.amount} HP`, 'var(--poke-red)');
     }
     aSfx(sfxBull);
     if (result.statusInflict) {
@@ -971,44 +1006,52 @@ function applyStatus(victimIdx, statusType) {
 // =============================================
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
-  if (p.evolved) return;
-  const muls = currentDarts.filter(d => d.type !== 'miss').map(d => d.mul);
-  if (muls.length === 3 && muls.every(m => m === muls[0])) {
-    triggerEvolution(playerIdx);
-  }
+  const turnScore = currentDarts
+    .filter(d => d.type !== 'miss')
+    .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+  const targetStage = turnScore >= 60 ? 3 : (turnScore >= 40 ? 2 : p.stage);
+  if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
 
-function triggerEvolution(playerIdx) {
+function triggerEvolution(playerIdx, targetStage = 2) {
   const p = players[playerIdx];
+  const oldStage = p.stage || 1;
+  const stageGain = targetStage - oldStage;
+  const newName = pokemonStageName(p.pokemon, targetStage);
   p.evolved = true;
-  p.maxHp += 30;
-  p.hp = Math.min(p.hp + 30, p.maxHp);
-  p.dmgBoost += 5;
+  p.stage = targetStage;
+  p.maxHp += 30 * stageGain;
+  p.hp = Math.min(p.hp + 30 * stageGain, p.maxHp);
+  p.dmgBoost += 5 * stageGain;
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
-    setPokemonSprite(img, p.pokemon, true);
+    setPokemonSprite(img, p.pokemon, targetStage);
     img.classList.add('evolving');
     setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
 
   // No new sprite (msid === sid): add gold glow class
-  if (p.pokemon.msid === p.pokemon.sid) {
+  if ((targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid) === p.pokemon.sid) {
     if (img) img.classList.add('glow-evolved');
   }
-  p.evolvedSprite = p.pokemon.msid !== p.pokemon.sid;
+  p.evolvedSprite = (targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid) !== p.pokemon.sid;
 
   const badge = document.getElementById(`evolved-badge-${playerIdx}`);
-  if (badge) { badge.textContent = p.pokemon.mname; badge.classList.add('visible'); }
+  if (badge) { badge.textContent = newName; badge.classList.add('visible'); }
 
   const sideEl = document.getElementById(`poke-side-${playerIdx}`);
   if (sideEl) {
+    const nameEl = sideEl.querySelector('.poke-name-tag');
+    const ptEl = sideEl.querySelector('.passive-tag');
     const enEl = sideEl.querySelector('.poke-evolved-name');
-    if (enEl) enEl.textContent = p.pokemon.mname;
+    if (nameEl) nameEl.textContent = newName.toUpperCase();
+    if (ptEl) ptEl.textContent = pokemonTypeLabel(p.pokemon, targetStage);
+    if (enEl) enEl.textContent = newName;
   }
 
-  flash(`MEGA EVOLUTION! ${p.pokemon.mname}!`, 'var(--gold)');
-  aSpeak(`${voicePokemonName(p.pokemon)} evolved into ${p.pokemon.mname}!`);
+  flash(`EVOLUTION! ${newName}!`, 'var(--gold)');
+  aSpeak(`${voicePokemonName(p.pokemon)} evolved into ${newName}!`);
   aSfx(sfxEvolution);
 }
 
@@ -1115,8 +1158,23 @@ function updateBattleField() {
 
     const img = document.getElementById(`sprite-${i}`);
     if (img) {
+      setPokemonSprite(img, p.pokemon, p.stage || 1);
       img.classList.toggle('active-turn', i === currentPlayer && gameActive);
       if (p.evolved && !p.evolvedSprite) img.classList.add('glow-evolved');
+    }
+    const sideEl = document.getElementById(`poke-side-${i}`);
+    if (sideEl && p.pokemon) {
+      const nameEl = sideEl.querySelector('.poke-name-tag');
+      const typeEl = sideEl.querySelector('.passive-tag');
+      const evolvedNameEl = sideEl.querySelector('.poke-evolved-name');
+      const badge = document.getElementById(`evolved-badge-${i}`);
+      if (nameEl) nameEl.textContent = pokemonStageName(p.pokemon, p.stage).toUpperCase();
+      if (typeEl) typeEl.textContent = pokemonTypeLabel(p.pokemon, p.stage);
+      if (evolvedNameEl) evolvedNameEl.textContent = p.stage > 1 ? pokemonStageName(p.pokemon, p.stage) : '';
+      if (badge) {
+        badge.classList.toggle('visible', p.stage > 1);
+        badge.textContent = p.stage > 1 ? pokemonStageName(p.pokemon, p.stage) : '';
+      }
     }
 
     const statusBadge = document.getElementById(`status-badge-${i}`);
@@ -1255,7 +1313,8 @@ function updateScoringGuide() {
     </div>`).join('');
 
   if (passiveEl) {
-    passiveEl.textContent = `${cls} Passive — ${CLASS_PASSIVES[cls]}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}`;
+    const typeLabel = pokemonTypeLabel(p.pokemon, p.stage);
+    passiveEl.textContent = `${typeLabel} Type${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}  ·  Fire > Grass > Water > Fire gives 1.2x damage`;
   }
 }
 
@@ -1353,7 +1412,7 @@ function runCpuTurn() {
 function saveState() {
   stateHistory.push({
     players: players.map(p => ({
-      hp: p.hp, maxHp: p.maxHp, dmgBoost: p.dmgBoost,
+      hp: p.hp, maxHp: p.maxHp, stage: p.stage, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
@@ -1382,7 +1441,7 @@ function undoLastDart() {
   finishTarget   = last.finishTarget;
   last.players.forEach((saved, i) => {
     const p = players[i];
-    p.hp = saved.hp; p.maxHp = saved.maxHp;
+    p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;
