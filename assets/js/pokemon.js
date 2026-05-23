@@ -193,6 +193,21 @@ function pokemonSpriteUrl(poke, evolved) {
   return useRemotePokemonSprites() ? spriteUrl(id) : localSpriteUrl(id);
 }
 
+function isTripleDraftPick(seg) {
+  return Number(seg && seg.multiplier) === 3 || /^T/i.test(String(seg && seg.name || ''));
+}
+
+function rollDraftShiny(seg) {
+  return isTripleDraftPick(seg) || Math.random() < 0.1;
+}
+
+function syncShinyClass(playerIdx) {
+  const p = players[playerIdx];
+  const img = document.getElementById(`sprite-${playerIdx}`);
+  const wrap = img ? img.closest('.poke-sprite-wrap') : null;
+  [img, wrap].forEach(el => { if (el) el.classList.toggle('shiny-pokemon', !!(p && p.shiny)); });
+}
+
 function pokemonImgAttrs(poke, evolved) {
   const fallback = fallbackSpriteUrl(poke.cls);
   return `src="${pokemonSpriteUrl(poke, evolved)}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback"`;
@@ -328,6 +343,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
   return {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
+    shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
     totalDmg: 0, totalHeal: 0, cpTurns: 0,
@@ -439,13 +455,14 @@ function startGame() {
 
 function launchLeg() {
   document.getElementById('confetti').innerHTML = '';
+  ensureDraftKeypadModifiers();
   // Build draft map: keep the roster in dartboard number order (1-20)
   draftMap = {};
   POKEMON_ROSTER.forEach((poke, i) => { draftMap[i + 1] = poke; });
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
-    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null;
+    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -477,6 +494,17 @@ function updateDraftInstruction() {
   } else {
     el.textContent = `${players[1].name} — throw a dart to pick your Pokémon!`;
   }
+}
+
+function ensureDraftKeypadModifiers() {
+  const keypad = document.querySelector('#draft .keypad-wrap');
+  if (!keypad || keypad.querySelector('.draft-mod-row')) return;
+  const row = document.createElement('div');
+  row.className = 'keypad-row draft-mod-row';
+  row.innerHTML = `
+    <button class="kp-btn kp-mod" data-mod="2" onclick="toggleKeypadMod(2)">DOUBLE</button>
+    <button class="kp-btn kp-mod" data-mod="3" onclick="toggleKeypadMod(3)">TREBLE</button>`;
+  keypad.appendChild(row);
 }
 
 function buildDraftGrid() {
@@ -517,7 +545,9 @@ function registerDraftThrow(seg) {
   }
 
   players[draftStep].pokemon = poke;
-  aSpeak(`${voicePokemonName(poke)}, I choose you!`);
+  players[draftStep].shiny = rollDraftShiny(seg);
+  if (card && players[draftStep].shiny) card.classList.add('shiny-draft-pick');
+  aSpeak(`${players[draftStep].shiny ? 'Shiny ' : ''}${voicePokemonName(poke)}, I choose you!`);
 
   if (draftStep === 0) {
     draftStep = 1;
@@ -555,16 +585,22 @@ function buildVSScreen() {
   const vsFirst = startingPlayer === 0 ? p0.name : p1.name;
 
   const p1El = document.getElementById('vs-p1');
-  if (p1El) p1El.innerHTML = `
-    <img class="vs-sprite" ${pokemonImgAttrs(p0.pokemon, false)} alt="${escapeHTML(p0.pokemon.name)}">
+  if (p1El) {
+    p1El.classList.toggle('shiny-pokemon', !!p0.shiny);
+    p1El.innerHTML = `
+    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" ${pokemonImgAttrs(p0.pokemon, false)} alt="${escapeHTML(p0.pokemon.name)}">
     <div class="vs-pname">${escapeHTML(p0.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p0.name)}</div>`;
+  }
 
   const p2El = document.getElementById('vs-p2');
-  if (p2El) p2El.innerHTML = `
-    <img class="vs-sprite" ${pokemonImgAttrs(p1.pokemon, false)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
+  if (p2El) {
+    p2El.classList.toggle('shiny-pokemon', !!p1.shiny);
+    p2El.innerHTML = `
+    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" ${pokemonImgAttrs(p1.pokemon, false)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
     <div class="vs-pname">${escapeHTML(p1.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p1.name)}</div>`;
+  }
 
   const gfEl = document.getElementById('vs-goes-first');
   if (gfEl) gfEl.textContent = `${vsFirst.toUpperCase()} GOES FIRST!`;
@@ -601,6 +637,7 @@ function buildBattleUI() {
     if (ptEl) ptEl.innerHTML = playerPokemonTypeHTML(p);
     const img = document.getElementById(`sprite-${i}`);
     setPlayerPokemonSprite(img, p);
+    syncShinyClass(i);
     const badge = document.getElementById(`evolved-badge-${i}`);
     if (badge) badge.classList.remove('visible');
     const statusBadge = document.getElementById(`status-badge-${i}`);
@@ -1085,6 +1122,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
     setPlayerPokemonSprite(img, p);
+    syncShinyClass(playerIdx);
     img.classList.add('evolving');
     setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
@@ -1218,6 +1256,7 @@ function updateBattleField() {
     const img = document.getElementById(`sprite-${i}`);
     if (img) {
       setPlayerPokemonSprite(img, p);
+      syncShinyClass(i);
       img.classList.toggle('active-turn', i === currentPlayer && gameActive);
       if (p.evolved && !p.evolvedSprite) img.classList.add('glow-evolved');
     }
@@ -1472,7 +1511,7 @@ function saveState() {
   stateHistory.push({
     players: players.map(p => ({
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
-      evolved: p.evolved, evolvedSprite: p.evolvedSprite,
+      evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
       totalHeal: p.totalHeal, cpTurns: p.cpTurns, dartsThrown: p.dartsThrown,
@@ -1502,7 +1541,7 @@ function undoLastDart() {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
-    p.evolvedSprite = saved.evolvedSprite;
+    p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;
     p.dartLostNext = saved.dartLostNext;
     p.totalDmg = saved.totalDmg; p.totalHeal = saved.totalHeal;
@@ -1531,17 +1570,20 @@ function undoLastDart() {
 // =============================================
 function toggleKeypadMod(mod) {
   keypadMod = (keypadMod === mod) ? 1 : mod;
-  document.getElementById('mod-double').classList.toggle('active', keypadMod === 2);
-  document.getElementById('mod-treble').classList.toggle('active', keypadMod === 3);
+  document.querySelectorAll('#mod-double, .kp-mod[data-mod="2"]').forEach(el => el.classList.toggle('active', keypadMod === 2));
+  document.querySelectorAll('#mod-treble, .kp-mod[data-mod="3"]').forEach(el => el.classList.toggle('active', keypadMod === 3));
 }
 
 function manualDraft(num) {
   if (!draftPhase || draftStep > 1) return;
   if (draftStep === 1 && players[1].isCpu) return;
   if (num < 1 || num > 20) return;
-  const seg = { number: num, multiplier: 1, name: 'S' + num };
+  let mul = keypadMod;
+  const nameMap = { 1:'S', 2:'D', 3:'T' };
+  const seg = { number: num, multiplier: mul, name: `${nameMap[mul]}${num}` };
   throwLog.push({ segment: seg, source: 'manual', phase: 'draft', player: draftStep, ts: Date.now() });
   registerDraftThrow(seg);
+  if (keypadMod !== 1) toggleKeypadMod(keypadMod);
 }
 
 function manualDart(num) {
@@ -1571,6 +1613,20 @@ function manualDart(num) {
   if (keypadMod !== 1) toggleKeypadMod(keypadMod);
 }
 
+function draftSegmentFromThrow(rawThrow) {
+  const seg = rawThrow && rawThrow.segment ? rawThrow.segment : {};
+  const number = Number(seg.number || (rawThrow && (rawThrow.number || rawThrow.segmentNumber || rawThrow.targetNumber)) || 0);
+  if (!number) return seg;
+  const multiplier = Number(seg.multiplier || (rawThrow && rawThrow.multiplier) || 1);
+  const prefix = multiplier === 3 ? 'T' : multiplier === 2 ? 'D' : 'S';
+  return {
+    ...seg,
+    number,
+    multiplier,
+    name: seg.name || (rawThrow && rawThrow.name) || `${prefix}${number}`,
+  };
+}
+
 // =============================================
 // WS HANDLER
 // =============================================
@@ -1591,7 +1647,7 @@ function handleWS(data) {
     }
     if (tc > seenThrows) {
       const rawThrow = throws[seenThrows];
-      const seg = rawThrow.segment || {};
+      const seg = draftSegmentFromThrow(rawThrow);
       throwLog.push(rawThrow);
       registerDraftThrow(seg);
       seenThrows = tc;
@@ -1717,7 +1773,14 @@ function _throwManual(num, mul) {
     return;
   }
   if (draftPhase) {
-    if (num >= 1 && num <= 20) manualDraft(num);
+    if (num >= 1 && num <= 20) {
+      const savedMod = keypadMod;
+      if (mul) keypadMod = mul;
+      manualDraft(num);
+      keypadMod = savedMod;
+      document.querySelectorAll('#mod-double, .kp-mod[data-mod="2"]').forEach(el => el.classList.toggle('active', keypadMod === 2));
+      document.querySelectorAll('#mod-treble, .kp-mod[data-mod="3"]').forEach(el => el.classList.toggle('active', keypadMod === 3));
+    }
     return;
   }
   if (!gameActive || turnEnded || players[currentPlayer].isCpu) return;
@@ -1728,8 +1791,8 @@ function _throwManual(num, mul) {
     manualDart(num);
     keypadMod = savedMod;
     // Reset the on-screen toggle indicator (manualDart only resets if it was non-1)
-    document.getElementById('mod-double').classList.toggle('active', keypadMod === 2);
-    document.getElementById('mod-treble').classList.toggle('active', keypadMod === 3);
+    document.querySelectorAll('#mod-double, .kp-mod[data-mod="2"]').forEach(el => el.classList.toggle('active', keypadMod === 2));
+    document.querySelectorAll('#mod-treble, .kp-mod[data-mod="3"]').forEach(el => el.classList.toggle('active', keypadMod === 3));
   } else {
     manualDart(num);
   }
