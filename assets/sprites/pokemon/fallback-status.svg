@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Status Pokemon fallback">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="64%">
+      <stop offset="0" stop-color="#ddd6fe"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="112" fill="url(#bg)" opacity=".24"/>
+  <path d="M60 184c8-56 29-94 68-122 39 28 60 66 68 122-35 22-101 22-136 0z" fill="#1f2937"/>
+  <path d="M92 125c18-24 54-24 72 0-20 18-52 18-72 0z" fill="#a78bfa"/>
+  <circle cx="105" cy="144" r="8" fill="#f0abfc"/>
+  <circle cx="151" cy="144" r="8" fill="#f0abfc"/>
+  <path d="M85 190c26 16 60 16 86 0" fill="none" stroke="#c084fc" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Sniper Pokemon fallback">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="64%">
+      <stop offset="0" stop-color="#ffe38a"/>
+      <stop offset="1" stop-color="#fb7185"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="112" fill="url(#bg)" opacity=".24"/>
+  <path d="M66 183c8-42 27-80 62-119 35 39 54 77 62 119-32 18-92 18-124 0z" fill="#1f2937"/>
+  <path d="M97 123l31-54 31 54-31 24z" fill="#ef4444"/>
+  <circle cx="128" cy="121" r="13" fill="#fef3c7"/>
+  <path d="M56 197c36 22 108 22 144 0" fill="none" stroke="#facc15" stroke-width="10" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Brawler Pokemon fallback">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="64%">
+      <stop offset="0" stop-color="#fed7aa"/>
+      <stop offset="1" stop-color="#f97316"/>
+    </radialGradient>
+  </defs>
+  <circle cx="128" cy="128" r="112" fill="url(#bg)" opacity=".24"/>
+  <path d="M70 177c5-47 25-86 58-114 33 28 53 67 58 114-29 24-87 24-116 0z" fill="#1f2937"/>
+  <path d="M79 113l28 23-21 30-30-17zM177 113l-28 23 21 30 30-17z" fill="#f97316"/>
+  <path d="M99 105c13-16 45-16 58 0-9 23-49 23-58 0z" fill="#fdba74"/>
+  <path d="M103 182c17 11 33 11 50 0" fill="none" stroke="#fb923c" stroke-width="10" stroke-linecap="round"/>
+</svg>

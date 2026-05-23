@@ -6,32 +6,32 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Pikachu',    cls:'Sniper',  baseHp:300, sid:25,  msid:26,    mname:'Raichu'},
-  {id:2,  name:'Charizard',  cls:'Sniper',  baseHp:300, sid:6,   msid:10034, mname:'Mega Charizard'},
-  {id:3,  name:'Mewtwo',     cls:'Sniper',  baseHp:300, sid:150, msid:10043, mname:'Mega Mewtwo'},
-  {id:4,  name:'Rayquaza',   cls:'Sniper',  baseHp:300, sid:384, msid:10079, mname:'Mega Rayquaza'},
-  {id:5,  name:'Greninja',   cls:'Sniper',  baseHp:300, sid:658, msid:10116, mname:'Ash-Greninja'},
-  {id:6,  name:'Snorlax',    cls:'Tank',    baseHp:450, sid:143, msid:143,   mname:'Snorlax'},
-  {id:7,  name:'Blastoise',  cls:'Tank',    baseHp:450, sid:9,   msid:10036, mname:'Mega Blastoise'},
-  {id:8,  name:'Venusaur',   cls:'Tank',    baseHp:450, sid:3,   msid:10033, mname:'Mega Venusaur'},
-  {id:9,  name:'Gyarados',   cls:'Tank',    baseHp:450, sid:130, msid:10041, mname:'Mega Gyarados'},
-  {id:10, name:'Dragonite',  cls:'Tank',    baseHp:450, sid:149, msid:149,   mname:'Dragonite'},
+  {id:1,  name:'Pikachu',    cls:'Sniper',  baseHp:350, sid:25,  msid:26,    mname:'Raichu'},
+  {id:2,  name:'Charizard',  cls:'Sniper',  baseHp:350, sid:6,   msid:10034, mname:'Mega Charizard'},
+  {id:3,  name:'Mewtwo',     cls:'Sniper',  baseHp:350, sid:150, msid:10043, mname:'Mega Mewtwo'},
+  {id:4,  name:'Rayquaza',   cls:'Sniper',  baseHp:350, sid:384, msid:10079, mname:'Mega Rayquaza'},
+  {id:5,  name:'Greninja',   cls:'Sniper',  baseHp:350, sid:658, msid:10116, mname:'Ash-Greninja'},
+  {id:6,  name:'Snorlax',    cls:'Tank',    baseHp:425, sid:143, msid:143,   mname:'Snorlax'},
+  {id:7,  name:'Blastoise',  cls:'Tank',    baseHp:425, sid:9,   msid:10036, mname:'Mega Blastoise'},
+  {id:8,  name:'Venusaur',   cls:'Tank',    baseHp:425, sid:3,   msid:10033, mname:'Mega Venusaur'},
+  {id:9,  name:'Gyarados',   cls:'Tank',    baseHp:425, sid:130, msid:10041, mname:'Mega Gyarados'},
+  {id:10, name:'Dragonite',  cls:'Tank',    baseHp:425, sid:149, msid:149,   mname:'Dragonite'},
   {id:11, name:'Lucario',    cls:'Brawler', baseHp:375, sid:448, msid:10076, mname:'Mega Lucario'},
   {id:12, name:'Machamp',    cls:'Brawler', baseHp:375, sid:68,  msid:68,    mname:'Machamp'},
   {id:13, name:'Squirtle',   cls:'Brawler', baseHp:375, sid:7,   msid:8,     mname:'Wartortle'},
   {id:14, name:'Bulbasaur',  cls:'Brawler', baseHp:375, sid:1,   msid:2,     mname:'Ivysaur'},
   {id:15, name:'Eevee',      cls:'Brawler', baseHp:375, sid:133, msid:134,   mname:'Vaporeon'},
-  {id:16, name:'Gengar',     cls:'Status',  baseHp:340, sid:94,  msid:10038, mname:'Mega Gengar'},
-  {id:17, name:'Jigglypuff', cls:'Status',  baseHp:340, sid:39,  msid:40,    mname:'Wigglytuff'},
-  {id:18, name:'Meowth',     cls:'Status',  baseHp:340, sid:52,  msid:53,    mname:'Persian'},
-  {id:19, name:'Psyduck',    cls:'Status',  baseHp:340, sid:54,  msid:55,    mname:'Golduck'},
-  {id:20, name:'Ditto',      cls:'Status',  baseHp:340, sid:132, msid:132,   mname:'Ditto'},
+  {id:16, name:'Gengar',     cls:'Status',  baseHp:360, sid:94,  msid:10038, mname:'Mega Gengar'},
+  {id:17, name:'Jigglypuff', cls:'Status',  baseHp:360, sid:39,  msid:40,    mname:'Wigglytuff'},
+  {id:18, name:'Meowth',     cls:'Status',  baseHp:360, sid:52,  msid:53,    mname:'Persian'},
+  {id:19, name:'Psyduck',    cls:'Status',  baseHp:360, sid:54,  msid:55,    mname:'Golduck'},
+  {id:20, name:'Ditto',      cls:'Status',  baseHp:360, sid:132, msid:132,   mname:'Ditto'},
 ];
 
 const CLASS_PASSIVES = {
   Sniper:  'Trebles deal 3.5× in Gym',
-  Tank:    'Even heals +10 extra HP',
-  Brawler: 'Odd attacks +10 flat bonus',
+  Tank:    'Even heals +8 extra HP',
+  Brawler: 'Odd attacks +5 flat bonus',
   Status:  'Bull hit inflicts burn or paralysis',
 };
 
@@ -79,6 +79,13 @@ function aSfx(fn) {
 // Timing helper — collapse animation/voice delays in test mode
 function tDelay(ms) { return testMode ? 0 : ms; }
 
+function resetThrowTracking() {
+  if (missTimer) { clearTimeout(missTimer); missTimer = null; }
+  seenThrows = 0;
+  turnEnded = false;
+  advancing = false;
+}
+
 function setTestMode(val) {
   testMode = val;
   if (val) cancelSpeech();
@@ -103,21 +110,6 @@ function closeKeyHelp() {
   if (m) m.style.display = 'none';
 }
 
-// Prompt for Neon DB string when user clicks the Settings button
-async function promptNeonString() {
-  const cur = localStorage.getItem('neon_db_string') || '';
-  const v = prompt('Enter your Neon Database Connection String for cloud stats:\n(Leave blank to play offline)', cur);
-  if (v === null) return;
-  if (v.trim() === '') {
-    localStorage.removeItem('neon_db_string');
-    alert('Neon DB cleared — running offline.');
-    return;
-  }
-  localStorage.setItem('neon_db_string', v.trim());
-  await initNeonDB();
-  alert('Neon DB connected.');
-}
-
 // =============================================
 // UTILITIES
 // =============================================
@@ -129,6 +121,35 @@ function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + m
 function spriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+
+function fallbackSpriteUrl(cls) {
+  const key = String(cls || 'generic').toLowerCase();
+  return `../assets/sprites/pokemon/fallback-${key}.svg`;
+}
+
+function useRemotePokemonSprites() {
+  return window.DARTBOT_CONFIG && window.DARTBOT_CONFIG.remotePokemonSprites === true;
+}
+
+function pokemonSpriteUrl(poke, evolved) {
+  if (!useRemotePokemonSprites()) return fallbackSpriteUrl(poke.cls);
+  return spriteUrl(evolved ? poke.msid : poke.sid);
+}
+
+function pokemonImgAttrs(poke, evolved) {
+  const fallback = fallbackSpriteUrl(poke.cls);
+  return `src="${pokemonSpriteUrl(poke, evolved)}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback"`;
+}
+
+function setPokemonSprite(img, poke, evolved) {
+  if (!img || !poke) return;
+  img.onerror = function() {
+    this.onerror = null;
+    this.src = this.dataset.fallback;
+  };
+  img.dataset.fallback = fallbackSpriteUrl(poke.cls);
+  img.src = pokemonSpriteUrl(poke, evolved);
 }
 
 function renderFlag(code) {
@@ -146,24 +167,9 @@ function renderFlag(code) {
 }
 
 // =============================================
-// LOCAL STORAGE / NEON DB
+// LOCAL STORAGE
 // =============================================
 const LS_KEY = 'dartbot_players_pokemon';
-let sql = null;
-
-async function initNeonDB() {
-  try {
-    const connString = localStorage.getItem('neon_db_string');
-    if (!connString) return; // No prompt — user must click "Connect DB" in Settings
-    const { neon } = await import('https://esm.sh/@neondatabase/serverless');
-    sql = neon(connString);
-    try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS avg_cp FLOAT`; } catch(e) {}
-    try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS match_pokemon VARCHAR(50)`; } catch(e) {}
-    try { await sql`ALTER TABLE players ADD COLUMN IF NOT EXISTS match_mode VARCHAR(20)`; } catch(e) {}
-    renderRecentPlayers();
-  } catch(e) { console.error('Neon DB connect failed:', e); }
-}
-
 function getSavedPlayers() {
   try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
 }
@@ -180,21 +186,6 @@ async function savePlayerStat(name, flag, won, avgCp, pokemonName, mode) {
   prev.match_pokemon = pokemonName;
   prev.match_mode = mode;
   try { localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch {}
-  if (sql) {
-    try {
-      await sql`
-        INSERT INTO players (name, flag, games, wins, avg_cp, match_pokemon, match_mode)
-        VALUES (${name}, ${flag}, 1, ${won?1:0}, ${avgCp}, ${pokemonName}, ${mode})
-        ON CONFLICT (name) DO UPDATE SET
-          flag = EXCLUDED.flag,
-          games = players.games + 1,
-          wins = players.wins + ${won?1:0},
-          avg_cp = (players.avg_cp * players.games + ${avgCp}) / (players.games + 1),
-          match_pokemon = EXCLUDED.match_pokemon,
-          match_mode = EXCLUDED.match_mode
-      `;
-    } catch(e) { console.error('Neon savePlayerStat error:', e); }
-  }
 }
 
 function savedMPR(stats) {
@@ -301,12 +292,6 @@ function renderPlayerList() {
 
 async function renderRecentPlayers() {
   let saved = getSavedPlayers();
-  if (sql) {
-    try {
-      const rows = await sql`SELECT name, flag, games, wins, avg_cp FROM players ORDER BY games DESC LIMIT 8`;
-      rows.forEach(r => { saved[r.name] = r; });
-    } catch(e) { /* use localStorage */ }
-  }
   const usedNames = new Set(players.filter(p => !p.isCpu).map(p => p.name));
   const suggestions = Object.keys(saved).filter(n => !usedNames.has(n)).slice(0, 5);
   const html = suggestions.length ? '<span class="recent-label">Recent:</span>' +
@@ -435,7 +420,7 @@ function buildDraftGrid() {
     card.id = `dcard-${n}`;
     card.innerHTML = `
       <div class="draft-num">${n}</div>
-      <img class="draft-sprite" src="${spriteUrl(poke.sid)}" alt="${escapeHTML(poke.name)}" loading="lazy">
+      <img class="draft-sprite" ${pokemonImgAttrs(poke, false)} alt="${escapeHTML(poke.name)}" loading="lazy">
       <div class="draft-pname">${escapeHTML(poke.name)}</div>
       <div class="draft-class-badge cls-${poke.cls}">${poke.cls}</div>`;
     grid.appendChild(card);
@@ -501,13 +486,13 @@ function buildVSScreen() {
 
   const p1El = document.getElementById('vs-p1');
   if (p1El) p1El.innerHTML = `
-    <img class="vs-sprite" src="${spriteUrl(p0.pokemon.sid)}" alt="${escapeHTML(p0.pokemon.name)}">
+    <img class="vs-sprite" ${pokemonImgAttrs(p0.pokemon, false)} alt="${escapeHTML(p0.pokemon.name)}">
     <div class="vs-pname">${escapeHTML(p0.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p0.name)}</div>`;
 
   const p2El = document.getElementById('vs-p2');
   if (p2El) p2El.innerHTML = `
-    <img class="vs-sprite" src="${spriteUrl(p1.pokemon.sid)}" alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
+    <img class="vs-sprite" ${pokemonImgAttrs(p1.pokemon, false)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
     <div class="vs-pname">${escapeHTML(p1.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p1.name)}</div>`;
 
@@ -545,7 +530,7 @@ function buildBattleUI() {
     const ptEl = sideEl.querySelector('.passive-tag');
     if (ptEl) ptEl.textContent = CLASS_PASSIVES[p.pokemon.cls];
     const img = document.getElementById(`sprite-${i}`);
-    if (img) img.src = spriteUrl(p.pokemon.sid);
+    setPokemonSprite(img, p.pokemon, false);
     const badge = document.getElementById(`evolved-badge-${i}`);
     if (badge) badge.classList.remove('visible');
     const statusBadge = document.getElementById(`status-badge-${i}`);
@@ -577,6 +562,12 @@ function startTurn() {
     flash('BURN DAMAGE! -20 HP', 'var(--poke-red)');
     aSpeak('Burn damage!');
     aSfx(sfxStatus);
+    updateBattleField();
+    if (p.hp <= 0) {
+      turnEnded = true;
+      setTimeout(() => endWithWinner(1 - currentPlayer), tDelay(600));
+      return;
+    }
   }
 
   // Paralyse: 2 darts only
@@ -824,42 +815,44 @@ function calcEffect(seg, attacker, defender) {
   // Regular numbers
   const isOdd  = num % 2 !== 0;
   const isEven = !isOdd;
+  const brawlerBonus = isBrawler && isOdd ? 5 : 0;
+  const tankHealBonus = isTank ? 8 : 0;
 
   if (gameMode === 'wild') {
     if (mul === 1 && isOdd) {
-      const dmg = rand(10, 20) + boost + (isBrawler ? 10 : 0);
+      const dmg = rand(10, 20) + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`S${num} -${dmg}`, mul:1 };
     }
     if (mul === 1 && isEven) {
-      const heal = rand(10, 20) + (isTank ? 10 : 0);
+      const heal = rand(10, 20) + tankHealBonus;
       return { type:'heal', amount:heal, label:`S${num} +${heal}HP`, mul:1 };
     }
     if (mul === 2) {
-      const dmg = rand(25, 40) + boost;
+      const dmg = rand(25, 40) + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`D${num} -${dmg}`, mul:2 };
     }
     if (mul === 3) {
       const lo = isSniper ? 52 : 45, hi = isSniper ? 70 : 60;
-      const dmg = rand(lo, hi) + boost;
+      const dmg = rand(lo, hi) + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`T${num} -${dmg}`, mul:3 };
     }
   } else {
     // gym mode
     if (mul === 1 && isOdd) {
-      const dmg = num + boost + (isBrawler ? 10 : 0);
+      const dmg = num + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`S${num} -${dmg}`, mul:1 };
     }
     if (mul === 1 && isEven) {
-      const heal = num + (isTank ? 10 : 0);
+      const heal = num + tankHealBonus;
       return { type:'heal', amount:heal, label:`S${num} +${heal}HP`, mul:1 };
     }
     if (mul === 2) {
-      const dmg = num * 2 + boost;
+      const dmg = num * 2 + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`D${num} -${dmg}`, mul:2 };
     }
     if (mul === 3) {
       const mult = isSniper ? 3.5 : 3;
-      const dmg = Math.round(num * mult) + boost;
+      const dmg = Math.round(num * mult) + boost + brawlerBonus;
       return { type:'damage', amount:dmg, label:`T${num} -${dmg}`, mul:3 };
     }
   }
@@ -994,9 +987,9 @@ function triggerEvolution(playerIdx) {
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
-    img.src = spriteUrl(p.pokemon.msid);
+    setPokemonSprite(img, p.pokemon, true);
     img.classList.add('evolving');
-    setTimeout(() => img.classList.remove('evolving'), 850);
+    setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
 
   // No new sprite (msid === sid): add gold glow class
@@ -1033,15 +1026,19 @@ function checkWin() {
   return false;
 }
 
-let _winAudio = null;
 function playWinMusic() {
-  stopWinMusic();
-  _winAudio = new Audio('https://www.myinstants.com/media/sounds/dart-winner.mp3');
-  _winAudio.volume = 0.9;
-  _winAudio.play().catch(() => {});
+  const ctx = gAC(), t = ctx.currentTime;
+  const melody = [
+    [392, 0], [523, .12], [659, .24], [784, .36],
+    [1047, .56], [784, .72], [1047, .88], [1319, 1.08],
+  ];
+  melody.forEach(([f, w]) => {
+    tone(f, 'triangle', t + w, .28, .18, ctx);
+    tone(f * 1.5, 'sine', t + w + .03, .18, .08, ctx);
+  });
+  noiz(t + .52, .18, .05, 2200, ctx);
 }
 function stopWinMusic() {
-  if (_winAudio) { _winAudio.pause(); _winAudio.currentTime = 0; _winAudio = null; }
 }
 
 async function endWithWinner(idx) {
@@ -1085,6 +1082,7 @@ function nextLeg() {
 
 function goToMenu() {
   gameActive = false;
+  resetThrowTracking();
   stopWinMusic();
   document.getElementById('confetti').innerHTML = '';
   window.location.href = '../index.html';
@@ -1093,6 +1091,7 @@ function goToMenu() {
 function endGame() {
   gameActive = false;
   draftPhase = false;
+  resetThrowTracking();
   stopWinMusic();
   document.getElementById('confetti').innerHTML = '';
   showScreen('setup');
@@ -1283,19 +1282,37 @@ function runCpuTurn() {
   const p   = players[currentPlayer];
   const cpu = p.cpuData;
   let prevSeg = null;
+  const tier = (typeof BOT_TIERS !== 'undefined' && cpu && BOT_TIERS[cpu.id]) ? BOT_TIERS[cpu.id] : null;
+  const sigmaOverride = tier ? tier.sigma : undefined;
 
   function cpuPickTarget() {
+    const opp = players[1 - currentPlayer];
+    const hpPct = p.hp / p.maxHp;
+    const oppPct = opp.hp / opp.maxHp;
+    const highTier = sigmaOverride !== undefined && sigmaOverride <= 18;
+    const wantsHeal = hpPct < 0.38 && oppPct > 0.22;
+
     // Finish mode: aim for exactly the remaining amount
     if (finishMode) {
       const remaining = finishTarget - finishTotal;
       return remaining >= 1 && remaining <= 20 ? remaining : 20;
     }
+
+    if (gameMode === 'gym') {
+      const evens = [2,4,6,8,10,12,14,16,18,20];
+      const odds = [1,3,5,7,9,11,13,15,17,19];
+      if (wantsHeal) return highTier ? 20 : (cpu.mpr >= 1.5 ? 18 : evens[rand(0, evens.length - 1)]);
+      if (p.pokemon.cls === 'Status' && Math.random() < .2) return 25;
+      if (p.pokemon.cls === 'Sniper') return highTier ? 19 : 17;
+      return cpu.mpr >= 1.5 ? (Math.random() < .65 ? 19 : 17) : odds[rand(0, odds.length - 1)];
+    }
+
+    if (wantsHeal && highTier && Math.random() < .45) return 25;
+
     // Status class: aim for bull to inflict status
     if (p.pokemon.cls === 'Status' && Math.random() < .3) return 25;
     // Sniper: treble of high number
     if (p.pokemon.cls === 'Sniper') return cpu.mpr >= 2 ? 19 : 17;
-    // Gym: target high treble for max dmg; Wild: odd singles ok
-    if (gameMode === 'gym') return cpu.mpr >= 3 ? 19 : (cpu.mpr >= 1.5 ? 17 : rand(1,20));
     // Wild: any odd for damage
     const odds = [1,3,5,7,9,11,13,15,17,19];
     return cpu.mpr >= 1.5 ? (Math.random() < .6 ? 19 : 17) : odds[rand(0, odds.length-1)];
@@ -1304,7 +1321,12 @@ function runCpuTurn() {
   function doThrow(dartN, cb) {
     if (!gameActive || turnEnded) { cb && cb(); return; }
     const target = cpuPickTarget();
-    const seg = generateCpuThrow(target, cpu.mpr, { prevSeg, dartsThrown: p.dartsThrown });
+    const seg = generateCpuThrow(target, cpu.mpr, {
+      prevSeg,
+      dartsThrown: p.dartsThrown,
+      sigmaOverride,
+      cricketAim: gameMode === 'gym',
+    });
     prevSeg = seg;
     registerDart(seg);
     cb && cb();
@@ -1476,7 +1498,7 @@ function handleWS(data) {
           registerDart(null);
           seenThrows = numThrows;
         }
-      }, 700);
+      }, tDelay(700));
     }
     if (event === 'Takeout finished' && numThrows === 0) {
       if (missTimer) { clearTimeout(missTimer); missTimer = null; }
@@ -1515,7 +1537,7 @@ function flash(text, color = 'var(--gold)') {
   void el.offsetWidth;
   el.classList.add('show');
   clearTimeout(flash._timer);
-  flash._timer = setTimeout(() => el.classList.remove('show'), 1400);
+  flash._timer = setTimeout(() => el.classList.remove('show'), tDelay(1400));
 }
 
 // =============================================
@@ -1671,7 +1693,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (scb) scb.checked = sfxEnabled;
   if (tcb) tcb.checked = testMode;
 
-  initNeonDB();
   buildCpuGrid();
   renderRecentPlayers();
   initSpeech();
