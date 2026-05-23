@@ -689,6 +689,7 @@ function advanceTurn() {
   const prev = players[currentPlayer];
   if (currentDarts.length > 0) {
     prev.cpTurns++;
+    checkEvolution(currentPlayer);
   }
 
   let next = (currentPlayer + 1) % 2;
