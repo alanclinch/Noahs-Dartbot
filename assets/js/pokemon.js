@@ -1009,7 +1009,9 @@ function checkEvolution(playerIdx) {
   const bestDartScore = currentDarts
     .filter(d => d.type !== 'miss')
     .reduce((best, d) => Math.max(best, Number(d.amount) || 0), 0);
-  const targetStage = bestDartScore >= 60 ? 3 : (bestDartScore >= 40 ? 2 : p.stage);
+  let targetStage = p.stage;
+  if (p.stage < 2 && bestDartScore >= 40) targetStage = 2;
+  else if (p.stage === 2 && bestDartScore >= 60) targetStage = 3;
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
 
