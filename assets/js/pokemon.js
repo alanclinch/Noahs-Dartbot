@@ -6,26 +6,26 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      types:['Grass','Poison'], cls:'Tank',    baseHp:425, sid:1,   msid:2,   fsid:3,   mname:'Ivysaur',    fname:'Venusaur'},
-  {id:2,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:375, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
-  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          types:['Water'],          cls:'Sniper',  baseHp:350, sid:7,   msid:8,   fsid:9,   mname:'Wartortle',  fname:'Blastoise'},
-  {id:4,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:350, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
-  {id:5,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:375, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
-  {id:6,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:350, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
-  {id:7,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:360, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
-  {id:8,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:425, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
-  {id:9,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:375, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
-  {id:10, name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:375, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
-  {id:11, name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:360, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
-  {id:12, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:350, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
-  {id:13, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:425, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
-  {id:14, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
-  {id:15, name:'Lapras',     vname:'Lap-russ',           types:['Water','Ice'],    cls:'Tank',    baseHp:425, sid:131, maxStage:1},
-  {id:16, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:360, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
-  {id:17, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:350, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
-  {id:18, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:425, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
-  {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:425, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
-  {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:425, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
+  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      types:['Grass','Poison'], cls:'Tank',    baseHp:150, sid:1,   msid:2,   fsid:3,   mname:'Ivysaur',    fname:'Venusaur'},
+  {id:2,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
+  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          types:['Water'],          cls:'Sniper',  baseHp:150, sid:7,   msid:8,   fsid:9,   mname:'Wartortle',  fname:'Blastoise'},
+  {id:4,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:150, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
+  {id:5,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:150, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
+  {id:6,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
+  {id:7,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
+  {id:8,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:150, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
+  {id:9,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
+  {id:10, name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
+  {id:11, name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:150, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
+  {id:12, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
+  {id:13, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
+  {id:14, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:150, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
+  {id:15, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
+  {id:16, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:150, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
+  {id:17, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:150, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
+  {id:18, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:150, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
+  {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:150, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
+  {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
 
 const CLASS_PASSIVES = {
@@ -133,6 +133,19 @@ function pokemonStageTypes(poke, stage = 1) {
 function pokemonTypeLabel(poke, stage = 1) {
   return pokemonStageTypes(poke, stage).join(' / ') || 'Pokemon';
 }
+function typeClassName(type) {
+  return `type-${String(type || 'pokemon').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+}
+function typeLabelHTML(types) {
+  const list = (types || []).filter(Boolean);
+  if (!list.length) return '<span class="type-pill type-pokemon">Pokemon</span>';
+  return list
+    .map(type => `<span class="type-pill ${typeClassName(type)}">${escapeHTML(type)}</span>`)
+    .join('<span class="type-slash">/</span>');
+}
+function pokemonTypeHTML(poke, stage = 1) {
+  return typeLabelHTML(pokemonStageTypes(poke, stage));
+}
 function playerEvolutionPick(player) {
   return player && player.stage > 1 && player.eeveeEvolution ? player.eeveeEvolution : null;
 }
@@ -146,6 +159,9 @@ function playerPokemonStageTypes(player) {
 }
 function playerPokemonTypeLabel(player) {
   return playerPokemonStageTypes(player).join(' / ') || 'Pokemon';
+}
+function playerPokemonTypeHTML(player) {
+  return typeLabelHTML(playerPokemonStageTypes(player));
 }
 function typeAdvantageMultiplier(attacker, defender) {
   const attackTypes = playerPokemonStageTypes(attacker);
@@ -476,7 +492,7 @@ function buildDraftGrid() {
       <div class="draft-num">${n}</div>
       <img class="draft-sprite" ${pokemonImgAttrs(poke, false)} alt="${escapeHTML(poke.name)}" loading="lazy">
       <div class="draft-pname">${escapeHTML(poke.name)}</div>
-      <div class="draft-class-badge cls-${poke.cls}">${pokemonTypeLabel(poke)}</div>`;
+      <div class="draft-type-badge">${pokemonTypeHTML(poke)}</div>`;
     grid.appendChild(card);
   }
 }
@@ -582,7 +598,7 @@ function buildBattleUI() {
     const evNameEl = sideEl.querySelector('.poke-evolved-name');
     if (evNameEl) evNameEl.textContent = '';
     const ptEl = sideEl.querySelector('.passive-tag');
-    if (ptEl) ptEl.textContent = playerPokemonTypeLabel(p);
+    if (ptEl) ptEl.innerHTML = playerPokemonTypeHTML(p);
     const img = document.getElementById(`sprite-${i}`);
     setPlayerPokemonSprite(img, p);
     const badge = document.getElementById(`evolved-badge-${i}`);
@@ -1062,8 +1078,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   p.evolved = true;
   p.stage = targetStage;
   const newName = playerPokemonStageName(p);
-  p.maxHp += 30 * stageGain;
-  p.hp = Math.min(p.hp + 30 * stageGain, p.maxHp);
+  p.maxHp += 25 * stageGain;
+  p.hp = Math.min(p.hp + 25 * stageGain, p.maxHp);
   p.dmgBoost += 5 * stageGain;
 
   const img = document.getElementById(`sprite-${playerIdx}`);
@@ -1089,7 +1105,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
     const ptEl = sideEl.querySelector('.passive-tag');
     const enEl = sideEl.querySelector('.poke-evolved-name');
     if (nameEl) nameEl.textContent = newName.toUpperCase();
-    if (ptEl) ptEl.textContent = playerPokemonTypeLabel(p);
+    if (ptEl) ptEl.innerHTML = playerPokemonTypeHTML(p);
     if (enEl) enEl.textContent = newName;
   }
 
@@ -1212,7 +1228,7 @@ function updateBattleField() {
       const evolvedNameEl = sideEl.querySelector('.poke-evolved-name');
       const badge = document.getElementById(`evolved-badge-${i}`);
       if (nameEl) nameEl.textContent = playerPokemonStageName(p).toUpperCase();
-      if (typeEl) typeEl.textContent = playerPokemonTypeLabel(p);
+      if (typeEl) typeEl.innerHTML = playerPokemonTypeHTML(p);
       if (evolvedNameEl) evolvedNameEl.textContent = p.stage > 1 ? playerPokemonStageName(p) : '';
       if (badge) {
         badge.classList.toggle('visible', p.stage > 1);

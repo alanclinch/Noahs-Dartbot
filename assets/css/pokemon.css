@@ -75,22 +75,50 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%; text-align: center;
 }
-.draft-class-badge {
+.draft-type-badge,
+.passive-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.draft-type-badge {
   font-size: 10px; letter-spacing: 1px;
-  padding: 2px 6px; border-radius: 8px;
   font-weight: 700; text-transform: uppercase;
 }
-.cls-Sniper  { background: rgba(96,165,250,.25);  color: var(--blue); }
-.cls-Tank    { background: rgba(52,211,153,.25);   color: var(--green); }
-.cls-Brawler { background: rgba(251,191,36,.25);   color: var(--amber); }
-.cls-Status  { background: rgba(167,139,250,.25);  color: #a78bfa; }
+.type-pill {
+  border-radius: 8px;
+  padding: 2px 6px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.35);
+}
+.type-slash {
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+.type-grass { background: #74d35d; color: #10260d; text-shadow: none; }
+.type-poison { background: #8b5cf6; }
+.type-fire { background: #f04e23; }
+.type-water { background: #2563eb; }
+.type-electric { background: #ffe436; color: #1f1a00; text-shadow: none; }
+.type-ground { background: #c99355; color: #26180a; text-shadow: none; }
+.type-fighting { background: #7f1d1d; }
+.type-dragon { background: #4338ca; }
+.type-ice { background: #67e8f9; color: #06252d; text-shadow: none; }
+.type-bug { background: #a3e635; color: #17240a; text-shadow: none; }
+.type-flying { background: #b8a4ff; color: #211438; text-shadow: none; }
+.type-dark { background: #1f2937; }
+.type-ghost { background: #6d28d9; }
+.type-steel { background: #94a3b8; color: #111827; text-shadow: none; }
+.type-pokemon { background: var(--surface2); color: var(--muted); }
 
 .passive-tag {
   font-size: 11px;
   background: var(--surface2); border: 2px solid var(--border2);
   border-radius: 8px; padding: 3px 10px;
-  display: inline-block; margin-top: 4px;
-  color: var(--muted);
+  margin-top: 4px;
 }
 
 /* ===================== VS SCREEN ===================== */
