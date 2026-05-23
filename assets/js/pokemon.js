@@ -9,33 +9,23 @@ const POKEMON_ROSTER = [
   {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      types:['Grass','Poison'], cls:'Tank',    baseHp:425, sid:1,   msid:2,   fsid:3,   mname:'Ivysaur',    fname:'Venusaur'},
   {id:2,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:375, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
   {id:3,  name:'Squirtle',   vname:'Skwer-tul',          types:['Water'],          cls:'Sniper',  baseHp:350, sid:7,   msid:8,   fsid:9,   mname:'Wartortle',  fname:'Blastoise'},
-  {id:4,  name:'Treecko',    vname:'Tree-ko',            types:['Grass'],          cls:'Tank',    baseHp:425, sid:252, msid:253, fsid:254, mname:'Grovyle',    fname:'Sceptile'},
-  {id:5,  name:'Torchic',    vname:'Tor-chik',           types:['Fire'],           cls:'Brawler', baseHp:375, sid:255, msid:256, fsid:257, mname:'Combusken',  fname:'Blaziken',  ftypes:['Fire','Fighting']},
-  {id:6,  name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:350, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
-  {id:7,  name:'Turtwig',    vname:'Tur-twig',           types:['Grass'],          cls:'Tank',    baseHp:425, sid:387, msid:388, fsid:389, mname:'Grotle',     fname:'Torterra',  ftypes:['Grass','Ground']},
-  {id:8,  name:'Chimchar',   vname:'Chun-char',          types:['Fire'],           cls:'Brawler', baseHp:375, sid:390, msid:391, fsid:392, mname:'Monferno',   fname:'Infernape', ftypes:['Fire','Fighting']},
-  {id:9,  name:'Piplup',     vname:'Pip-lup',            types:['Water'],          cls:'Sniper',  baseHp:350, sid:393, msid:394, fsid:395, mname:'Prinplup',   fname:'Empoleon',  ftypes:['Water','Steel']},
-  {id:10, name:'Chespin',    vname:'Ches-pin',           types:['Grass'],          cls:'Tank',    baseHp:425, sid:650, msid:651, fsid:652, mname:'Quilladin',  fname:'Chesnaught',ftypes:['Grass','Fighting']},
-  {id:11, name:'Fennekin',   vname:'Fen-nih-kin',        types:['Fire'],           cls:'Brawler', baseHp:375, sid:653, msid:654, fsid:655, mname:'Braixen',    fname:'Delphox',   ftypes:['Fire','Psychic']},
-  {id:12, name:'Froakie',    vname:'Frow-kee',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:656, msid:657, fsid:658, mname:'Frogadier',  fname:'Greninja',  ftypes:['Water','Dark']},
-  {id:13, name:'Rowlet',     vname:'Row-let',            types:['Grass','Flying'], cls:'Tank',    baseHp:425, sid:722, msid:723, fsid:724, mname:'Dartrix',    fname:'Decidueye', ftypes:['Grass','Ghost']},
-  {id:14, name:'Litten',     vname:'Lit-ten',            types:['Fire'],           cls:'Brawler', baseHp:375, sid:725, msid:726, fsid:727, mname:'Torracat',   fname:'Incineroar',ftypes:['Fire','Dark']},
-  {id:15, name:'Popplio',    vname:'Pop-lee-oh',         types:['Water'],          cls:'Sniper',  baseHp:350, sid:728, msid:729, fsid:730, mname:'Brionne',    fname:'Primarina', ftypes:['Water','Fairy']},
-  {id:16, name:'Sprigatito', vname:'Spree-gah-tee-toe',  types:['Grass'],          cls:'Tank',    baseHp:425, sid:906, msid:907, fsid:908, mname:'Floragato',  fname:'Meowscarada',ftypes:['Grass','Dark']},
-  {id:17, name:'Fuecoco',    vname:'Fweh-ko-ko',         types:['Fire'],           cls:'Brawler', baseHp:375, sid:909, msid:910, fsid:911, mname:'Crocalor',   fname:'Skeledirge',ftypes:['Fire','Ghost']},
-  {id:18, name:'Quaxly',     vname:'Kwax-lee',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:912, msid:913, fsid:914, mname:'Quaxwell',   fname:'Quaquaval', ftypes:['Water','Fighting']},
-  {id:19, name:'Eevee',      vname:'Ee-vee',             types:['Normal'],         cls:'Status',  baseHp:360, sid:133, msid:134, fsid:134, mname:'Vaporeon',   fname:'Vaporeon',  ftypes:['Water'],
-    eeveelutions:[
-      {name:'Vaporeon', sid:134, types:['Water']},
-      {name:'Jolteon',  sid:135, types:['Electric']},
-      {name:'Flareon',  sid:136, types:['Fire']},
-      {name:'Espeon',   sid:196, types:['Psychic']},
-      {name:'Umbreon',  sid:197, types:['Dark']},
-      {name:'Leafeon',  sid:470, types:['Grass']},
-      {name:'Glaceon',  sid:471, types:['Ice']},
-      {name:'Sylveon',  sid:700, types:['Fairy']},
-    ]},
-  {id:20, name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:350, sid:25,  msid:26,  fsid:26,  mname:'Raichu',     fname:'Raichu'},
+  {id:4,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:350, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
+  {id:5,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:375, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
+  {id:6,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:350, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
+  {id:7,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:360, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
+  {id:8,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:425, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
+  {id:9,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:375, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
+  {id:10, name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:375, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
+  {id:11, name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:360, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
+  {id:12, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:350, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
+  {id:13, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:425, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
+  {id:14, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
+  {id:15, name:'Lapras',     vname:'Lap-russ',           types:['Water','Ice'],    cls:'Tank',    baseHp:425, sid:131, maxStage:1},
+  {id:16, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:360, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
+  {id:17, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:350, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
+  {id:18, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:425, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
+  {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:425, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
+  {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:425, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
 
 const CLASS_PASSIVES = {
@@ -1050,12 +1040,15 @@ function applyStatus(victimIdx, statusType) {
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
+  const maxStage = p.pokemon.maxStage || 3;
+  if ((p.stage || 1) >= maxStage) return;
   const bestDartScore = currentDarts
     .filter(d => d.type !== 'miss')
     .reduce((best, d) => Math.max(best, Number(d.amount) || 0), 0);
   let targetStage = p.stage;
   if (p.stage < 2 && bestDartScore >= 40) targetStage = 2;
   else if (p.stage === 2 && bestDartScore >= 60) targetStage = 3;
+  targetStage = Math.min(targetStage, maxStage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
 
