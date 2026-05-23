@@ -4,6 +4,10 @@ Documentation/
 # Audio files — kept local due to copyright, not pushed to GitHub
 assets/audio/
 
+# Claude Code local config
+.claude/settings.local.json
+
 # OS files
 .DS_Store
 Thumbs.db
+desktop.ini
