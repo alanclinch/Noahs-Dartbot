@@ -812,6 +812,7 @@ function registerDart(seg) {
   currentDarts.push({ label, type: result.type, amount: result.amount, mul: result.mul || 0 });
   updateDartSlot(dartIdx, label, slotClass);
 
+  if (result.type !== 'miss') checkEvolution(currentPlayer);
   if (checkWin()) { turnEnded = true; return; }
   updateBattleField();
 
