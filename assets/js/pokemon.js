@@ -174,8 +174,15 @@ function spriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 }
+function shinySpriteUrl(id) {
+  if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
+}
 function localSpriteUrl(id) {
   return `../assets/sprites/pokemon/pokemon-${id}.png`;
+}
+function localShinySpriteUrl(id) {
+  return `../assets/sprites/pokemon/pokemon-${id}-shiny.png`;
 }
 
 function fallbackSpriteUrl(cls) {
@@ -187,9 +194,10 @@ function useRemotePokemonSprites() {
   return window.DARTBOT_CONFIG && window.DARTBOT_CONFIG.remotePokemonSprites === true;
 }
 
-function pokemonSpriteUrl(poke, evolved) {
+function pokemonSpriteUrl(poke, evolved, shiny = false) {
   const stage = typeof evolved === 'number' ? evolved : (evolved ? 2 : 1);
   const id = stage >= 3 ? (poke.fsid || poke.msid || poke.sid) : (stage >= 2 ? poke.msid : poke.sid);
+  if (shiny) return useRemotePokemonSprites() ? shinySpriteUrl(id) : localShinySpriteUrl(id);
   return useRemotePokemonSprites() ? spriteUrl(id) : localSpriteUrl(id);
 }
 
@@ -213,21 +221,21 @@ function pokemonImgAttrs(poke, evolved) {
   return `src="${pokemonSpriteUrl(poke, evolved)}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback"`;
 }
 
-function setPokemonSprite(img, poke, evolved) {
+function setPokemonSprite(img, poke, evolved, shiny = false) {
   if (!img || !poke) return;
   img.onerror = function() {
     this.onerror = null;
     this.src = this.dataset.fallback;
   };
   img.dataset.fallback = fallbackSpriteUrl(poke.cls);
-  img.src = pokemonSpriteUrl(poke, evolved);
+  img.src = pokemonSpriteUrl(poke, evolved, shiny);
 }
 
 function setPlayerPokemonSprite(img, player) {
   if (!img || !player || !player.pokemon) return;
   const eeveePick = playerEvolutionPick(player);
   if (!eeveePick) {
-    setPokemonSprite(img, player.pokemon, player.stage || 1);
+    setPokemonSprite(img, player.pokemon, player.stage || 1, player.shiny);
     return;
   }
   img.onerror = function() {
@@ -235,7 +243,9 @@ function setPlayerPokemonSprite(img, player) {
     this.src = this.dataset.fallback;
   };
   img.dataset.fallback = fallbackSpriteUrl(player.pokemon.cls);
-  img.src = useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid);
+  img.src = player.shiny
+    ? (useRemotePokemonSprites() ? shinySpriteUrl(eeveePick.sid) : localShinySpriteUrl(eeveePick.sid))
+    : (useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid));
 }
 
 function renderFlag(code) {
@@ -588,7 +598,7 @@ function buildVSScreen() {
   if (p1El) {
     p1El.classList.toggle('shiny-pokemon', !!p0.shiny);
     p1El.innerHTML = `
-    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" ${pokemonImgAttrs(p0.pokemon, false)} alt="${escapeHTML(p0.pokemon.name)}">
+    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" src="${pokemonSpriteUrl(p0.pokemon, 1, p0.shiny)}" data-fallback="${fallbackSpriteUrl(p0.pokemon.cls)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(p0.pokemon.name)}">
     <div class="vs-pname">${escapeHTML(p0.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p0.name)}</div>`;
   }
@@ -597,7 +607,7 @@ function buildVSScreen() {
   if (p2El) {
     p2El.classList.toggle('shiny-pokemon', !!p1.shiny);
     p2El.innerHTML = `
-    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" ${pokemonImgAttrs(p1.pokemon, false)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
+    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" src="${pokemonSpriteUrl(p1.pokemon, 1, p1.shiny)}" data-fallback="${fallbackSpriteUrl(p1.pokemon.cls)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
     <div class="vs-pname">${escapeHTML(p1.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p1.name)}</div>`;
   }

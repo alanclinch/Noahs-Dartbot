@@ -191,10 +191,7 @@
     radial-gradient(circle at 82% 18%, rgba(255,230,80,.9) 0 2px, transparent 3px),
     radial-gradient(circle at 74% 82%, rgba(255,255,255,.9) 0 2px, transparent 3px),
     radial-gradient(circle at 28% 78%, rgba(255,230,80,.85) 0 2px, transparent 3px);
-  animation: shinySparkle 1.7s ease-in-out infinite;
-}
-.vs-sprite.shiny-pokemon {
-  filter: hue-rotate(58deg) saturate(1.55) brightness(1.12) drop-shadow(0 0 14px rgba(255,214,10,.55)) drop-shadow(0 4px 16px rgba(0,0,0,.6));
+  animation: shinySparkle 3.8s ease-in-out infinite;
 }
 .vs-pname { font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 700; color: #fff; }
 .vs-player-name { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
@@ -278,7 +275,7 @@
     radial-gradient(circle at 88% 72%, rgba(255,255,255,.9) 0 2px, transparent 3px),
     radial-gradient(circle at 26% 82%, rgba(255,230,80,.85) 0 2px, transparent 3px);
   opacity: .8;
-  animation: shinySparkle 1.7s ease-in-out infinite;
+  animation: shinySparkle 3.8s ease-in-out infinite;
 }
 .poke-sprite-wrap.shiny-pokemon::after {
   transform: rotate(35deg);
@@ -296,14 +293,14 @@
 .poke-sprite.p2-sprite { transform: scaleX(-1); }
 .poke-sprite.active-turn { filter: drop-shadow(0 0 16px rgba(252,211,77,.9)) drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
 .poke-sprite.shiny-pokemon {
-  filter: hue-rotate(58deg) saturate(1.55) brightness(1.12) drop-shadow(0 0 14px rgba(255,214,10,.55)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  filter: drop-shadow(0 0 14px rgba(255,214,10,.55)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
 }
 .poke-sprite.shiny-pokemon.active-turn {
-  filter: hue-rotate(58deg) saturate(1.55) brightness(1.18) drop-shadow(0 0 18px rgba(252,211,77,.95)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  filter: drop-shadow(0 0 18px rgba(252,211,77,.95)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
 }
 .poke-sprite.glow-evolved { filter: drop-shadow(0 0 20px rgba(252,211,77,1)) drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
 .poke-sprite.shiny-pokemon.glow-evolved {
-  filter: hue-rotate(58deg) saturate(1.55) brightness(1.18) drop-shadow(0 0 22px rgba(252,211,77,1)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
+  filter: drop-shadow(0 0 22px rgba(252,211,77,1)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
 }
 @keyframes pokeEvolve {
   0%   { filter: brightness(8) drop-shadow(0 0 30px #fff); }
