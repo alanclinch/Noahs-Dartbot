@@ -24,7 +24,17 @@ const POKEMON_ROSTER = [
   {id:16, name:'Sprigatito', vname:'Spree-gah-tee-toe',  types:['Grass'],          cls:'Tank',    baseHp:425, sid:906, msid:907, fsid:908, mname:'Floragato',  fname:'Meowscarada',ftypes:['Grass','Dark']},
   {id:17, name:'Fuecoco',    vname:'Fweh-ko-ko',         types:['Fire'],           cls:'Brawler', baseHp:375, sid:909, msid:910, fsid:911, mname:'Crocalor',   fname:'Skeledirge',ftypes:['Fire','Ghost']},
   {id:18, name:'Quaxly',     vname:'Kwax-lee',           types:['Water'],          cls:'Sniper',  baseHp:350, sid:912, msid:913, fsid:914, mname:'Quaxwell',   fname:'Quaquaval', ftypes:['Water','Fighting']},
-  {id:19, name:'Eevee',      vname:'Ee-vee',             types:['Normal'],         cls:'Status',  baseHp:360, sid:133, msid:134, fsid:134, mname:'Vaporeon',   fname:'Vaporeon',  ftypes:['Water']},
+  {id:19, name:'Eevee',      vname:'Ee-vee',             types:['Normal'],         cls:'Status',  baseHp:360, sid:133, msid:134, fsid:134, mname:'Vaporeon',   fname:'Vaporeon',  ftypes:['Water'],
+    eeveelutions:[
+      {name:'Vaporeon', sid:134, types:['Water']},
+      {name:'Jolteon',  sid:135, types:['Electric']},
+      {name:'Flareon',  sid:136, types:['Fire']},
+      {name:'Espeon',   sid:196, types:['Psychic']},
+      {name:'Umbreon',  sid:197, types:['Dark']},
+      {name:'Leafeon',  sid:470, types:['Grass']},
+      {name:'Glaceon',  sid:471, types:['Ice']},
+      {name:'Sylveon',  sid:700, types:['Fairy']},
+    ]},
   {id:20, name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:350, sid:25,  msid:26,  fsid:26,  mname:'Raichu',     fname:'Raichu'},
 ];
 
@@ -133,9 +143,23 @@ function pokemonStageTypes(poke, stage = 1) {
 function pokemonTypeLabel(poke, stage = 1) {
   return pokemonStageTypes(poke, stage).join(' / ') || 'Pokemon';
 }
+function playerEvolutionPick(player) {
+  return player && player.stage > 1 && player.eeveeEvolution ? player.eeveeEvolution : null;
+}
+function playerPokemonStageName(player) {
+  const eeveePick = playerEvolutionPick(player);
+  return eeveePick ? eeveePick.name : pokemonStageName(player.pokemon, player.stage);
+}
+function playerPokemonStageTypes(player) {
+  const eeveePick = playerEvolutionPick(player);
+  return eeveePick ? eeveePick.types : pokemonStageTypes(player.pokemon, player.stage);
+}
+function playerPokemonTypeLabel(player) {
+  return playerPokemonStageTypes(player).join(' / ') || 'Pokemon';
+}
 function typeAdvantageMultiplier(attacker, defender) {
-  const attackTypes = pokemonStageTypes(attacker.pokemon, attacker.stage);
-  const defendTypes = pokemonStageTypes(defender.pokemon, defender.stage);
+  const attackTypes = playerPokemonStageTypes(attacker);
+  const defendTypes = playerPokemonStageTypes(defender);
   const beats = { Fire:'Grass', Grass:'Water', Water:'Fire' };
   return attackTypes.some(t => defendTypes.includes(beats[t])) ? 1.2 : 1;
 }
@@ -174,6 +198,21 @@ function setPokemonSprite(img, poke, evolved) {
   };
   img.dataset.fallback = fallbackSpriteUrl(poke.cls);
   img.src = pokemonSpriteUrl(poke, evolved);
+}
+
+function setPlayerPokemonSprite(img, player) {
+  if (!img || !player || !player.pokemon) return;
+  const eeveePick = playerEvolutionPick(player);
+  if (!eeveePick || !useRemotePokemonSprites()) {
+    setPokemonSprite(img, player.pokemon, player.stage || 1);
+    return;
+  }
+  img.onerror = function() {
+    this.onerror = null;
+    this.src = this.dataset.fallback;
+  };
+  img.dataset.fallback = fallbackSpriteUrl(player.pokemon.cls);
+  img.src = spriteUrl(eeveePick.sid);
 }
 
 function renderFlag(code) {
@@ -280,7 +319,7 @@ function addCpuPlayer(id) {
 function makePlayer(name, color, flag, isCpu, cpuData) {
   return {
     name, color, flag, isCpu, cpuData,
-    pokemon: null, hp: 0, maxHp: 0, stage: 1,
+    pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
     totalDmg: 0, totalHeal: 0, cpTurns: 0,
@@ -398,7 +437,7 @@ function launchLeg() {
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
-    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1;
+    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -547,13 +586,13 @@ function buildBattleUI() {
     const sideEl = document.getElementById(`poke-side-${i}`);
     if (!sideEl) return;
     sideEl.querySelector('.poke-player-tag').textContent = p.name.toUpperCase();
-    sideEl.querySelector('.poke-name-tag').textContent = pokemonStageName(p.pokemon, p.stage).toUpperCase();
+    sideEl.querySelector('.poke-name-tag').textContent = playerPokemonStageName(p).toUpperCase();
     const evNameEl = sideEl.querySelector('.poke-evolved-name');
     if (evNameEl) evNameEl.textContent = '';
     const ptEl = sideEl.querySelector('.passive-tag');
-    if (ptEl) ptEl.textContent = pokemonTypeLabel(p.pokemon, p.stage);
+    if (ptEl) ptEl.textContent = playerPokemonTypeLabel(p);
     const img = document.getElementById(`sprite-${i}`);
-    setPokemonSprite(img, p.pokemon, p.stage);
+    setPlayerPokemonSprite(img, p);
     const badge = document.getElementById(`evolved-badge-${i}`);
     if (badge) badge.classList.remove('visible');
     const statusBadge = document.getElementById(`status-badge-${i}`);
@@ -1006,6 +1045,7 @@ function applyStatus(victimIdx, statusType) {
 // =============================================
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
+  if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
   const bestDartScore = currentDarts
     .filter(d => d.type !== 'miss')
     .reduce((best, d) => Math.max(best, Number(d.amount) || 0), 0);
@@ -1019,25 +1059,29 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   const p = players[playerIdx];
   const oldStage = p.stage || 1;
   const stageGain = targetStage - oldStage;
-  const newName = pokemonStageName(p.pokemon, targetStage);
+  if (p.pokemon.name === 'Eevee' && !p.eeveeEvolution && p.pokemon.eeveelutions) {
+    p.eeveeEvolution = p.pokemon.eeveelutions[rand(0, p.pokemon.eeveelutions.length - 1)];
+  }
   p.evolved = true;
   p.stage = targetStage;
+  const newName = playerPokemonStageName(p);
   p.maxHp += 30 * stageGain;
   p.hp = Math.min(p.hp + 30 * stageGain, p.maxHp);
   p.dmgBoost += 5 * stageGain;
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
-    setPokemonSprite(img, p.pokemon, targetStage);
+    setPlayerPokemonSprite(img, p);
     img.classList.add('evolving');
     setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
 
   // No new sprite (msid === sid): add gold glow class
-  if ((targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid) === p.pokemon.sid) {
+  const evolvedSpriteId = p.eeveeEvolution ? p.eeveeEvolution.sid : (targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid);
+  if (evolvedSpriteId === p.pokemon.sid) {
     if (img) img.classList.add('glow-evolved');
   }
-  p.evolvedSprite = (targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid) !== p.pokemon.sid;
+  p.evolvedSprite = evolvedSpriteId !== p.pokemon.sid;
 
   const badge = document.getElementById(`evolved-badge-${playerIdx}`);
   if (badge) { badge.textContent = newName; badge.classList.add('visible'); }
@@ -1048,7 +1092,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
     const ptEl = sideEl.querySelector('.passive-tag');
     const enEl = sideEl.querySelector('.poke-evolved-name');
     if (nameEl) nameEl.textContent = newName.toUpperCase();
-    if (ptEl) ptEl.textContent = pokemonTypeLabel(p.pokemon, targetStage);
+    if (ptEl) ptEl.textContent = playerPokemonTypeLabel(p);
     if (enEl) enEl.textContent = newName;
   }
 
@@ -1160,7 +1204,7 @@ function updateBattleField() {
 
     const img = document.getElementById(`sprite-${i}`);
     if (img) {
-      setPokemonSprite(img, p.pokemon, p.stage || 1);
+      setPlayerPokemonSprite(img, p);
       img.classList.toggle('active-turn', i === currentPlayer && gameActive);
       if (p.evolved && !p.evolvedSprite) img.classList.add('glow-evolved');
     }
@@ -1170,12 +1214,12 @@ function updateBattleField() {
       const typeEl = sideEl.querySelector('.passive-tag');
       const evolvedNameEl = sideEl.querySelector('.poke-evolved-name');
       const badge = document.getElementById(`evolved-badge-${i}`);
-      if (nameEl) nameEl.textContent = pokemonStageName(p.pokemon, p.stage).toUpperCase();
-      if (typeEl) typeEl.textContent = pokemonTypeLabel(p.pokemon, p.stage);
-      if (evolvedNameEl) evolvedNameEl.textContent = p.stage > 1 ? pokemonStageName(p.pokemon, p.stage) : '';
+      if (nameEl) nameEl.textContent = playerPokemonStageName(p).toUpperCase();
+      if (typeEl) typeEl.textContent = playerPokemonTypeLabel(p);
+      if (evolvedNameEl) evolvedNameEl.textContent = p.stage > 1 ? playerPokemonStageName(p) : '';
       if (badge) {
         badge.classList.toggle('visible', p.stage > 1);
-        badge.textContent = p.stage > 1 ? pokemonStageName(p.pokemon, p.stage) : '';
+        badge.textContent = p.stage > 1 ? playerPokemonStageName(p) : '';
       }
     }
 
@@ -1315,7 +1359,7 @@ function updateScoringGuide() {
     </div>`).join('');
 
   if (passiveEl) {
-    const typeLabel = pokemonTypeLabel(p.pokemon, p.stage);
+    const typeLabel = playerPokemonTypeLabel(p);
     passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}  ·  Advantage: Fire beats Grass, Grass beats Water, Water beats Fire (1.2x)`;
   }
 }
@@ -1414,7 +1458,7 @@ function runCpuTurn() {
 function saveState() {
   stateHistory.push({
     players: players.map(p => ({
-      hp: p.hp, maxHp: p.maxHp, stage: p.stage, dmgBoost: p.dmgBoost,
+      hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
@@ -1443,7 +1487,7 @@ function undoLastDart() {
   finishTarget   = last.finishTarget;
   last.players.forEach((saved, i) => {
     const p = players[i];
-    p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1;
+    p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;
