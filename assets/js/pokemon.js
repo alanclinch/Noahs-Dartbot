@@ -168,6 +168,9 @@ function spriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 }
+function localSpriteUrl(id) {
+  return `../assets/sprites/pokemon/pokemon-${id}.png`;
+}
 
 function fallbackSpriteUrl(cls) {
   const key = String(cls || 'generic').toLowerCase();
@@ -179,10 +182,9 @@ function useRemotePokemonSprites() {
 }
 
 function pokemonSpriteUrl(poke, evolved) {
-  if (!useRemotePokemonSprites()) return fallbackSpriteUrl(poke.cls);
   const stage = typeof evolved === 'number' ? evolved : (evolved ? 2 : 1);
   const id = stage >= 3 ? (poke.fsid || poke.msid || poke.sid) : (stage >= 2 ? poke.msid : poke.sid);
-  return spriteUrl(id);
+  return useRemotePokemonSprites() ? spriteUrl(id) : localSpriteUrl(id);
 }
 
 function pokemonImgAttrs(poke, evolved) {
@@ -203,7 +205,7 @@ function setPokemonSprite(img, poke, evolved) {
 function setPlayerPokemonSprite(img, player) {
   if (!img || !player || !player.pokemon) return;
   const eeveePick = playerEvolutionPick(player);
-  if (!eeveePick || !useRemotePokemonSprites()) {
+  if (!eeveePick) {
     setPokemonSprite(img, player.pokemon, player.stage || 1);
     return;
   }
@@ -212,7 +214,7 @@ function setPlayerPokemonSprite(img, player) {
     this.src = this.dataset.fallback;
   };
   img.dataset.fallback = fallbackSpriteUrl(player.pokemon.cls);
-  img.src = spriteUrl(eeveePick.sid);
+  img.src = useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid);
 }
 
 function renderFlag(code) {

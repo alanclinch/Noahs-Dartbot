@@ -28,31 +28,33 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 24px 16px;
+  padding: 18px 24px;
   overflow-y: auto;
-  gap: 16px;
+  gap: 14px;
 }
 .draft-title {
   font-family: 'Orbitron', monospace;
-  font-size: 28px; font-weight: 900;
+  font-size: 34px; font-weight: 900;
   color: var(--poke-yellow);
   letter-spacing: 6px;
 }
-.draft-instruction { font-size: 18px; color: var(--text); font-weight: 600; text-align: center; }
+.draft-instruction { font-size: 20px; color: var(--text); font-weight: 600; text-align: center; }
 .draft-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-  max-width: 900px;
+  gap: 14px;
+  max-width: 1420px;
   width: 100%;
 }
 .draft-card {
   background: var(--surface);
   border: 2px solid var(--border);
   border-radius: 12px;
-  padding: 10px 6px 6px;
+  min-height: 150px;
+  padding: 12px 8px 8px;
   display: flex; flex-direction: column; align-items: center;
-  gap: 4px; position: relative;
+  justify-content: center;
+  gap: 5px; position: relative;
   transition: all .2s; cursor: default;
 }
 .draft-card.selected-p1 { border-color: var(--blue); background: rgba(37,99,235,.15); }
@@ -64,17 +66,17 @@
   position: absolute; top: 6px; left: 10px;
 }
 .draft-sprite {
-  width: 72px; height: 72px;
+  width: 94px; height: 94px;
   image-rendering: auto;
   object-fit: contain;
 }
 .draft-pname {
-  font-size: 11px; font-weight: 700; color: #fff;
+  font-size: 13px; font-weight: 700; color: #fff;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%; text-align: center;
 }
 .draft-class-badge {
-  font-size: 9px; letter-spacing: 1px;
+  font-size: 10px; letter-spacing: 1px;
   padding: 2px 6px; border-radius: 8px;
   font-weight: 700; text-transform: uppercase;
 }
@@ -163,7 +165,7 @@
   font-size: clamp(14px, 2vw, 20px); font-weight: 700;
   letter-spacing: 2px; color: #fff;
 }
-.poke-evolved-name { font-size: 11px; color: var(--gold); letter-spacing: 1px; }
+.poke-evolved-name { display: none; }
 .poke-hp-bar-wrap { width: 100%; max-width: 280px; }
 .poke-hp-label {
   display: flex; justify-content: space-between;
@@ -213,14 +215,8 @@
 .status-burn    { background: var(--poke-red);    color: #fff; }
 .status-paralyse { background: var(--poke-yellow); color: #1a1a1a; }
 
-.poke-evolved-badge {
-  position: absolute; top: -8px; right: -8px;
-  background: linear-gradient(135deg, var(--gold), var(--amber));
-  color: #1a1100; font-size: 9px; font-weight: 900;
-  padding: 2px 6px; border-radius: 6px;
-  display: none;
-}
-.poke-evolved-badge.visible { display: block; }
+.poke-evolved-badge,
+.poke-evolved-badge.visible { display: none; }
 
 .battle-divider { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .battle-vs-text { font-family: 'Orbitron', monospace; font-size: 20px; color: rgba(255,255,255,.15); }
