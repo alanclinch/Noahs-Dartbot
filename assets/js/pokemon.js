@@ -1006,10 +1006,10 @@ function applyStatus(victimIdx, statusType) {
 // =============================================
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
-  const turnScore = currentDarts
+  const bestDartScore = currentDarts
     .filter(d => d.type !== 'miss')
-    .reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
-  const targetStage = turnScore >= 60 ? 3 : (turnScore >= 40 ? 2 : p.stage);
+    .reduce((best, d) => Math.max(best, Number(d.amount) || 0), 0);
+  const targetStage = bestDartScore >= 60 ? 3 : (bestDartScore >= 40 ? 2 : p.stage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
 
