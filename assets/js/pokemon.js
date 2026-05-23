@@ -1314,7 +1314,7 @@ function updateScoringGuide() {
 
   if (passiveEl) {
     const typeLabel = pokemonTypeLabel(p.pokemon, p.stage);
-    passiveEl.textContent = `${typeLabel} Type${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}  ·  Fire > Grass > Water > Fire gives 1.2x damage`;
+    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}  ·  Advantage: Fire beats Grass, Grass beats Water, Water beats Fire (1.2x)`;
   }
 }
 
