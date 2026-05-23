@@ -6,26 +6,26 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Pikachu',    cls:'Sniper',  baseHp:350, sid:25,  msid:26,    mname:'Raichu'},
-  {id:2,  name:'Charizard',  cls:'Sniper',  baseHp:350, sid:6,   msid:10034, mname:'Mega Charizard'},
-  {id:3,  name:'Mewtwo',     cls:'Sniper',  baseHp:350, sid:150, msid:10043, mname:'Mega Mewtwo'},
-  {id:4,  name:'Rayquaza',   cls:'Sniper',  baseHp:350, sid:384, msid:10079, mname:'Mega Rayquaza'},
-  {id:5,  name:'Greninja',   cls:'Sniper',  baseHp:350, sid:658, msid:10116, mname:'Ash-Greninja'},
-  {id:6,  name:'Snorlax',    cls:'Tank',    baseHp:425, sid:143, msid:143,   mname:'Snorlax'},
-  {id:7,  name:'Blastoise',  cls:'Tank',    baseHp:425, sid:9,   msid:10036, mname:'Mega Blastoise'},
-  {id:8,  name:'Venusaur',   cls:'Tank',    baseHp:425, sid:3,   msid:10033, mname:'Mega Venusaur'},
-  {id:9,  name:'Gyarados',   cls:'Tank',    baseHp:425, sid:130, msid:10041, mname:'Mega Gyarados'},
-  {id:10, name:'Dragonite',  cls:'Tank',    baseHp:425, sid:149, msid:149,   mname:'Dragonite'},
-  {id:11, name:'Lucario',    cls:'Brawler', baseHp:375, sid:448, msid:10076, mname:'Mega Lucario'},
-  {id:12, name:'Machamp',    cls:'Brawler', baseHp:375, sid:68,  msid:68,    mname:'Machamp'},
-  {id:13, name:'Squirtle',   cls:'Brawler', baseHp:375, sid:7,   msid:8,     mname:'Wartortle'},
-  {id:14, name:'Bulbasaur',  cls:'Brawler', baseHp:375, sid:1,   msid:2,     mname:'Ivysaur'},
-  {id:15, name:'Eevee',      cls:'Brawler', baseHp:375, sid:133, msid:134,   mname:'Vaporeon'},
-  {id:16, name:'Gengar',     cls:'Status',  baseHp:360, sid:94,  msid:10038, mname:'Mega Gengar'},
-  {id:17, name:'Jigglypuff', cls:'Status',  baseHp:360, sid:39,  msid:40,    mname:'Wigglytuff'},
-  {id:18, name:'Meowth',     cls:'Status',  baseHp:360, sid:52,  msid:53,    mname:'Persian'},
-  {id:19, name:'Psyduck',    cls:'Status',  baseHp:360, sid:54,  msid:55,    mname:'Golduck'},
-  {id:20, name:'Ditto',      cls:'Status',  baseHp:360, sid:132, msid:132,   mname:'Ditto'},
+  {id:1,  name:'Bulbasaur',  cls:'Tank',    baseHp:425, sid:1,   msid:2,   mname:'Ivysaur'},
+  {id:2,  name:'Charmander', cls:'Brawler', baseHp:375, sid:4,   msid:5,   mname:'Charmeleon'},
+  {id:3,  name:'Squirtle',   cls:'Sniper',  baseHp:350, sid:7,   msid:8,   mname:'Wartortle'},
+  {id:4,  name:'Treecko',    cls:'Tank',    baseHp:425, sid:252, msid:253, mname:'Grovyle'},
+  {id:5,  name:'Torchic',    cls:'Brawler', baseHp:375, sid:255, msid:256, mname:'Combusken'},
+  {id:6,  name:'Mudkip',     cls:'Sniper',  baseHp:350, sid:258, msid:259, mname:'Marshtomp'},
+  {id:7,  name:'Turtwig',    cls:'Tank',    baseHp:425, sid:387, msid:388, mname:'Grotle'},
+  {id:8,  name:'Chimchar',   cls:'Brawler', baseHp:375, sid:390, msid:391, mname:'Monferno'},
+  {id:9,  name:'Piplup',     cls:'Sniper',  baseHp:350, sid:393, msid:394, mname:'Prinplup'},
+  {id:10, name:'Chespin',    cls:'Tank',    baseHp:425, sid:650, msid:651, mname:'Quilladin'},
+  {id:11, name:'Fennekin',   cls:'Brawler', baseHp:375, sid:653, msid:654, mname:'Braixen'},
+  {id:12, name:'Froakie',    cls:'Sniper',  baseHp:350, sid:656, msid:657, mname:'Frogadier'},
+  {id:13, name:'Rowlet',     cls:'Tank',    baseHp:425, sid:722, msid:723, mname:'Dartrix'},
+  {id:14, name:'Litten',     cls:'Brawler', baseHp:375, sid:725, msid:726, mname:'Torracat'},
+  {id:15, name:'Popplio',    cls:'Sniper',  baseHp:350, sid:728, msid:729, mname:'Brionne'},
+  {id:16, name:'Sprigatito', cls:'Tank',    baseHp:425, sid:906, msid:907, mname:'Floragato'},
+  {id:17, name:'Fuecoco',    cls:'Brawler', baseHp:375, sid:909, msid:910, mname:'Crocalor'},
+  {id:18, name:'Quaxly',     cls:'Sniper',  baseHp:350, sid:912, msid:913, mname:'Quaxwell'},
+  {id:19, name:'Eevee',      cls:'Status',  baseHp:360, sid:133, msid:134, mname:'Vaporeon'},
+  {id:20, name:'Pikachu',    cls:'Sniper',  baseHp:350, sid:25,  msid:26,  mname:'Raichu'},
 ];
 
 const CLASS_PASSIVES = {
@@ -368,10 +368,9 @@ function startGame() {
 
 function launchLeg() {
   document.getElementById('confetti').innerHTML = '';
-  // Build draft map: shuffle all 20 roster entries, assign to dart numbers 1-20
-  const shuffled = [...POKEMON_ROSTER].sort(() => Math.random() - .5);
+  // Build draft map: keep the roster in dartboard number order (1-20)
   draftMap = {};
-  shuffled.forEach((poke, i) => { draftMap[i + 1] = poke; });
+  POKEMON_ROSTER.forEach((poke, i) => { draftMap[i + 1] = poke; });
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
