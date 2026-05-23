@@ -517,7 +517,7 @@ function registerDraftThrow(seg) {
   }
 
   players[draftStep].pokemon = poke;
-  aSpeak(`${voicePokemonName(poke)}!`);
+  aSpeak(`${voicePokemonName(poke)}, I choose you!`);
 
   if (draftStep === 0) {
     draftStep = 1;
