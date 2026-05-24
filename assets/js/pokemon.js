@@ -263,7 +263,7 @@ function megaIconHTML(poke) {
 
 function playerPokemonNameHTML(player) {
   const name = playerPokemonStageName(player).toUpperCase();
-  const megaIcon = megaIconHTML(player && player.pokemon);
+  const megaIcon = player && player.megaActive ? megaIconHTML(player.pokemon) : '';
   return `${name}${megaIcon}`;
 }
 
