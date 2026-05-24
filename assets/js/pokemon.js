@@ -257,6 +257,16 @@ function isMegaPokemon(player) {
   return !!(player && player.pokemon && player.pokemon.megaEvolution);
 }
 
+function megaIconHTML(poke) {
+  return poke && poke.megaEvolution ? '<span class="mega-icon" aria-label="Mega Evolution" title="Mega Evolution"></span>' : '';
+}
+
+function playerPokemonNameHTML(player) {
+  const name = playerPokemonStageName(player).toUpperCase();
+  const megaIcon = megaIconHTML(player && player.pokemon);
+  return `${name}${megaIcon}`;
+}
+
 function playMegaAnimation(playerIdx) {
   const img = document.getElementById(`sprite-${playerIdx}`);
   const wrap = img ? img.closest('.poke-sprite-wrap') : null;
@@ -398,6 +408,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     branchEvolution: null,
     megaActive: false, megaTurnsLeft: 0, megaJustActivated: false,
+    evoScoreOffset: 0,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
@@ -518,7 +529,7 @@ function launchLeg() {
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
-    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.shiny = false;
+    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -575,7 +586,7 @@ function buildDraftGrid() {
     card.innerHTML = `
       <div class="draft-num">${n}</div>
       <img class="draft-sprite" ${pokemonImgAttrs(poke, false)} alt="${escapeHTML(poke.name)}" loading="lazy">
-      <div class="draft-pname">${escapeHTML(poke.name)}</div>
+      <div class="draft-pname">${escapeHTML(poke.name)}${megaIconHTML(poke)}</div>
       <div class="draft-type-badge">${pokemonTypeHTML(poke)}</div>`;
     grid.appendChild(card);
   }
@@ -686,7 +697,7 @@ function buildBattleUI() {
     const sideEl = document.getElementById(`poke-side-${i}`);
     if (!sideEl) return;
     sideEl.querySelector('.poke-player-tag').textContent = p.name.toUpperCase();
-    sideEl.querySelector('.poke-name-tag').textContent = playerPokemonStageName(p).toUpperCase();
+    sideEl.querySelector('.poke-name-tag').innerHTML = playerPokemonNameHTML(p);
     const evNameEl = sideEl.querySelector('.poke-evolved-name');
     if (evNameEl) evNameEl.textContent = '';
     const ptEl = sideEl.querySelector('.passive-tag');
@@ -712,6 +723,7 @@ function startTurn() {
   hpAtTurnStart = [players[0].hp, players[1].hp];
   xAttackBonus = 0;
   currentDarts = [];
+  p.evoScoreOffset = 0;
   seenThrows = 0;
   turnEnded = false;
   p._maxDartsThisTurn = 3;
@@ -1155,15 +1167,19 @@ function applyStatus(victimIdx, statusType) {
 // =============================================
 // EVOLUTION
 // =============================================
+function currentTurnEvolutionScore() {
+  return currentDarts
+    .filter(d => d.type !== 'miss')
+    .reduce((total, d) => total + (Number(d.score) || 0), 0);
+}
+
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
   if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
   if ((p.stage || 1) >= maxStage) return;
-  const turnScore = currentDarts
-    .filter(d => d.type !== 'miss')
-    .reduce((total, d) => total + (Number(d.score) || 0), 0);
+  const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
   let targetStage = p.stage;
   if (isMegaPokemon(p) && p.stage < 2 && turnScore >= 50) targetStage = 2;
   else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
@@ -1195,6 +1211,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   p.maxHp += hpGain;
   p.hp = Math.min(p.hp + hpGain, p.maxHp);
   if (!isMega) p.dmgBoost += 5 * stageGain;
+  p.evoScoreOffset = currentTurnEvolutionScore();
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
@@ -1221,7 +1238,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
     const nameEl = sideEl.querySelector('.poke-name-tag');
     const ptEl = sideEl.querySelector('.passive-tag');
     const enEl = sideEl.querySelector('.poke-evolved-name');
-    if (nameEl) nameEl.textContent = newName.toUpperCase();
+    if (nameEl) nameEl.innerHTML = playerPokemonNameHTML(p);
     if (ptEl) ptEl.innerHTML = playerPokemonTypeHTML(p);
     if (enEl) enEl.textContent = newName;
   }
@@ -1345,7 +1362,7 @@ function updateBattleField() {
       const typeEl = sideEl.querySelector('.passive-tag');
       const evolvedNameEl = sideEl.querySelector('.poke-evolved-name');
       const badge = document.getElementById(`evolved-badge-${i}`);
-      if (nameEl) nameEl.textContent = playerPokemonStageName(p).toUpperCase();
+      if (nameEl) nameEl.innerHTML = playerPokemonNameHTML(p);
       if (typeEl) typeEl.innerHTML = playerPokemonTypeHTML(p);
       if (evolvedNameEl) evolvedNameEl.textContent = p.stage > 1 ? playerPokemonStageName(p) : '';
       if (badge) {
@@ -1414,9 +1431,7 @@ function updateEvolutionTarget() {
     el.classList.remove('mega-target');
     return;
   }
-  const turnScore = currentDarts
-    .filter(d => d.type !== 'miss')
-    .reduce((total, d) => total + (Number(d.score) || 0), 0);
+  const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
   el.classList.toggle('mega-target', isMegaPokemon(p));
   if (p.megaActive) {
     el.textContent = `Mega Active: ${p.megaTurnsLeft} turns left`;
@@ -1619,6 +1634,7 @@ function saveState() {
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
+      evoScoreOffset: p.evoScoreOffset || 0,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
       totalHeal: p.totalHeal, cpTurns: p.cpTurns, dartsThrown: p.dartsThrown,
@@ -1648,6 +1664,7 @@ function undoLastDart() {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
+    p.evoScoreOffset = saved.evoScoreOffset || 0;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;

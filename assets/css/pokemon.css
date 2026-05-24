@@ -105,6 +105,10 @@
   font-size: 13px; font-weight: 700; color: #fff;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   max-width: 100%; text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 .draft-type-badge,
 .passive-tag {
@@ -240,6 +244,28 @@
   font-family: 'Orbitron', monospace;
   font-size: clamp(14px, 2vw, 20px); font-weight: 700;
   letter-spacing: 2px; color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.mega-icon,
+.mega-stone::before {
+  width: 22px;
+  height: 34px;
+  display: inline-block;
+  flex: 0 0 auto;
+  background:
+    radial-gradient(circle at 74% 5%, #f43f5e 0 2px, transparent 3px),
+    radial-gradient(circle at 61% 20%, #f43f5e 0 2px, transparent 3px),
+    radial-gradient(circle at 77% 88%, #f43f5e 0 2px, transparent 3px),
+    linear-gradient(135deg, transparent 0 28%, #f43f5e 29% 36%, transparent 37%),
+    linear-gradient(155deg, transparent 0 34%, #f59e0b 35% 42%, transparent 43%),
+    linear-gradient(115deg, transparent 0 43%, #a3e635 44% 50%, transparent 51%),
+    linear-gradient(150deg, transparent 0 52%, #38bdf8 53% 60%, transparent 61%),
+    linear-gradient(125deg, transparent 0 61%, #8b5cf6 62% 69%, transparent 70%);
+  clip-path: polygon(62% 0, 86% 27%, 66% 42%, 98% 54%, 49% 100%, 56% 62%, 2% 77%, 40% 39%, 30% 16%);
+  filter: drop-shadow(0 0 4px rgba(96,165,250,.9)) drop-shadow(0 0 3px rgba(252,211,77,.8));
 }
 .poke-evolved-name { display: none; }
 .poke-hp-bar-wrap { width: 100%; max-width: 280px; }
@@ -306,18 +332,25 @@
 }
 .mega-stone {
   position: absolute;
-  width: 28px;
-  height: 28px;
+  width: 46px;
+  height: 46px;
   bottom: -10px;
   left: 50%;
   z-index: 2;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, #fff 0 3px, transparent 4px),
-    radial-gradient(circle at 55% 55%, #38bdf8 0 7px, #7c3aed 8px 13px, #fcd34d 14px);
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,.95) 0 4px, transparent 5px),
+    radial-gradient(circle at 50% 50%, #e0f2fe 0 12px, #60a5fa 13px 17px, #7c3aed 18px 23px);
   box-shadow: 0 0 18px rgba(96,165,250,.9), 0 0 28px rgba(252,211,77,.65);
   transform: translateX(-50%);
   animation: megaStoneRise 1.15s ease-in forwards;
+}
+.mega-stone::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(.78);
 }
 .poke-sprite-wrap.mega-activating::after {
   content: "";
