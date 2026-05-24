@@ -18,7 +18,7 @@ const POKEMON_ROSTER = [
     ]},
   {id:7,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
   {id:8,  name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
-  {id:9,  name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:150, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
+  {id:9,  name:'Rayquaza',   vname:'Ray-quay-zah',       types:['Dragon','Flying'],cls:'Brawler', baseHp:150, sid:384, msid:10079, maxStage:2, mname:'Mega Rayquaza', mtypes:['Dragon','Flying'], megaEvolution:true},
   {id:10, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
   {id:11, name:'Frigibax',   vname:'Frij-ih-bax',        types:['Dragon','Ice'],   cls:'Brawler', baseHp:150, sid:996, msid:997, fsid:998, mname:'Arctibax',   fname:'Baxcalibur'},
   {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
@@ -253,6 +253,44 @@ function setPlayerPokemonSprite(img, player) {
     : (useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid));
 }
 
+function isMegaPokemon(player) {
+  return !!(player && player.pokemon && player.pokemon.megaEvolution);
+}
+
+function playMegaAnimation(playerIdx) {
+  const img = document.getElementById(`sprite-${playerIdx}`);
+  const wrap = img ? img.closest('.poke-sprite-wrap') : null;
+  if (!wrap) return;
+  const stone = document.createElement('div');
+  stone.className = 'mega-stone';
+  wrap.appendChild(stone);
+  wrap.classList.add('mega-activating');
+  setTimeout(() => {
+    stone.remove();
+    wrap.classList.remove('mega-activating');
+  }, tDelay(1200));
+}
+
+function endMegaEvolution(playerIdx) {
+  const p = players[playerIdx];
+  if (!p || !p.megaActive) return;
+  p.megaActive = false;
+  p.megaTurnsLeft = 0;
+  p.megaJustActivated = false;
+  p.stage = 1;
+  p.evolved = false;
+  p.evolvedSprite = false;
+  p.maxHp = Math.max(1, p.maxHp - 100);
+  p.hp = Math.min(p.hp, p.maxHp);
+  const img = document.getElementById(`sprite-${playerIdx}`);
+  if (img) {
+    setPlayerPokemonSprite(img, p);
+    syncShinyClass(playerIdx);
+  }
+  flash('MEGA RAYQUAZA RETURNED!', 'var(--muted)');
+  aSpeak('Mega Rayquaza returned!');
+}
+
 function renderFlag(code) {
   let c = String(code || 'sco').toLowerCase();
   if (c.includes('󠁳󠁣󠁴') || c === '👤' || c === 'undefined') c = 'sco';
@@ -359,6 +397,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     branchEvolution: null,
+    megaActive: false, megaTurnsLeft: 0, megaJustActivated: false,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
@@ -478,7 +517,8 @@ function launchLeg() {
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
-    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null; p.shiny = false;
+    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
+    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -752,6 +792,14 @@ function advanceTurn() {
     prev.cpTurns++;
     checkEvolution(currentPlayer);
   }
+  if (prev.megaActive) {
+    if (prev.megaJustActivated) {
+      prev.megaJustActivated = false;
+    } else {
+      prev.megaTurnsLeft--;
+      if (prev.megaTurnsLeft <= 0) endMegaEvolution(currentPlayer);
+    }
+  }
 
   let next = (currentPlayer + 1) % 2;
   if (next === 0) round++;
@@ -914,7 +962,8 @@ function calcEffect(seg, attacker, defender) {
   const isTank    = attacker.pokemon.cls === 'Tank';
   const isBrawler = attacker.pokemon.cls === 'Brawler';
   const isStatus  = attacker.pokemon.cls === 'Status';
-  const boost = attacker.dmgBoost + xAttackBonus;
+  const megaBonus = attacker.megaActive ? 15 : 0;
+  const boost = attacker.dmgBoost + xAttackBonus + megaBonus;
 
   // Bullseye (D25)
   if (num === 25 && mul === 2) {
@@ -1109,6 +1158,7 @@ function applyStatus(victimIdx, statusType) {
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
+  if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
   if ((p.stage || 1) >= maxStage) return;
   const bestDartScore = currentDarts
@@ -1125,6 +1175,7 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   const p = players[playerIdx];
   const oldStage = p.stage || 1;
   const stageGain = targetStage - oldStage;
+  const isMega = isMegaPokemon(p);
   if (p.pokemon.name === 'Eevee' && !p.eeveeEvolution && p.pokemon.eeveelutions) {
     p.eeveeEvolution = p.pokemon.eeveelutions[rand(0, p.pokemon.eeveelutions.length - 1)];
   }
@@ -1133,15 +1184,22 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   }
   p.evolved = true;
   p.stage = targetStage;
+  if (isMega) {
+    p.megaActive = true;
+    p.megaTurnsLeft = 2;
+    p.megaJustActivated = true;
+  }
   const newName = playerPokemonStageName(p);
-  p.maxHp += 50 * stageGain;
-  p.hp = Math.min(p.hp + 50 * stageGain, p.maxHp);
-  p.dmgBoost += 5 * stageGain;
+  const hpGain = isMega ? 100 : 50 * stageGain;
+  p.maxHp += hpGain;
+  p.hp = Math.min(p.hp + hpGain, p.maxHp);
+  if (!isMega) p.dmgBoost += 5 * stageGain;
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
     setPlayerPokemonSprite(img, p);
     syncShinyClass(playerIdx);
+    if (isMega) playMegaAnimation(playerIdx);
     img.classList.add('evolving');
     setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
@@ -1167,8 +1225,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
     if (enEl) enEl.textContent = newName;
   }
 
-  flash(`EVOLUTION! ${newName}!`, 'var(--gold)');
-  aSpeak(`${voicePokemonName(p.pokemon)} evolved into ${newName}!`);
+  flash(`${isMega ? 'MEGA EVOLUTION' : 'EVOLUTION'}! ${newName}!`, 'var(--gold)');
+  aSpeak(`${voicePokemonName(p.pokemon)} ${isMega ? 'mega evolved into' : 'evolved into'} ${newName}!`);
   aSfx(sfxEvolution);
 }
 
@@ -1372,7 +1430,7 @@ function updateScoringGuide() {
 
   const cls    = p.pokemon.cls;
   const isWild = gameMode === 'wild';
-  const boost  = p.dmgBoost + xAttackBonus;
+  const boost  = p.dmgBoost + xAttackBonus + (p.megaActive ? 15 : 0);
   const bStr   = boost > 0 ? ` +${boost}` : '';
   const isSni  = cls === 'Sniper';
   const isTank = cls === 'Tank';
@@ -1432,7 +1490,7 @@ function updateScoringGuide() {
 
   if (passiveEl) {
     const typeLabel = playerPokemonTypeLabel(p);
-    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}  ·  Advantage: Fire beats Grass, Grass beats Water, Water beats Fire (1.2x)`;
+    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}${p.megaActive ? `  ·  Mega turns left: ${p.megaTurnsLeft}` : ''}  ·  Advantage: Fire beats Grass, Grass beats Water, Water beats Fire (1.2x)`;
   }
 }
 
@@ -1532,6 +1590,7 @@ function saveState() {
     players: players.map(p => ({
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
+      megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
       totalHeal: p.totalHeal, cpTurns: p.cpTurns, dartsThrown: p.dartsThrown,
@@ -1560,6 +1619,7 @@ function undoLastDart() {
   last.players.forEach((saved, i) => {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
+    p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;

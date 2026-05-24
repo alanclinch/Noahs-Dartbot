@@ -304,11 +304,47 @@
 .poke-sprite.shiny-pokemon.glow-evolved {
   filter: drop-shadow(0 0 22px rgba(252,211,77,1)) drop-shadow(0 4px 12px rgba(0,0,0,.5));
 }
+.mega-stone {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  bottom: -10px;
+  left: 50%;
+  z-index: 2;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #fff 0 3px, transparent 4px),
+    radial-gradient(circle at 55% 55%, #38bdf8 0 7px, #7c3aed 8px 13px, #fcd34d 14px);
+  box-shadow: 0 0 18px rgba(96,165,250,.9), 0 0 28px rgba(252,211,77,.65);
+  transform: translateX(-50%);
+  animation: megaStoneRise 1.15s ease-in forwards;
+}
+.poke-sprite-wrap.mega-activating::after {
+  content: "";
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  pointer-events: none;
+  border-radius: 50%;
+  border: 3px solid rgba(252,211,77,.7);
+  animation: megaRingBurst 1.15s ease-out forwards;
+}
 @keyframes pokeEvolve {
   0%   { filter: brightness(8) drop-shadow(0 0 30px #fff); }
   100% { filter: brightness(1) drop-shadow(0 0 24px rgba(252,211,77,.9)); }
 }
 .poke-sprite.evolving { animation: pokeEvolve .8s forwards; }
+@keyframes megaStoneRise {
+  0% { transform: translate(-50%, 0) scale(.7); opacity: 0; }
+  25% { opacity: 1; }
+  75% { transform: translate(-50%, -130px) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -170px) scale(.2); opacity: 0; }
+}
+@keyframes megaRingBurst {
+  0% { transform: scale(.25); opacity: 0; }
+  45% { opacity: .95; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
 @keyframes shinySparkle {
   0%, 100% { opacity: .35; transform: scale(.94) rotate(0deg); }
   50% { opacity: .9; transform: scale(1.04) rotate(8deg); }
