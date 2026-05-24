@@ -11,12 +11,16 @@ const POKEMON_ROSTER = [
   {id:3,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
   {id:4,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
   {id:5,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
-  {id:6,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:150, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
+  {id:6,  name:'Ralts',      vname:'Ralts',              types:['Psychic','Fairy'],cls:'Status',  baseHp:150, sid:280, msid:281, fsid:282, mname:'Kirlia',    fname:'Gardevoir', ftypes:['Psychic','Fairy'],
+    finalEvolutions:[
+      {name:'Gardevoir', sid:282, types:['Psychic','Fairy']},
+      {name:'Gallade',   sid:475, types:['Psychic','Fighting']},
+    ]},
   {id:7,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
   {id:8,  name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
   {id:9,  name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:150, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
   {id:10, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
-  {id:11, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:150, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
+  {id:11, name:'Frigibax',   vname:'Frij-ih-bax',        types:['Dragon','Ice'],   cls:'Brawler', baseHp:150, sid:996, msid:997, fsid:998, mname:'Arctibax',   fname:'Baxcalibur'},
   {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
   {id:13, name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:150, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
   {id:14, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
@@ -147,7 +151,8 @@ function pokemonTypeHTML(poke, stage = 1) {
   return typeLabelHTML(pokemonStageTypes(poke, stage));
 }
 function playerEvolutionPick(player) {
-  return player && player.stage > 1 && player.eeveeEvolution ? player.eeveeEvolution : null;
+  if (!player || player.stage <= 1) return null;
+  return player.eeveeEvolution || player.branchEvolution || null;
 }
 function playerPokemonStageName(player) {
   const eeveePick = playerEvolutionPick(player);
@@ -353,6 +358,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
   return {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
+    branchEvolution: null,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
     status: null, statusDurtn: 0, dartLostNext: false,
@@ -472,7 +478,7 @@ function launchLeg() {
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
-    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.shiny = false;
+    p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -1122,6 +1128,9 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   if (p.pokemon.name === 'Eevee' && !p.eeveeEvolution && p.pokemon.eeveelutions) {
     p.eeveeEvolution = p.pokemon.eeveelutions[rand(0, p.pokemon.eeveelutions.length - 1)];
   }
+  if (targetStage >= 3 && !p.branchEvolution && p.pokemon.finalEvolutions) {
+    p.branchEvolution = p.pokemon.finalEvolutions[rand(0, p.pokemon.finalEvolutions.length - 1)];
+  }
   p.evolved = true;
   p.stage = targetStage;
   const newName = playerPokemonStageName(p);
@@ -1138,7 +1147,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   }
 
   // No new sprite (msid === sid): add gold glow class
-  const evolvedSpriteId = p.eeveeEvolution ? p.eeveeEvolution.sid : (targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid);
+  const pickedEvolution = playerEvolutionPick(p);
+  const evolvedSpriteId = pickedEvolution ? pickedEvolution.sid : (targetStage >= 3 ? p.pokemon.fsid : p.pokemon.msid);
   if (evolvedSpriteId === p.pokemon.sid) {
     if (img) img.classList.add('glow-evolved');
   }
@@ -1521,7 +1531,7 @@ function saveState() {
   stateHistory.push({
     players: players.map(p => ({
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
-      evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny,
+      evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
       totalHeal: p.totalHeal, cpTurns: p.cpTurns, dartsThrown: p.dartsThrown,
@@ -1549,7 +1559,7 @@ function undoLastDart() {
   finishTarget   = last.finishTarget;
   last.players.forEach((saved, i) => {
     const p = players[i];
-    p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null;
+    p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
     p.status = saved.status; p.statusDurtn = saved.statusDurtn;

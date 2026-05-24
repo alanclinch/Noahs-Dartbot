@@ -143,6 +143,8 @@
 .type-dark { background: #1f2937; }
 .type-ghost { background: #6d28d9; }
 .type-steel { background: #94a3b8; color: #111827; text-shadow: none; }
+.type-psychic { background: #ec4899; }
+.type-fairy { background: #f9a8d4; color: #351225; text-shadow: none; }
 .type-pokemon { background: var(--surface2); color: var(--muted); }
 
 .passive-tag {
