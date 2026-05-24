@@ -1181,8 +1181,9 @@ function checkEvolution(playerIdx) {
   if ((p.stage || 1) >= maxStage) return;
   const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
   let targetStage = p.stage;
-  if (isMegaPokemon(p) && p.stage < 2 && turnScore >= 50) targetStage = 2;
-  else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
+  if (isMegaPokemon(p)) {
+    if (p.stage < 2 && turnScore >= 50) targetStage = 2;
+  } else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
   else if (p.stage === 2 && turnScore >= 45) targetStage = 3;
   targetStage = Math.min(targetStage, maxStage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
