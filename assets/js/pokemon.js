@@ -8,19 +8,25 @@
 const POKEMON_ROSTER = [
   {id:1,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:150, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
   {id:2,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:150, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
-  {id:3,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
-  {id:4,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
+  {id:3,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying'],
+    megaEvolutions:[
+      {name:'Mega Charizard X', sid:10034, types:['Fire','Dragon']},
+      {name:'Mega Charizard Y', sid:10035, types:['Fire','Flying']},
+    ]},
+  {id:4,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying'],
+    megaEvolutions:[{name:'Mega Gyarados', sid:10041, types:['Water','Dark']}]},
   {id:5,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
   {id:6,  name:'Ralts',      vname:'Ralts',              types:['Psychic','Fairy'],cls:'Status',  baseHp:150, sid:280, msid:281, fsid:282, mname:'Kirlia',    fname:'Gardevoir', ftypes:['Psychic','Fairy'],
     finalEvolutions:[
-      {name:'Gardevoir', sid:282, types:['Psychic','Fairy']},
-      {name:'Gallade',   sid:475, types:['Psychic','Fighting']},
+      {name:'Gardevoir', sid:282, types:['Psychic','Fairy'], megaEvolution:{name:'Mega Gardevoir', sid:10051, types:['Psychic','Fairy']}},
+      {name:'Gallade',   sid:475, types:['Psychic','Fighting'], megaEvolution:{name:'Mega Gallade', sid:10068, types:['Psychic','Fighting']}},
     ]},
   {id:7,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
   {id:8,  name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
   {id:9,  name:'Rayquaza',   vname:'Ray-quay-zah',       types:['Dragon','Flying'],cls:'Brawler', baseHp:150, sid:384, msid:10079, maxStage:2, mname:'Mega Rayquaza', mtypes:['Dragon','Flying'], megaEvolution:true},
   {id:10, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
-  {id:11, name:'Frigibax',   vname:'Frij-ih-bax',        types:['Dragon','Ice'],   cls:'Brawler', baseHp:150, sid:996, msid:997, fsid:998, mname:'Arctibax',   fname:'Baxcalibur'},
+  {id:11, name:'Frigibax',   vname:'Frij-ih-bax',        types:['Dragon','Ice'],   cls:'Brawler', baseHp:150, sid:996, msid:997, fsid:998, mname:'Arctibax',   fname:'Baxcalibur',
+    megaEvolutions:[{name:'Mega Baxcalibur', sid:998, types:['Dragon','Ice']}]},
   {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
   {id:13, name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:150, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
   {id:14, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
@@ -151,6 +157,7 @@ function pokemonTypeHTML(poke, stage = 1) {
   return typeLabelHTML(pokemonStageTypes(poke, stage));
 }
 function playerEvolutionPick(player) {
+  if (player && player.megaActive && player.megaPick) return player.megaPick;
   if (!player || player.stage <= 1) return null;
   return player.eeveeEvolution || player.branchEvolution || null;
 }
@@ -257,13 +264,31 @@ function isMegaPokemon(player) {
   return !!(player && player.pokemon && player.pokemon.megaEvolution);
 }
 
+function pokemonCanMega(poke) {
+  return !!(poke && (poke.megaEvolution || (poke.megaEvolutions && poke.megaEvolutions.length) ||
+    (poke.finalEvolutions && poke.finalEvolutions.some(e => e.megaEvolution))));
+}
+
+function playerMegaOptions(player) {
+  if (!player || !player.pokemon || player.megaActive) return [];
+  const poke = player.pokemon;
+  if (poke.megaEvolution) {
+    return [{ name: poke.mname, sid: poke.msid, types: poke.mtypes || poke.types }];
+  }
+  const maxStage = poke.maxStage || 3;
+  if ((player.stage || 1) < maxStage) return [];
+  const branchMega = player.branchEvolution && player.branchEvolution.megaEvolution;
+  if (branchMega) return [branchMega];
+  return poke.megaEvolutions || [];
+}
+
 function megaIconHTML(poke) {
-  return poke && poke.megaEvolution ? '<span class="mega-icon" aria-label="Mega Evolution" title="Mega Evolution"></span>' : '';
+  return pokemonCanMega(poke) ? '<span class="mega-icon" aria-label="Mega Evolution" title="Mega Evolution"></span>' : '';
 }
 
 function playerPokemonNameHTML(player) {
   const name = playerPokemonStageName(player).toUpperCase();
-  const megaIcon = player && player.megaActive ? megaIconHTML(player.pokemon) : '';
+  const megaIcon = player && (pokemonCanMega(player.pokemon) || player.megaActive) ? megaIconHTML(player.pokemon) : '';
   return `${name}${megaIcon}`;
 }
 
@@ -284,12 +309,15 @@ function playMegaAnimation(playerIdx) {
 function endMegaEvolution(playerIdx) {
   const p = players[playerIdx];
   if (!p || !p.megaActive) return;
+  const returnName = playerPokemonStageName(p);
   p.megaActive = false;
   p.megaTurnsLeft = 0;
   p.megaJustActivated = false;
-  p.stage = 1;
-  p.evolved = false;
-  p.evolvedSprite = false;
+  p.stage = p.megaBaseStage || p.stage || 1;
+  p.megaBaseStage = null;
+  p.megaPick = null;
+  p.evolved = p.stage > 1;
+  p.evolvedSprite = p.stage > 1;
   p.maxHp = Math.max(1, p.maxHp - 100);
   p.hp = Math.min(p.hp, p.maxHp);
   const img = document.getElementById(`sprite-${playerIdx}`);
@@ -297,8 +325,9 @@ function endMegaEvolution(playerIdx) {
     setPlayerPokemonSprite(img, p);
     syncShinyClass(playerIdx);
   }
-  flash('MEGA RAYQUAZA RETURNED!', 'var(--muted)');
-  aSpeak('Mega Rayquaza returned!');
+  const normalName = playerPokemonStageName(p);
+  flash(`${returnName.toUpperCase()} RETURNED TO ${normalName.toUpperCase()}!`, 'var(--muted)');
+  aSpeak(`${returnName} returned!`);
 }
 
 function renderFlag(code) {
@@ -407,7 +436,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     branchEvolution: null,
-    megaActive: false, megaTurnsLeft: 0, megaJustActivated: false,
+    megaActive: false, megaTurnsLeft: 0, megaJustActivated: false, megaPick: null, megaBaseStage: null,
     evoScoreOffset: 0,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
@@ -529,7 +558,7 @@ function launchLeg() {
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
-    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.evoScoreOffset = 0; p.shiny = false;
+    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -1178,22 +1207,62 @@ function checkEvolution(playerIdx) {
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
   if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
-  if ((p.stage || 1) >= maxStage) return;
   const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
+  if (playerMegaOptions(p).length && turnScore >= 50) {
+    triggerMegaEvolution(playerIdx);
+    return;
+  }
+  if ((p.stage || 1) >= maxStage || p.pokemon.megaEvolution) return;
   let targetStage = p.stage;
-  if (isMegaPokemon(p)) {
-    if (p.stage < 2 && turnScore >= 50) targetStage = 2;
-  } else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
+  if (p.stage < 2 && turnScore >= 30) targetStage = 2;
   else if (p.stage === 2 && turnScore >= 45) targetStage = 3;
   targetStage = Math.min(targetStage, maxStage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
+}
+
+function triggerMegaEvolution(playerIdx) {
+  const p = players[playerIdx];
+  const options = playerMegaOptions(p);
+  if (!options.length) return;
+  p.megaBaseStage = p.stage || 1;
+  p.megaPick = options[rand(0, options.length - 1)];
+  p.megaActive = true;
+  p.megaTurnsLeft = 2;
+  p.megaJustActivated = true;
+  p.evolved = true;
+  p.stage = p.pokemon.maxStage || p.stage || 1;
+  p.maxHp += 100;
+  p.hp = Math.min(p.hp + 100, p.maxHp);
+  p.evoScoreOffset = currentTurnEvolutionScore();
+
+  const img = document.getElementById(`sprite-${playerIdx}`);
+  if (img) {
+    setPlayerPokemonSprite(img, p);
+    syncShinyClass(playerIdx);
+    playMegaAnimation(playerIdx);
+    img.classList.add('evolving');
+    setTimeout(() => img.classList.remove('evolving'), tDelay(850));
+  }
+
+  const newName = playerPokemonStageName(p);
+  flash(`${newName.toUpperCase()}! +100 HP`, 'var(--poke-yellow)');
+  aSpeak(`${newName}!`);
+  aSfx(sfxEvolution);
+  const sideEl = document.getElementById(`poke-side-${playerIdx}`);
+  if (sideEl) {
+    const nameEl = sideEl.querySelector('.poke-name-tag');
+    const ptEl = sideEl.querySelector('.passive-tag');
+    const enEl = sideEl.querySelector('.poke-evolved-name');
+    if (nameEl) nameEl.innerHTML = playerPokemonNameHTML(p);
+    if (ptEl) ptEl.innerHTML = playerPokemonTypeHTML(p);
+    if (enEl) enEl.textContent = newName;
+  }
 }
 
 function triggerEvolution(playerIdx, targetStage = 2) {
   const p = players[playerIdx];
   const oldStage = p.stage || 1;
   const stageGain = targetStage - oldStage;
-  const isMega = isMegaPokemon(p);
   if (p.pokemon.name === 'Eevee' && !p.eeveeEvolution && p.pokemon.eeveelutions) {
     p.eeveeEvolution = p.pokemon.eeveelutions[rand(0, p.pokemon.eeveelutions.length - 1)];
   }
@@ -1202,23 +1271,17 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   }
   p.evolved = true;
   p.stage = targetStage;
-  if (isMega) {
-    p.megaActive = true;
-    p.megaTurnsLeft = 2;
-    p.megaJustActivated = true;
-  }
   const newName = playerPokemonStageName(p);
-  const hpGain = isMega ? 100 : 50 * stageGain;
+  const hpGain = 50 * stageGain;
   p.maxHp += hpGain;
   p.hp = Math.min(p.hp + hpGain, p.maxHp);
-  if (!isMega) p.dmgBoost += 5 * stageGain;
+  p.dmgBoost += 5 * stageGain;
   p.evoScoreOffset = currentTurnEvolutionScore();
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
     setPlayerPokemonSprite(img, p);
     syncShinyClass(playerIdx);
-    if (isMega) playMegaAnimation(playerIdx);
     img.classList.add('evolving');
     setTimeout(() => img.classList.remove('evolving'), tDelay(850));
   }
@@ -1433,10 +1496,10 @@ function updateEvolutionTarget() {
     return;
   }
   const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
-  el.classList.toggle('mega-target', isMegaPokemon(p));
+  el.classList.toggle('mega-target', p.megaActive || playerMegaOptions(p).length > 0);
   if (p.megaActive) {
     el.textContent = `Mega Active: ${p.megaTurnsLeft} turns left`;
-  } else if (isMegaPokemon(p)) {
+  } else if (playerMegaOptions(p).length) {
     el.textContent = `Mega Evolution: ${turnScore}/50 total this turn`;
   } else if ((p.stage || 1) < 2) {
     el.textContent = `Evolution: ${turnScore}/30 total this turn`;
@@ -1635,6 +1698,7 @@ function saveState() {
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
+      megaPick: p.megaPick || null, megaBaseStage: p.megaBaseStage || null,
       evoScoreOffset: p.evoScoreOffset || 0,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
@@ -1665,6 +1729,7 @@ function undoLastDart() {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
+    p.megaPick = saved.megaPick || null; p.megaBaseStage = saved.megaBaseStage || null;
     p.evoScoreOffset = saved.evoScoreOffset || 0;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
