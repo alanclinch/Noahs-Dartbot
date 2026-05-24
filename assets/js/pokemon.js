@@ -6,24 +6,24 @@
 // POKEMON ROSTER
 // =============================================
 const POKEMON_ROSTER = [
-  {id:1,  name:'Bulbasaur',  vname:'Bul-buh-sore',      types:['Grass','Poison'], cls:'Tank',    baseHp:150, sid:1,   msid:2,   fsid:3,   mname:'Ivysaur',    fname:'Venusaur'},
-  {id:2,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
-  {id:3,  name:'Squirtle',   vname:'Skwer-tul',          types:['Water'],          cls:'Sniper',  baseHp:150, sid:7,   msid:8,   fsid:9,   mname:'Wartortle',  fname:'Blastoise'},
-  {id:4,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:150, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
-  {id:5,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:150, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
-  {id:6,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
-  {id:7,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
-  {id:8,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:150, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
-  {id:9,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
-  {id:10, name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
-  {id:11, name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:150, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
-  {id:12, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
-  {id:13, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
-  {id:14, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:150, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
-  {id:15, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
-  {id:16, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:150, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
-  {id:17, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:150, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
-  {id:18, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:150, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
+  {id:1,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:150, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
+  {id:2,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:150, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
+  {id:3,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying']},
+  {id:4,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying']},
+  {id:5,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
+  {id:6,  name:'Cubone',     vname:'Kyoo-bone',          types:['Ground'],         cls:'Tank',    baseHp:150, sid:104, msid:105,  maxStage:2, mname:'Marowak',   mtypes:['Ground']},
+  {id:7,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
+  {id:8,  name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
+  {id:9,  name:'Snorunt',    vname:'Sno-runt',           types:['Ice'],            cls:'Status',  baseHp:150, sid:361, msid:362,  maxStage:2, mname:'Glalie',    mtypes:['Ice']},
+  {id:10, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel']},
+  {id:11, name:'Buizel',     vname:'Bwee-zul',           types:['Water'],          cls:'Sniper',  baseHp:150, sid:418, msid:419,  maxStage:2, mname:'Floatzel',  mtypes:['Water']},
+  {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
+  {id:13, name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:150, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
+  {id:14, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
+  {id:15, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:150, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
+  {id:16, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:150, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
+  {id:17, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:150, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
+  {id:18, name:'Rowlet',     vname:'Row-let',            types:['Grass','Flying'], cls:'Tank',    baseHp:150, sid:722, msid:723, fsid:724, mname:'Dartrix',    fname:'Decidueye', ftypes:['Grass','Ghost']},
   {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:150, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
   {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
@@ -936,7 +936,7 @@ function calcEffect(seg, attacker, defender) {
   const isOdd  = num % 2 !== 0;
   const isEven = !isOdd;
   const brawlerBonus = isBrawler && isOdd ? 5 : 0;
-  const tankHealBonus = isTank ? 8 : 0;
+  const tankHealBonus = 0;
 
   if (gameMode === 'wild') {
     if (mul === 1 && isOdd) {
@@ -944,7 +944,7 @@ function calcEffect(seg, attacker, defender) {
       return { type:'damage', amount:dmg, label:`S${num} -${dmg}`, mul:1 };
     }
     if (mul === 1 && isEven) {
-      const heal = rand(10, 20) + tankHealBonus;
+      const heal = rand(10, 15) + tankHealBonus;
       return { type:'heal', amount:heal, label:`S${num} +${heal}HP`, mul:1 };
     }
     if (mul === 2) {
@@ -1378,8 +1378,8 @@ function updateScoringGuide() {
     },
     {
       type: 'SINGLE EVEN',
-      value: isWild ? `${10+(isTank?10:0)}–${20+(isTank?10:0)}` : `FACE VAL${isTank?' +10':''}`,
-      label: 'HEAL' + (isTank ? ' (+10 BONUS)' : ''),
+      value: isWild ? '10–15' : 'FACE VAL',
+      label: 'HEAL',
       valCls: 'heal', itemCls: 'sg-heal',
     },
     {
