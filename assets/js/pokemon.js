@@ -857,13 +857,13 @@ function registerDart(seg) {
       aSfx(sfxPokeHeal);
       flash(`+${healAmt} HP (${mul === 2 ? 'Bullseye' : 'Bull'} Heal!)`, 'var(--hp-green)');
       aSpeak(`${healAmt} healed!`);
-      currentDarts.push({ label: `+${healAmt}HP`, type: 'heal', amount: healAmt, mul });
+      currentDarts.push({ label: `+${healAmt}HP`, type: 'heal', amount: healAmt, score: num * mul, mul });
       updateDartSlot(dartIdx, `+${healAmt}HP`, 'heal');
       updateBattleField();
     } else if (!num || num === 0) {
       aSfx(sfxMiss);
       flash('Miss!', 'var(--muted)');
-      currentDarts.push({ label: 'Miss', type: 'miss', amount: 0, mul: 0 });
+      currentDarts.push({ label: 'Miss', type: 'miss', amount: 0, score: 0, mul: 0 });
       updateDartSlot(dartIdx, 'Miss', 'miss');
     } else {
       // Face value only — multiplier ignored
@@ -873,7 +873,7 @@ function registerDart(seg) {
         aSfx(sfxBust);
         flash('BUST! No finish!', 'var(--poke-red)');
         aSpeak('Bust!');
-        currentDarts.push({ label: 'BUST!', type: 'miss', amount: 0, mul });
+        currentDarts.push({ label: 'BUST!', type: 'miss', amount: 0, score: 0, mul });
         updateDartSlot(dartIdx, 'BUST!', 'miss');
         endFinishTurn();
         return;
@@ -883,7 +883,7 @@ function registerDart(seg) {
         aSfx(sfxPokeDamage);
         flash(`FINISH! ${finishTarget} EXACTLY! 🎯`, 'var(--gold)');
         aSpeak('Finish!');
-        currentDarts.push({ label: `${num}✓`, type: 'crit', amount: num, mul });
+        currentDarts.push({ label: `${num}✓`, type: 'crit', amount: num, score: num * mul, mul });
         updateDartSlot(dartIdx, `${num}✓`, 'scored');
         updateBattleField();
         turnEnded = true;
@@ -893,7 +893,7 @@ function registerDart(seg) {
         aSfx(sfxPokeDamage);
         const rem = finishTarget - finishTotal;
         flash(`${num} hit — need ${rem} more`, 'var(--amber)');
-        currentDarts.push({ label: `${num} (${finishTotal})`, type: 'hit', amount: num, mul });
+        currentDarts.push({ label: `${num} (${finishTotal})`, type: 'hit', amount: num, score: num * mul, mul });
         updateDartSlot(dartIdx, `${num}`, 'hit');
         updateBattleField();
       }
@@ -918,7 +918,7 @@ function registerDart(seg) {
   else if (result.type === 'status') slotClass = 'status';
   else if (result.type === 'crit') slotClass = 'scored';
 
-  currentDarts.push({ label, type: result.type, amount: result.amount, mul: result.mul || 0 });
+  currentDarts.push({ label, type: result.type, amount: result.amount, score: result.score || 0, mul: result.mul || 0 });
   updateDartSlot(dartIdx, label, slotClass);
 
   if (result.type !== 'miss') checkEvolution(currentPlayer);
@@ -954,22 +954,22 @@ function endFinishTurn() {
 // =============================================
 function calcEffect(seg, attacker, defender) {
   const miss = !seg || !seg.number || seg.number === 0;
-  if (miss) return { type:'miss', amount:0, label:'Miss', mul:0 };
+  if (miss) return { type:'miss', amount:0, score:0, label:'Miss', mul:0 };
 
   const num = Number(seg.number);
   const mul = Number(seg.multiplier || 1);
+  const score = num * mul;
   const isSniper  = attacker.pokemon.cls === 'Sniper';
   const isTank    = attacker.pokemon.cls === 'Tank';
   const isBrawler = attacker.pokemon.cls === 'Brawler';
   const isStatus  = attacker.pokemon.cls === 'Status';
-  const megaBonus = attacker.megaActive ? 15 : 0;
-  const boost = attacker.dmgBoost + xAttackBonus + megaBonus;
+  const boost = attacker.dmgBoost + xAttackBonus;
 
   // Bullseye (D25)
   if (num === 25 && mul === 2) {
     const dmg = 80 + boost;
     const si = isStatus ? (Math.random() < .5 ? 'burn' : 'paralyse') : null;
-    return { type:'crit', amount:dmg, label:`D25 CRIT!`, mul:2,
+    return { type:'crit', amount:dmg, score, label:`D25 CRIT!`, mul:2,
       msg:`CRITICAL HIT! ${dmg} DMG!`, statusInflict: si };
   }
 
@@ -980,10 +980,10 @@ function calcEffect(seg, attacker, defender) {
     const si = isStatus ? (Math.random() < .5 ? 'burn' : 'paralyse') : null;
     if (gameMode === 'gym') {
       const dmg = 25 + boost;
-      return { type:'bull', amount:dmg, label:`B25 +item`, mul:1,
+      return { type:'bull', amount:dmg, score, label:`B25 +item`, mul:1,
         msg:`Bull! ${dmg} DMG + ${item}`, item, statusInflict: si };
     }
-    return { type:'bull', amount:0, label:`B25 ${item}`, mul:1,
+    return { type:'bull', amount:0, score, label:`B25 ${item}`, mul:1,
       msg:`Poké Ball! Item: ${item}`, item, statusInflict: si };
   }
 
@@ -996,43 +996,43 @@ function calcEffect(seg, attacker, defender) {
   if (gameMode === 'wild') {
     if (mul === 1 && isOdd) {
       const dmg = rand(10, 20) + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`S${num} -${dmg}`, mul:1 };
+      return { type:'damage', amount:dmg, score, label:`S${num} -${dmg}`, mul:1 };
     }
     if (mul === 1 && isEven) {
       const heal = rand(10, 15) + tankHealBonus;
-      return { type:'heal', amount:heal, label:`S${num} +${heal}HP`, mul:1 };
+      return { type:'heal', amount:heal, score, label:`S${num} +${heal}HP`, mul:1 };
     }
     if (mul === 2) {
       const dmg = rand(25, 40) + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`D${num} -${dmg}`, mul:2 };
+      return { type:'damage', amount:dmg, score, label:`D${num} -${dmg}`, mul:2 };
     }
     if (mul === 3) {
       const lo = isSniper ? 52 : 45, hi = isSniper ? 70 : 60;
       const dmg = rand(lo, hi) + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`T${num} -${dmg}`, mul:3 };
+      return { type:'damage', amount:dmg, score, label:`T${num} -${dmg}`, mul:3 };
     }
   } else {
     // gym mode
     if (mul === 1 && isOdd) {
       const dmg = num + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`S${num} -${dmg}`, mul:1 };
+      return { type:'damage', amount:dmg, score, label:`S${num} -${dmg}`, mul:1 };
     }
     if (mul === 1 && isEven) {
       const heal = num + tankHealBonus;
-      return { type:'heal', amount:heal, label:`S${num} +${heal}HP`, mul:1 };
+      return { type:'heal', amount:heal, score, label:`S${num} +${heal}HP`, mul:1 };
     }
     if (mul === 2) {
       const dmg = num * 2 + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`D${num} -${dmg}`, mul:2 };
+      return { type:'damage', amount:dmg, score, label:`D${num} -${dmg}`, mul:2 };
     }
     if (mul === 3) {
       const mult = isSniper ? 3.5 : 3;
       const dmg = Math.round(num * mult) + boost + brawlerBonus;
-      return { type:'damage', amount:dmg, label:`T${num} -${dmg}`, mul:3 };
+      return { type:'damage', amount:dmg, score, label:`T${num} -${dmg}`, mul:3 };
     }
   }
 
-  return { type:'miss', amount:0, label:'Miss', mul:0 };
+  return { type:'miss', amount:0, score:0, label:'Miss', mul:0 };
 }
 
 function applyTypeAdvantage(result, attacker, defender) {
@@ -1163,7 +1163,7 @@ function checkEvolution(playerIdx) {
   if ((p.stage || 1) >= maxStage) return;
   const turnScore = currentDarts
     .filter(d => d.type !== 'miss')
-    .reduce((total, d) => total + (Number(d.amount) || 0), 0);
+    .reduce((total, d) => total + (Number(d.score) || 0), 0);
   let targetStage = p.stage;
   if (isMegaPokemon(p) && p.stage < 2 && turnScore >= 50) targetStage = 2;
   else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
@@ -1416,10 +1416,10 @@ function updateEvolutionTarget() {
   }
   const turnScore = currentDarts
     .filter(d => d.type !== 'miss')
-    .reduce((total, d) => total + (Number(d.amount) || 0), 0);
+    .reduce((total, d) => total + (Number(d.score) || 0), 0);
   el.classList.toggle('mega-target', isMegaPokemon(p));
   if (p.megaActive) {
-    el.textContent = `Mega Active: +15 damage, ${p.megaTurnsLeft} turns left`;
+    el.textContent = `Mega Active: ${p.megaTurnsLeft} turns left`;
   } else if (isMegaPokemon(p)) {
     el.textContent = `Mega Evolution: ${turnScore}/50 total this turn`;
   } else if ((p.stage || 1) < 2) {
@@ -1458,7 +1458,7 @@ function updateScoringGuide() {
 
   const cls    = p.pokemon.cls;
   const isWild = gameMode === 'wild';
-  const boost  = p.dmgBoost + xAttackBonus + (p.megaActive ? 15 : 0);
+  const boost  = p.dmgBoost + xAttackBonus;
   const bStr   = boost > 0 ? ` +${boost}` : '';
   const isSni  = cls === 'Sniper';
   const isTank = cls === 'Tank';
