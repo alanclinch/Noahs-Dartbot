@@ -1161,12 +1161,13 @@ function checkEvolution(playerIdx) {
   if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
   if ((p.stage || 1) >= maxStage) return;
-  const bestDartScore = currentDarts
+  const turnScore = currentDarts
     .filter(d => d.type !== 'miss')
-    .reduce((best, d) => Math.max(best, Number(d.amount) || 0), 0);
+    .reduce((total, d) => total + (Number(d.amount) || 0), 0);
   let targetStage = p.stage;
-  if (p.stage < 2 && bestDartScore >= 40) targetStage = 2;
-  else if (p.stage === 2 && bestDartScore >= 60) targetStage = 3;
+  if (isMegaPokemon(p) && p.stage < 2 && turnScore >= 50) targetStage = 2;
+  else if (p.stage < 2 && turnScore >= 30) targetStage = 2;
+  else if (p.stage === 2 && turnScore >= 45) targetStage = 3;
   targetStage = Math.min(targetStage, maxStage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
@@ -1376,6 +1377,7 @@ function updateBattleField() {
     if (az) az.classList.toggle('finish-mode', finishMode);
   }
   applyTurnIndicator();
+  updateEvolutionTarget();
 }
 
 function applyTurnIndicator() {
@@ -1401,6 +1403,32 @@ function setActionZone(main, sub) {
   const subEl  = document.getElementById('action-sub');
   if (mainEl) mainEl.textContent = main;
   if (subEl)  subEl.textContent  = sub;
+}
+
+function updateEvolutionTarget() {
+  const el = document.getElementById('evo-target');
+  if (!el) return;
+  const p = players[currentPlayer];
+  if (!gameActive || !p || !p.pokemon) {
+    el.textContent = '';
+    el.classList.remove('mega-target');
+    return;
+  }
+  const turnScore = currentDarts
+    .filter(d => d.type !== 'miss')
+    .reduce((total, d) => total + (Number(d.amount) || 0), 0);
+  el.classList.toggle('mega-target', isMegaPokemon(p));
+  if (p.megaActive) {
+    el.textContent = `Mega Active: +15 damage, ${p.megaTurnsLeft} turns left`;
+  } else if (isMegaPokemon(p)) {
+    el.textContent = `Mega Evolution: ${turnScore}/50 total this turn`;
+  } else if ((p.stage || 1) < 2) {
+    el.textContent = `Evolution: ${turnScore}/30 total this turn`;
+  } else if ((p.stage || 1) < (p.pokemon.maxStage || 3)) {
+    el.textContent = `Final Evolution: ${turnScore}/45 total this turn`;
+  } else {
+    el.textContent = 'Fully evolved';
+  }
 }
 
 function updateScoringGuide() {
