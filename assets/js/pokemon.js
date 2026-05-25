@@ -38,6 +38,8 @@ const POKEMON_ROSTER = [
   {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
 
+const POKEMON_SPRITE_VERSION = 2;
+
 const CLASS_PASSIVES = {
   Sniper:  'Trebles deal 3.5× in Gym',
   Tank:    'Even heals +8 extra HP',
@@ -191,10 +193,10 @@ function shinySpriteUrl(id) {
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
 }
 function localSpriteUrl(id) {
-  return `../assets/sprites/pokemon/pokemon-${id}.png`;
+  return `../assets/sprites/pokemon/pokemon-${id}.png?v=${POKEMON_SPRITE_VERSION}`;
 }
 function localShinySpriteUrl(id) {
-  return `../assets/sprites/pokemon/pokemon-${id}-shiny.png`;
+  return `../assets/sprites/pokemon/pokemon-${id}-shiny.png?v=${POKEMON_SPRITE_VERSION}`;
 }
 
 function fallbackSpriteUrl(cls) {
