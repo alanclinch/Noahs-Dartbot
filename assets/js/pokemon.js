@@ -30,15 +30,19 @@ const POKEMON_ROSTER = [
   {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
   {id:13, name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:150, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
   {id:14, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
-  {id:15, name:'Skrelp',     vname:'Skrelp',             types:['Poison','Water'], cls:'Status',  baseHp:150, sid:690, msid:691,  maxStage:2, mname:'Dragalge',  mtypes:['Poison','Dragon']},
-  {id:16, name:'Sneasel',    vname:'Snee-zul',           types:['Dark','Ice'],     cls:'Sniper',  baseHp:150, sid:215, msid:461,  maxStage:2, mname:'Weavile',   mtypes:['Dark','Ice']},
+  {id:15, name:'Dratini',    vname:'Dra-tee-nee',        types:['Dragon'],         cls:'Tank',    baseHp:150, sid:147, msid:148, fsid:149, mname:'Dragonair',  fname:'Dragonite', ftypes:['Dragon','Flying']},
+  {id:16, name:'Charcadet',  vname:'Char-ka-det',        types:['Fire'],           cls:'Brawler', baseHp:150, sid:935, msid:936, maxStage:2, mname:'Armarouge',  mtypes:['Fire','Psychic'], branchAtStage:2,
+    finalEvolutions:[
+      {name:'Armarouge', sid:936, types:['Fire','Psychic']},
+      {name:'Ceruledge', sid:937, types:['Fire','Ghost']},
+    ]},
   {id:17, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:150, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
   {id:18, name:'Rowlet',     vname:'Row-let',            types:['Grass','Flying'], cls:'Tank',    baseHp:150, sid:722, msid:723, fsid:724, mname:'Dartrix',    fname:'Decidueye', ftypes:['Grass','Ghost']},
   {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:150, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
   {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
 
-const POKEMON_SPRITE_VERSION = 3;
+const POKEMON_SPRITE_VERSION = 4;
 
 const CLASS_PASSIVES = {
   Sniper:  'Trebles deal 3.5× in Gym',
@@ -1275,7 +1279,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   if (p.pokemon.name === 'Eevee' && !p.eeveeEvolution && p.pokemon.eeveelutions) {
     p.eeveeEvolution = p.pokemon.eeveelutions[rand(0, p.pokemon.eeveelutions.length - 1)];
   }
-  if (targetStage >= 3 && !p.branchEvolution && p.pokemon.finalEvolutions) {
+  const branchAtStage = p.pokemon.branchAtStage || 3;
+  if (targetStage >= branchAtStage && !p.branchEvolution && p.pokemon.finalEvolutions) {
     p.branchEvolution = p.pokemon.finalEvolutions[rand(0, p.pokemon.finalEvolutions.length - 1)];
   }
   p.evolved = true;
