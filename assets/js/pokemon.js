@@ -42,7 +42,18 @@ const POKEMON_ROSTER = [
   {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
 ];
 
-const POKEMON_SPRITE_VERSION = 4;
+const SECRET_POKEMON = {
+  bull: {id:150, name:'Mewtwo', vname:'Mew-two', types:['Psychic'], cls:'Status', baseHp:300, sid:150, maxStage:1,
+    megaEvolutions:[
+      {name:'Mega Mewtwo X', sid:10043, types:['Psychic','Fighting']},
+      {name:'Mega Mewtwo Y', sid:10044, types:['Psychic']},
+    ]},
+  dbull: {id:493, name:'Arceus', vname:'Ar-key-us', types:['Normal'], cls:'Tank', baseHp:325, sid:493, maxStage:1, randomType:true},
+};
+
+const ARCEUS_TYPES = ['Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy'];
+
+const POKEMON_SPRITE_VERSION = 5;
 
 const CLASS_PASSIVES = {
   Sniper:  'Trebles deal 3.5× in Gym',
@@ -172,6 +183,7 @@ function playerPokemonStageName(player) {
   return eeveePick ? eeveePick.name : pokemonStageName(player.pokemon, player.stage);
 }
 function playerPokemonStageTypes(player) {
+  if (player && player.pokemon && player.pokemon.randomType && player.arceusType) return [player.arceusType];
   const eeveePick = playerEvolutionPick(player);
   return eeveePick ? eeveePick.types : pokemonStageTypes(player.pokemon, player.stage);
 }
@@ -227,6 +239,12 @@ function isShinyDraftPick(seg) {
 
 function rollDraftShiny(seg) {
   return isShinyDraftPick(seg) || Math.random() < 0.1;
+}
+
+function secretDraftPokemon(seg) {
+  const num = Number(seg && seg.number);
+  if (num !== 25) return null;
+  return Number(seg && seg.multiplier) === 2 ? SECRET_POKEMON.dbull : SECRET_POKEMON.bull;
 }
 
 function syncShinyClass(playerIdx) {
@@ -445,6 +463,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     branchEvolution: null,
     megaActive: false, megaTurnsLeft: 0, megaJustActivated: false, megaPick: null, megaBaseStage: null,
+    arceusType: null,
     evoScoreOffset: 0,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
@@ -566,7 +585,7 @@ function launchLeg() {
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
-    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.evoScoreOffset = 0; p.shiny = false;
+    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.arceusType = null; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -632,18 +651,19 @@ function buildDraftGrid() {
 function registerDraftThrow(seg) {
   if (!draftPhase) return;
   const num = seg ? Number(seg.number) : 0;
-  if (!num || num < 1 || num > 20) {
+  const secretPoke = secretDraftPokemon(seg);
+  if (!secretPoke && (!num || num < 1 || num > 20)) {
     aSfx(sfxMiss);
     flash('Miss! Try again.', 'var(--muted)');
     return;
   }
-  const poke = draftMap[num];
+  const poke = secretPoke || draftMap[num];
   if (!poke) return;
 
   // Check not already picked
   if (players.some(p => p.pokemon && p.pokemon.id === poke.id)) return;
 
-  const card = document.getElementById(`dcard-${num}`);
+  const card = secretPoke ? null : document.getElementById(`dcard-${num}`);
   if (card) {
     card.classList.add(draftStep === 0 ? 'selected-p1' : 'selected-p2');
   }
@@ -651,6 +671,7 @@ function registerDraftThrow(seg) {
   players[draftStep].pokemon = poke;
   players[draftStep].shiny = rollDraftShiny(seg);
   if (card && players[draftStep].shiny) card.classList.add('shiny-draft-pick');
+  if (secretPoke) flash('SECRET POKEMON!', 'var(--poke-yellow)');
   aSpeak(`${players[draftStep].shiny ? 'Shiny ' : ''}${voicePokemonName(poke)}, I choose you!`);
 
   if (draftStep === 0) {
@@ -764,6 +785,12 @@ function startTurn() {
   seenThrows = 0;
   turnEnded = false;
   p._maxDartsThisTurn = 3;
+
+  if (p.pokemon && p.pokemon.randomType) {
+    p.arceusType = ARCEUS_TYPES[rand(0, ARCEUS_TYPES.length - 1)];
+    flash(`ARCEUS ${p.arceusType.toUpperCase()} TYPE!`, 'var(--poke-yellow)');
+    aSpeak(`Arceus ${p.arceusType} type!`);
+  }
 
   const nextBtn = document.getElementById('next-player-btn');
   if (nextBtn) nextBtn.style.display = 'none';
@@ -1716,6 +1743,7 @@ function saveState() {
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
       megaPick: p.megaPick || null, megaBaseStage: p.megaBaseStage || null,
+      arceusType: p.arceusType || null,
       evoScoreOffset: p.evoScoreOffset || 0,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
@@ -1747,6 +1775,7 @@ function undoLastDart() {
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
     p.megaPick = saved.megaPick || null; p.megaBaseStage = saved.megaBaseStage || null;
+    p.arceusType = saved.arceusType || null;
     p.evoScoreOffset = saved.evoScoreOffset || 0;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
@@ -1981,10 +2010,14 @@ function _throwManual(num, mul) {
     return;
   }
   if (draftPhase) {
-    if (num >= 1 && num <= 20) {
+    if ((num >= 1 && num <= 20) || num === 25) {
       const savedMod = keypadMod;
       if (mul) keypadMod = mul;
-      manualDraft(num);
+      if (num === 25) {
+        registerDraftThrow({ number: 25, multiplier: keypadMod, name: keypadMod === 2 ? 'D-BULL' : 'BULL' });
+      } else {
+        manualDraft(num);
+      }
       keypadMod = savedMod;
       document.querySelectorAll('#mod-double, .kp-mod[data-mod="2"]').forEach(el => el.classList.toggle('active', keypadMod === 2));
       document.querySelectorAll('#mod-treble, .kp-mod[data-mod="3"]').forEach(el => el.classList.toggle('active', keypadMod === 3));
@@ -2042,7 +2075,6 @@ document.addEventListener('keydown', e => {
 
   // Bull / Bullseye
   if (lower === 'b') {
-    if (draftPhase) return;
     e.preventDefault();
     _throwManual(25, e.shiftKey ? 2 : 1);
     return;

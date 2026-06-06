@@ -145,6 +145,8 @@
 .type-bug { background: #a3e635; color: #17240a; text-shadow: none; }
 .type-flying { background: #b8a4ff; color: #211438; text-shadow: none; }
 .type-dark { background: #1f2937; }
+.type-normal { background: #d4d4d8; color: #18181b; text-shadow: none; }
+.type-rock { background: #a16207; }
 .type-ghost { background: #6d28d9; }
 .type-steel { background: #94a3b8; color: #111827; text-shadow: none; }
 .type-psychic { background: #ec4899; }
