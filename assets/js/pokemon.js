@@ -219,12 +219,14 @@ function pokemonSpriteUrl(poke, evolved, shiny = false) {
   return useRemotePokemonSprites() ? spriteUrl(id) : localSpriteUrl(id);
 }
 
-function isTripleDraftPick(seg) {
-  return Number(seg && seg.multiplier) === 3 || /^T/i.test(String(seg && seg.name || ''));
+function isShinyDraftPick(seg) {
+  const mul = Number(seg && seg.multiplier);
+  const name = String(seg && seg.name || '');
+  return mul === 2 || mul === 3 || /^[DT]/i.test(name);
 }
 
 function rollDraftShiny(seg) {
-  return isTripleDraftPick(seg) || Math.random() < 0.1;
+  return isShinyDraftPick(seg) || Math.random() < 0.1;
 }
 
 function syncShinyClass(playerIdx) {
