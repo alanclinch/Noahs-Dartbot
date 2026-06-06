@@ -626,7 +626,9 @@ function ensureDraftKeypadModifiers() {
   row.className = 'keypad-row draft-mod-row';
   row.innerHTML = `
     <button class="kp-btn kp-mod" data-mod="2" onclick="toggleKeypadMod(2)">DOUBLE</button>
-    <button class="kp-btn kp-mod" data-mod="3" onclick="toggleKeypadMod(3)">TREBLE</button>`;
+    <button class="kp-btn kp-mod" data-mod="3" onclick="toggleKeypadMod(3)">TREBLE</button>
+    <button class="kp-btn kp-bull" onclick="_throwManual(25, 1)">BULL</button>
+    <button class="kp-btn kp-bull" onclick="_throwManual(25, 2)">D-BULL</button>`;
   keypad.appendChild(row);
 }
 
