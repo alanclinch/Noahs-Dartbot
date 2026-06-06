@@ -200,6 +200,7 @@ function typeAdvantageMultiplier(attacker, defender) {
 }
 
 const TYPE_ADVANTAGES = {
+  Normal: [],
   Fire: ['Grass', 'Ice', 'Bug', 'Steel'],
   Water: ['Fire', 'Ground', 'Rock'],
   Electric: ['Water', 'Flying'],
@@ -226,17 +227,16 @@ function ensureTypeGuideStyles() {
   style.textContent = `
     .type-guide {
       margin-top: 12px;
-      border: 2px solid rgba(255,214,10,.65);
-      border-radius: 8px;
-      background: rgba(18,42,78,.78);
-      box-shadow: inset 0 0 14px rgba(255,214,10,.08);
-      color: var(--text);
-      overflow: hidden;
     }
-    .type-guide summary {
+    .type-guide-button {
+      width: 100%;
+      border: 2px solid rgba(255,214,10,.75);
+      border-radius: 8px;
+      padding: 14px 12px;
+      background: rgba(18,42,78,.86);
+      box-shadow: inset 0 0 14px rgba(255,214,10,.08), 0 0 12px rgba(255,214,10,.12);
+      color: var(--text);
       cursor: pointer;
-      list-style: none;
-      padding: 12px 14px;
       color: var(--poke-yellow);
       font-family: 'Press Start 2P', monospace;
       font-size: 11px;
@@ -244,47 +244,90 @@ function ensureTypeGuideStyles() {
       text-align: center;
       user-select: none;
     }
-    .type-guide summary::-webkit-details-marker { display: none; }
-    .type-guide summary::after {
-      content: ' OPEN';
+    .type-guide-button span {
+      display: block;
+      margin-top: 4px;
       color: var(--muted);
       font-family: 'Share Tech Mono', monospace;
       font-size: 12px;
       letter-spacing: 1px;
     }
-    .type-guide[open] summary::after { content: ' CLOSE'; }
+    .type-guide-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 42px;
+      background: rgba(7,18,38,.82);
+      backdrop-filter: blur(2px);
+    }
+    .type-guide-overlay.open { display: flex; }
+    .type-guide-card {
+      width: min(1500px, 92vw);
+      max-height: 88vh;
+      border: 3px solid rgba(255,214,10,.8);
+      border-radius: 14px;
+      padding: 24px;
+      background: linear-gradient(180deg, rgba(25,58,104,.98), rgba(13,33,68,.98));
+      box-shadow: 0 0 40px rgba(0,0,0,.55), inset 0 0 22px rgba(255,214,10,.1);
+    }
+    .type-guide-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .type-guide-title {
+      color: var(--poke-yellow);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 22px;
+      line-height: 1.2;
+      letter-spacing: 1px;
+    }
+    .type-guide-close {
+      border: 2px solid rgba(255,214,10,.8);
+      border-radius: 8px;
+      padding: 10px 18px;
+      background: rgba(12,31,58,.85);
+      color: var(--poke-yellow);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+    }
     .type-guide-list {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 5px;
-      max-height: 560px;
-      overflow: auto;
-      padding: 0 10px 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
     }
     .type-guide-row {
       display: grid;
-      grid-template-columns: 86px 1fr;
+      grid-template-columns: 110px 1fr;
       align-items: center;
-      gap: 6px;
-      padding: 5px 7px;
-      border: 1px solid rgba(124,170,219,.28);
-      border-radius: 6px;
-      background: rgba(12,31,58,.42);
+      gap: 10px;
+      min-height: 52px;
+      padding: 9px 11px;
+      border: 1px solid rgba(124,170,219,.42);
+      border-radius: 8px;
+      background: rgba(12,31,58,.62);
       font-family: 'Share Tech Mono', monospace;
-      font-size: 13px;
+      font-size: 16px;
       line-height: 1.15;
     }
     .type-guide-row strong {
       color: var(--poke-yellow);
-      font-size: 12px;
+      font-size: 15px;
       text-transform: uppercase;
     }
     .type-guide-row span { color: #e8f3ff; }
     .type-guide-note {
-      padding: 0 12px 10px;
+      margin-top: 16px;
       color: var(--muted);
       font-family: 'Share Tech Mono', monospace;
-      font-size: 12px;
+      font-size: 16px;
       text-align: center;
     }
   `;
@@ -295,8 +338,18 @@ function renderTypeAdvantageGuide() {
   return Object.entries(TYPE_ADVANTAGES).map(([type, beats]) => `
     <div class="type-guide-row">
       <strong>${escapeHTML(type)}</strong>
-      <span>${beats.map(escapeHTML).join(', ')}</span>
+      <span>${beats.length ? beats.map(escapeHTML).join(', ') : 'N/A'}</span>
     </div>`).join('');
+}
+
+function openTypeGuide() {
+  const overlay = document.getElementById('type-guide-overlay');
+  if (overlay) overlay.classList.add('open');
+}
+
+function closeTypeGuide() {
+  const overlay = document.getElementById('type-guide-overlay');
+  if (overlay) overlay.classList.remove('open');
 }
 
 function ensureTypeGuidePanel() {
@@ -305,14 +358,31 @@ function ensureTypeGuidePanel() {
   ensureTypeGuideStyles();
   let panel = document.getElementById('type-guide');
   if (!panel) {
-    panel = document.createElement('details');
+    panel = document.createElement('div');
     panel.id = 'type-guide';
     panel.className = 'type-guide';
     panel.innerHTML = `
-      <summary>Typing List</summary>
-      <div class="type-guide-note">Advantages only. Advantage hits do 1.2x damage.</div>
-      <div class="type-guide-list">${renderTypeAdvantageGuide()}</div>`;
+      <button class="type-guide-button" onclick="openTypeGuide()">Typing List<span>All advantages</span></button>`;
     evoEl.insertAdjacentElement('afterend', panel);
+  }
+  let overlay = document.getElementById('type-guide-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'type-guide-overlay';
+    overlay.className = 'type-guide-overlay';
+    overlay.innerHTML = `
+      <div class="type-guide-card">
+        <div class="type-guide-head">
+          <div class="type-guide-title">Type Advantages</div>
+          <button class="type-guide-close" onclick="closeTypeGuide()">CLOSE</button>
+        </div>
+        <div class="type-guide-list">${renderTypeAdvantageGuide()}</div>
+        <div class="type-guide-note">Advantages only. Advantage hits do 1.2x damage.</div>
+      </div>`;
+    overlay.addEventListener('click', (ev) => {
+      if (ev.target === overlay) closeTypeGuide();
+    });
+    document.body.appendChild(overlay);
   }
   return panel;
 }
