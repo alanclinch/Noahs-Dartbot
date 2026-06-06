@@ -196,8 +196,125 @@ function playerPokemonTypeHTML(player) {
 function typeAdvantageMultiplier(attacker, defender) {
   const attackTypes = playerPokemonStageTypes(attacker);
   const defendTypes = playerPokemonStageTypes(defender);
-  const beats = { Fire:'Grass', Grass:'Water', Water:'Fire' };
-  return attackTypes.some(t => defendTypes.includes(beats[t])) ? 1.2 : 1;
+  return attackTypes.some(t => (TYPE_ADVANTAGES[t] || []).some(beaten => defendTypes.includes(beaten))) ? 1.2 : 1;
+}
+
+const TYPE_ADVANTAGES = {
+  Fire: ['Grass', 'Ice', 'Bug', 'Steel'],
+  Water: ['Fire', 'Ground', 'Rock'],
+  Electric: ['Water', 'Flying'],
+  Grass: ['Water', 'Ground', 'Rock'],
+  Ice: ['Grass', 'Ground', 'Flying', 'Dragon'],
+  Fighting: ['Normal', 'Ice', 'Rock', 'Dark', 'Steel'],
+  Poison: ['Grass', 'Fairy'],
+  Ground: ['Fire', 'Electric', 'Poison', 'Rock', 'Steel'],
+  Flying: ['Grass', 'Fighting', 'Bug'],
+  Psychic: ['Fighting', 'Poison'],
+  Bug: ['Grass', 'Psychic', 'Dark'],
+  Rock: ['Fire', 'Ice', 'Flying', 'Bug'],
+  Ghost: ['Psychic', 'Ghost'],
+  Dragon: ['Dragon'],
+  Dark: ['Psychic', 'Ghost'],
+  Steel: ['Ice', 'Rock', 'Fairy'],
+  Fairy: ['Fighting', 'Dragon', 'Dark'],
+};
+
+function ensureTypeGuideStyles() {
+  if (document.getElementById('type-guide-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'type-guide-styles';
+  style.textContent = `
+    .type-guide {
+      margin-top: 12px;
+      border: 2px solid rgba(255,214,10,.65);
+      border-radius: 8px;
+      background: rgba(18,42,78,.78);
+      box-shadow: inset 0 0 14px rgba(255,214,10,.08);
+      color: var(--text);
+      overflow: hidden;
+    }
+    .type-guide summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 12px 14px;
+      color: var(--poke-yellow);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      text-align: center;
+      user-select: none;
+    }
+    .type-guide summary::-webkit-details-marker { display: none; }
+    .type-guide summary::after {
+      content: ' OPEN';
+      color: var(--muted);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    .type-guide[open] summary::after { content: ' CLOSE'; }
+    .type-guide-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 5px;
+      max-height: 560px;
+      overflow: auto;
+      padding: 0 10px 10px;
+    }
+    .type-guide-row {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 7px;
+      border: 1px solid rgba(124,170,219,.28);
+      border-radius: 6px;
+      background: rgba(12,31,58,.42);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      line-height: 1.15;
+    }
+    .type-guide-row strong {
+      color: var(--poke-yellow);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .type-guide-row span { color: #e8f3ff; }
+    .type-guide-note {
+      padding: 0 12px 10px;
+      color: var(--muted);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      text-align: center;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function renderTypeAdvantageGuide() {
+  return Object.entries(TYPE_ADVANTAGES).map(([type, beats]) => `
+    <div class="type-guide-row">
+      <strong>${escapeHTML(type)}</strong>
+      <span>${beats.map(escapeHTML).join(', ')}</span>
+    </div>`).join('');
+}
+
+function ensureTypeGuidePanel() {
+  const evoEl = document.getElementById('evo-target');
+  if (!evoEl) return null;
+  ensureTypeGuideStyles();
+  let panel = document.getElementById('type-guide');
+  if (!panel) {
+    panel = document.createElement('details');
+    panel.id = 'type-guide';
+    panel.className = 'type-guide';
+    panel.innerHTML = `
+      <summary>Typing List</summary>
+      <div class="type-guide-note">Advantages only. Advantage hits do 1.2x damage.</div>
+      <div class="type-guide-list">${renderTypeAdvantageGuide()}</div>`;
+    evoEl.insertAdjacentElement('afterend', panel);
+  }
+  return panel;
 }
 
 function spriteUrl(id) {
@@ -1535,6 +1652,7 @@ function setActionZone(main, sub) {
 function updateEvolutionTarget() {
   const el = document.getElementById('evo-target');
   if (!el) return;
+  ensureTypeGuidePanel();
   const p = players[currentPlayer];
   if (!gameActive || !p || !p.pokemon) {
     el.textContent = '';
@@ -1643,7 +1761,7 @@ function updateScoringGuide() {
 
   if (passiveEl) {
     const typeLabel = playerPokemonTypeLabel(p);
-    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}${p.megaActive ? `  ·  Mega turns left: ${p.megaTurnsLeft}` : ''}  ·  Advantage: Fire beats Grass, Grass beats Water, Water beats Fire (1.2x)`;
+    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}${p.megaActive ? `  ·  Mega turns left: ${p.megaTurnsLeft}` : ''}`;
   }
 }
 
