@@ -1200,8 +1200,14 @@ function applyStatus(victimIdx, statusType) {
 // =============================================
 function currentTurnEvolutionScore() {
   return currentDarts
-    .filter(d => d.type !== 'miss')
+    .filter(d => d.type !== 'miss' && !d.evoUsed)
     .reduce((total, d) => total + (Number(d.score) || 0), 0);
+}
+
+function markCurrentEvolutionScoreUsed() {
+  currentDarts.forEach(d => {
+    if (d.type !== 'miss') d.evoUsed = true;
+  });
 }
 
 function checkEvolution(playerIdx) {
@@ -1209,7 +1215,7 @@ function checkEvolution(playerIdx) {
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
   if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
-  const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
+  const turnScore = currentTurnEvolutionScore();
   if (playerMegaOptions(p).length && turnScore >= 50) {
     triggerMegaEvolution(playerIdx);
     return;
@@ -1235,7 +1241,8 @@ function triggerMegaEvolution(playerIdx) {
   p.stage = p.pokemon.maxStage || p.stage || 1;
   p.maxHp += 100;
   p.hp = Math.min(p.hp + 100, p.maxHp);
-  p.evoScoreOffset = currentTurnEvolutionScore();
+  p.evoScoreOffset = 0;
+  markCurrentEvolutionScoreUsed();
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
@@ -1278,7 +1285,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   p.maxHp += hpGain;
   p.hp = Math.min(p.hp + hpGain, p.maxHp);
   p.dmgBoost += 5 * stageGain;
-  p.evoScoreOffset = currentTurnEvolutionScore();
+  p.evoScoreOffset = 0;
+  markCurrentEvolutionScoreUsed();
 
   const img = document.getElementById(`sprite-${playerIdx}`);
   if (img) {
@@ -1497,7 +1505,7 @@ function updateEvolutionTarget() {
     el.classList.remove('mega-target');
     return;
   }
-  const turnScore = Math.max(0, currentTurnEvolutionScore() - (p.evoScoreOffset || 0));
+  const turnScore = currentTurnEvolutionScore();
   el.classList.toggle('mega-target', p.megaActive || playerMegaOptions(p).length > 0);
   if (p.megaActive) {
     el.textContent = `Mega Active: ${p.megaTurnsLeft} turns left`;
