@@ -1097,29 +1097,26 @@ function updateDartSlot(idx, label, cssClass) {
   el.innerHTML = `<div class="dart-slot-label">${['1ST','2ND','3RD'][idx]}</div><div class="dart-slot-val">${label}</div>`;
 }
 
-function startImmediateFinishMode() {
+function startFinishModeWithRemainingDarts() {
   const p = players[currentPlayer];
   const opp = players[1 - currentPlayer];
   if (!gameActive || !p || !opp || opp.hp <= 0 || opp.hp > 20) return false;
+  if (currentDarts.length >= p._maxDartsThisTurn) return false;
 
   finishMode = true;
   finishTarget = opp.hp;
   finishTotal = 0;
-  currentDarts = [];
   seenThrows = 0;
   turnEnded = false;
-  p._maxDartsThisTurn = 3;
 
   const nextBtn = document.getElementById('next-player-btn');
   if (nextBtn) nextBtn.style.display = 'none';
-  resetDartSlots();
   aSfx(sfxFinishMode);
   flash(`FINISH! Hit ${finishTarget} exactly!`, 'var(--poke-yellow)');
   const subEl = document.getElementById('turn-sub');
   if (subEl) subEl.textContent = p.isCpu ? 'Computer thinking...' : `Hit ${finishTarget} EXACTLY`;
   updateBattleField();
   updateScoringGuide();
-  if (p.isCpu) setTimeout(() => runCpuTurn(), tDelay(1000));
   return true;
 }
 
@@ -1215,11 +1212,11 @@ function registerDart(seg) {
   if (result.type !== 'miss') checkEvolution(currentPlayer);
   if (checkWin()) { turnEnded = true; return; }
   updateBattleField();
+  const startedFinish = startFinishModeWithRemainingDarts();
 
   const maxed = currentDarts.length >= p._maxDartsThisTurn;
-  if (maxed || wasEndured) {
+  if (maxed || (wasEndured && !startedFinish)) {
     checkEvolution(currentPlayer);
-    if (startImmediateFinishMode()) return;
     turnEnded = true;
     if (!p.isCpu) {
       const nextBtn = document.getElementById('next-player-btn');
