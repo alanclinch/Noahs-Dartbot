@@ -1564,8 +1564,8 @@ function triggerEvolution(playerIdx, targetStage = 2) {
     if (enEl) enEl.textContent = newName;
   }
 
-  flash(`${isMega ? 'MEGA EVOLUTION' : 'EVOLUTION'}! ${newName}!`, 'var(--gold)');
-  aSpeak(`${voicePokemonName(p.pokemon)} ${isMega ? 'mega evolved into' : 'evolved into'} ${newName}!`);
+  flash(`EVOLUTION! ${newName}!`, 'var(--gold)');
+  aSpeak(`${voicePokemonName(p.pokemon)} evolved into ${newName}!`);
   aSfx(sfxEvolution);
 }
 
@@ -1599,8 +1599,10 @@ function stopWinMusic() {
 }
 
 async function endWithWinner(idx) {
+  const shouldCountWinningTurn = gameActive && currentPlayer === idx && currentDarts.length > 0;
   gameActive = false;
   const winner = players[idx], loser = players[1 - idx];
+  if (shouldCountWinningTurn) winner.cpTurns++;
   if (!testMode && sfxEnabled) playWinMusic();
   aSpeak(`${winner.name} wins!`, true);
 
