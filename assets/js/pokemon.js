@@ -100,28 +100,6 @@ const GEN1_EVOLUTIONS = {
   120:[121], 129:[130], 133:[134,135,136], 138:[139], 140:[141], 147:[148,149], 148:[149],
 };
 
-const GEN1_MEGA_EVOLUTIONS = {
-  3:[{name:'Mega Venusaur', sid:10033, types:['Grass','Poison']}],
-  6:[
-    {name:'Mega Charizard X', sid:10034, types:['Fire','Dragon']},
-    {name:'Mega Charizard Y', sid:10035, types:['Fire','Flying']},
-  ],
-  9:[{name:'Mega Blastoise', sid:10036, types:['Water']}],
-  15:[{name:'Mega Beedrill', sid:10090, types:['Bug','Poison']}],
-  18:[{name:'Mega Pidgeot', sid:10073, types:['Normal','Flying']}],
-  65:[{name:'Mega Alakazam', sid:10037, types:['Psychic']}],
-  80:[{name:'Mega Slowbro', sid:10071, types:['Water','Psychic']}],
-  94:[{name:'Mega Gengar', sid:10038, types:['Ghost','Poison']}],
-  115:[{name:'Mega Kangaskhan', sid:10039, types:['Normal']}],
-  127:[{name:'Mega Pinsir', sid:10040, types:['Bug','Flying']}],
-  130:[{name:'Mega Gyarados', sid:10041, types:['Water','Dark']}],
-  142:[{name:'Mega Aerodactyl', sid:10042, types:['Rock','Flying']}],
-  150:[
-    {name:'Mega Mewtwo X', sid:10043, types:['Psychic','Fighting']},
-    {name:'Mega Mewtwo Y', sid:10044, types:['Psychic']},
-  ],
-};
-
 const GEN1_BY_ID = Object.fromEntries(GEN1_POKEMON_DATA.map(([id, name, vname, types]) => [id, {id, name, vname, types}]));
 
 function classForGen1Pokemon(types, id) {
@@ -161,8 +139,6 @@ function buildGen1Pokemon(entry) {
     poke.fname = fin.name;
     poke.ftypes = fin.types;
   }
-  const mega = GEN1_MEGA_EVOLUTIONS[id] || (evo.length ? GEN1_MEGA_EVOLUTIONS[evo[evo.length - 1]] : null);
-  if (mega) poke.megaEvolutions = mega;
   return poke;
 }
 
@@ -293,7 +269,6 @@ function pokemonTypeHTML(poke, stage = 1) {
   return typeLabelHTML(pokemonStageTypes(poke, stage));
 }
 function playerEvolutionPick(player) {
-  if (player && player.megaActive && player.megaPick) return player.megaPick;
   if (!player || player.stage <= 1) return null;
   return player.eeveeEvolution || player.branchEvolution || null;
 }
@@ -521,7 +496,7 @@ function isShinyDraftPick(seg) {
 }
 
 function rollDraftShiny(seg) {
-  return isShinyDraftPick(seg) || Math.random() < 0.1;
+  return false;
 }
 
 function secretDraftPokemon(seg) {
@@ -529,10 +504,9 @@ function secretDraftPokemon(seg) {
 }
 
 function syncShinyClass(playerIdx) {
-  const p = players[playerIdx];
   const img = document.getElementById(`sprite-${playerIdx}`);
   const wrap = img ? img.closest('.poke-sprite-wrap') : null;
-  [img, wrap].forEach(el => { if (el) el.classList.toggle('shiny-pokemon', !!(p && p.shiny)); });
+  [img, wrap].forEach(el => { if (el) el.classList.remove('shiny-pokemon'); });
 }
 
 function pokemonImgAttrs(poke, evolved) {
@@ -545,8 +519,8 @@ function pokemonImgAttrs(poke, evolved) {
 
 function playerPokemonImgAttrs(player, evolved) {
   const poke = player.pokemon;
-  const primary = pokemonSpriteUrl(poke, evolved, player.shiny);
-  const remote = remotePokemonSpriteUrl(poke, evolved, player.shiny);
+  const primary = pokemonSpriteUrl(poke, evolved, false);
+  const remote = remotePokemonSpriteUrl(poke, evolved, false);
   const fallback = fallbackSpriteUrl(poke.cls);
   const firstFallback = primary === remote ? fallback : remote;
   return `src="${primary}" data-fallback="${firstFallback}" data-final-fallback="${fallback}" onerror="this.onerror=function(){this.onerror=null;this.src=this.dataset.finalFallback};this.src=this.dataset.fallback"`;
@@ -573,13 +547,11 @@ function setPlayerPokemonSprite(img, player) {
   if (!img || !player || !player.pokemon) return;
   const eeveePick = playerEvolutionPick(player);
   if (!eeveePick) {
-    setPokemonSprite(img, player.pokemon, player.stage || 1, player.shiny);
+    setPokemonSprite(img, player.pokemon, player.stage || 1, false);
     return;
   }
-  const primary = player.shiny
-    ? (useRemotePokemonSprites() ? shinySpriteUrl(eeveePick.sid) : localShinySpriteUrl(eeveePick.sid))
-    : (useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid));
-  const remote = player.shiny ? shinySpriteUrl(eeveePick.sid) : spriteUrl(eeveePick.sid);
+  const primary = useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid);
+  const remote = spriteUrl(eeveePick.sid);
   const fallback = fallbackSpriteUrl(player.pokemon.cls);
   img.onerror = function() {
     this.onerror = function() {
@@ -598,31 +570,20 @@ function isMegaPokemon(player) {
 }
 
 function pokemonCanMega(poke) {
-  return !!(poke && (poke.megaEvolution || (poke.megaEvolutions && poke.megaEvolutions.length) ||
-    (poke.finalEvolutions && poke.finalEvolutions.some(e => e.megaEvolution))));
+  return false;
 }
 
 function playerMegaOptions(player) {
-  if (!player || !player.pokemon || player.megaActive) return [];
-  const poke = player.pokemon;
-  if (poke.megaEvolution) {
-    return [{ name: poke.mname, sid: poke.msid, types: poke.mtypes || poke.types }];
-  }
-  const maxStage = poke.maxStage || 3;
-  if ((player.stage || 1) < maxStage) return [];
-  const branchMega = player.branchEvolution && player.branchEvolution.megaEvolution;
-  if (branchMega) return [branchMega];
-  return poke.megaEvolutions || [];
+  return [];
 }
 
 function megaIconHTML(poke) {
-  return pokemonCanMega(poke) ? '<span class="mega-icon" aria-label="Mega Evolution" title="Mega Evolution"></span>' : '';
+  return '';
 }
 
 function playerPokemonNameHTML(player) {
   const name = playerPokemonStageName(player).toUpperCase();
-  const megaIcon = player && (pokemonCanMega(player.pokemon) || player.megaActive) ? megaIconHTML(player.pokemon) : '';
-  return `${name}${megaIcon}`;
+  return name;
 }
 
 function playMegaAnimation(playerIdx) {
@@ -889,10 +850,13 @@ function startGame() {
 
 function assignRandomPokemon() {
   const pool = POKEMON_ROSTER.slice();
-  players.forEach(player => {
-    const pickIndex = rand(0, pool.length - 1);
-    player.pokemon = pool.splice(pickIndex, 1)[0];
-    player.shiny = Math.random() < 0.1;
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = rand(0, i);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  players.forEach((player, idx) => {
+    player.pokemon = pool[idx];
+    player.shiny = false;
   });
 }
 
@@ -1078,18 +1042,18 @@ function buildVSScreen() {
 
   const p1El = document.getElementById('vs-p1');
   if (p1El) {
-    p1El.classList.toggle('shiny-pokemon', !!p0.shiny);
+    p1El.classList.remove('shiny-pokemon');
     p1El.innerHTML = `
-    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" ${playerPokemonImgAttrs(p0, 1)} alt="${escapeHTML(p0.pokemon.name)}">
+    <img class="vs-sprite" ${playerPokemonImgAttrs(p0, 1)} alt="${escapeHTML(p0.pokemon.name)}">
     <div class="vs-pname">${escapeHTML(p0.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p0.name)}</div>`;
   }
 
   const p2El = document.getElementById('vs-p2');
   if (p2El) {
-    p2El.classList.toggle('shiny-pokemon', !!p1.shiny);
+    p2El.classList.remove('shiny-pokemon');
     p2El.innerHTML = `
-    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" ${playerPokemonImgAttrs(p1, 1)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
+    <img class="vs-sprite" ${playerPokemonImgAttrs(p1, 1)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
     <div class="vs-pname">${escapeHTML(p1.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p1.name)}</div>`;
   }
@@ -1526,14 +1490,9 @@ function markCurrentEvolutionScoreUsed() {
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
-  if (p.megaActive) return;
   const maxStage = p.pokemon.maxStage || 3;
   const turnScore = currentTurnEvolutionScore();
-  if (playerMegaOptions(p).length && turnScore >= 50) {
-    triggerMegaEvolution(playerIdx);
-    return;
-  }
-  if ((p.stage || 1) >= maxStage || p.pokemon.megaEvolution) return;
+  if ((p.stage || 1) >= maxStage) return;
   let targetStage = p.stage;
   if (p.stage < 2 && turnScore >= 30) targetStage = 2;
   else if (p.stage === 2 && turnScore >= 45) targetStage = 3;
@@ -1816,12 +1775,8 @@ function updateEvolutionTarget() {
     return;
   }
   const turnScore = currentTurnEvolutionScore();
-  el.classList.toggle('mega-target', p.megaActive || playerMegaOptions(p).length > 0);
-  if (p.megaActive) {
-    el.textContent = `Mega Active: ${p.megaTurnsLeft} turns left`;
-  } else if (playerMegaOptions(p).length) {
-    el.textContent = `Mega Evolution: ${turnScore}/50 total this turn`;
-  } else if ((p.stage || 1) < 2) {
+  el.classList.remove('mega-target');
+  if ((p.stage || 1) < 2) {
     el.textContent = `Evolution: ${turnScore}/30 total this turn`;
   } else if ((p.stage || 1) < (p.pokemon.maxStage || 3)) {
     el.textContent = `Final Evolution: ${turnScore}/45 total this turn`;
@@ -2054,7 +2009,7 @@ function handleWS(data) {
   const numThrows = d.numThrows !== undefined ? d.numThrows : -1;
   const tc = Array.isArray(throws) ? throws.length : 0;
 
-  // Draft phase
+  // Legacy selection handler
   if (draftPhase && !players[draftStep].isCpu) {
     // Reset on takeout so the next player's dart is detected
     if (event === 'Takeout finished' || (tc === 0 && seenThrows > 0)) {
