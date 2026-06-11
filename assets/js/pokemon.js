@@ -543,6 +543,15 @@ function pokemonImgAttrs(poke, evolved) {
   return `src="${primary}" data-fallback="${firstFallback}" data-final-fallback="${fallback}" onerror="this.onerror=function(){this.onerror=null;this.src=this.dataset.finalFallback};this.src=this.dataset.fallback"`;
 }
 
+function playerPokemonImgAttrs(player, evolved) {
+  const poke = player.pokemon;
+  const primary = pokemonSpriteUrl(poke, evolved, player.shiny);
+  const remote = remotePokemonSpriteUrl(poke, evolved, player.shiny);
+  const fallback = fallbackSpriteUrl(poke.cls);
+  const firstFallback = primary === remote ? fallback : remote;
+  return `src="${primary}" data-fallback="${firstFallback}" data-final-fallback="${fallback}" onerror="this.onerror=function(){this.onerror=null;this.src=this.dataset.finalFallback};this.src=this.dataset.fallback"`;
+}
+
 function setPokemonSprite(img, poke, evolved, shiny = false) {
   if (!img || !poke) return;
   const primary = pokemonSpriteUrl(poke, evolved, shiny);
@@ -878,11 +887,17 @@ function startGame() {
   launchLeg();
 }
 
+function assignRandomPokemon() {
+  const pool = POKEMON_ROSTER.slice();
+  players.forEach(player => {
+    const pickIndex = rand(0, pool.length - 1);
+    player.pokemon = pool.splice(pickIndex, 1)[0];
+    player.shiny = Math.random() < 0.1;
+  });
+}
+
 function launchLeg() {
   document.getElementById('confetti').innerHTML = '';
-  ensureDraftKeypadModifiers();
-  draftPage = 0;
-  buildDraftMap();
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
@@ -894,7 +909,8 @@ function launchLeg() {
     p.dartsThrown = 0;
   });
 
-  draftPhase = true;
+  assignRandomPokemon();
+  draftPhase = false;
   draftStep = 0;
   advancing = false;
   stateHistory = [];
@@ -906,9 +922,7 @@ function launchLeg() {
   finishTarget = 0;
   finishTotal = 0;
 
-  buildDraftGrid();
-  showScreen('draft');
-  updateDraftInstruction();
+  completeDraft();
 }
 
 function draftPageCount() {
@@ -1066,7 +1080,7 @@ function buildVSScreen() {
   if (p1El) {
     p1El.classList.toggle('shiny-pokemon', !!p0.shiny);
     p1El.innerHTML = `
-    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" src="${pokemonSpriteUrl(p0.pokemon, 1, p0.shiny)}" data-fallback="${fallbackSpriteUrl(p0.pokemon.cls)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(p0.pokemon.name)}">
+    <img class="vs-sprite${p0.shiny ? ' shiny-pokemon' : ''}" ${playerPokemonImgAttrs(p0, 1)} alt="${escapeHTML(p0.pokemon.name)}">
     <div class="vs-pname">${escapeHTML(p0.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p0.name)}</div>`;
   }
@@ -1075,7 +1089,7 @@ function buildVSScreen() {
   if (p2El) {
     p2El.classList.toggle('shiny-pokemon', !!p1.shiny);
     p2El.innerHTML = `
-    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" src="${pokemonSpriteUrl(p1.pokemon, 1, p1.shiny)}" data-fallback="${fallbackSpriteUrl(p1.pokemon.cls)}" onerror="this.onerror=null;this.src=this.dataset.fallback" alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
+    <img class="vs-sprite${p1.shiny ? ' shiny-pokemon' : ''}" ${playerPokemonImgAttrs(p1, 1)} alt="${escapeHTML(p1.pokemon.name)}" style="transform:scaleX(-1)">
     <div class="vs-pname">${escapeHTML(p1.pokemon.name)}</div>
     <div class="vs-player-name">${escapeHTML(p1.name)}</div>`;
   }

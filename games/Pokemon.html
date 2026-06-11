@@ -88,46 +88,6 @@
   </div>
 </div>
 
-<!-- DRAFT SCREEN -->
-<div id="draft" class="screen">
-  <div class="draft-title">DRAFT PHASE</div>
-  <div class="draft-instruction" id="draft-instruction">Throw to pick your Pokémon!</div>
-  <div class="draft-grid" id="draft-grid"></div>
-
-  <div style="width:100%;max-width:520px;margin-top:8px;">
-    <div class="keypad-wrap">
-      <div class="keypad-row">
-        <button class="kp-btn" onclick="manualDraft(1)">1</button>
-        <button class="kp-btn" onclick="manualDraft(2)">2</button>
-        <button class="kp-btn" onclick="manualDraft(3)">3</button>
-        <button class="kp-btn" onclick="manualDraft(4)">4</button>
-        <button class="kp-btn" onclick="manualDraft(5)">5</button>
-      </div>
-      <div class="keypad-row">
-        <button class="kp-btn" onclick="manualDraft(6)">6</button>
-        <button class="kp-btn" onclick="manualDraft(7)">7</button>
-        <button class="kp-btn" onclick="manualDraft(8)">8</button>
-        <button class="kp-btn" onclick="manualDraft(9)">9</button>
-        <button class="kp-btn" onclick="manualDraft(10)">10</button>
-      </div>
-      <div class="keypad-row">
-        <button class="kp-btn" onclick="manualDraft(11)">11</button>
-        <button class="kp-btn" onclick="manualDraft(12)">12</button>
-        <button class="kp-btn" onclick="manualDraft(13)">13</button>
-        <button class="kp-btn" onclick="manualDraft(14)">14</button>
-        <button class="kp-btn" onclick="manualDraft(15)">15</button>
-      </div>
-      <div class="keypad-row">
-        <button class="kp-btn" onclick="manualDraft(16)">16</button>
-        <button class="kp-btn" onclick="manualDraft(17)">17</button>
-        <button class="kp-btn" onclick="manualDraft(18)">18</button>
-        <button class="kp-btn" onclick="manualDraft(19)">19</button>
-        <button class="kp-btn" onclick="manualDraft(20)">20</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- VS SCREEN -->
 <div id="vs-screen" class="screen">
   <div class="vs-layout">
@@ -351,7 +311,7 @@
     <div><b>M</b> &nbsp;→ Miss</div>
     <div><b>Backspace</b> &nbsp;→ Undo last dart</div>
     <div><b>Enter / Space</b> &nbsp;→ Advance to next player</div>
-    <div style="margin-top:10px;color:var(--muted);font-size:12px;">Test Mode allows you to play both sides yourself. Number/letter keys also work during the draft phase.</div>
+    <div style="margin-top:10px;color:var(--muted);font-size:12px;">Test Mode allows you to play both sides yourself.</div>
     <div style="text-align:center;margin-top:18px;">
       <button class="win-btn" onclick="closeKeyHelp()">CLOSE</button>
     </div>
@@ -360,6 +320,6 @@
 
 <div id="confetti"></div>
 <div id="announce"></div>
-<script src="../assets/js/pokemon.js?v=31"></script>
+<script src="../assets/js/pokemon.js?v=32"></script>
 </body>
 </html>
