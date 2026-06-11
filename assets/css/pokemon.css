@@ -95,6 +95,19 @@
   font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900;
   color: var(--gold);
   position: absolute; top: 6px; left: 10px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.draft-num span {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.draft-empty {
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--muted);
+  font-size: 15px;
 }
 .draft-sprite {
   width: 94px; height: 94px;

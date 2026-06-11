@@ -5,53 +5,170 @@
 // =============================================
 // POKEMON ROSTER
 // =============================================
-const POKEMON_ROSTER = [
-  {id:1,  name:'Pikachu',    vname:'Pee-kah-choo',       types:['Electric'],       cls:'Sniper',  baseHp:150, sid:25,  msid:26,   maxStage:2, mname:'Raichu',    mtypes:['Electric']},
-  {id:2,  name:'Vulpix',     vname:'Vul-pix',            types:['Fire'],           cls:'Brawler', baseHp:150, sid:37,  msid:38,   maxStage:2, mname:'Ninetales', mtypes:['Fire']},
-  {id:3,  name:'Charmander', vname:'Char-man-der',       types:['Fire'],           cls:'Brawler', baseHp:150, sid:4,   msid:5,   fsid:6,   mname:'Charmeleon', fname:'Charizard', ftypes:['Fire','Flying'],
-    megaEvolutions:[
-      {name:'Mega Charizard X', sid:10034, types:['Fire','Dragon']},
-      {name:'Mega Charizard Y', sid:10035, types:['Fire','Flying']},
-    ]},
-  {id:4,  name:'Magikarp',   vname:'Maj-ee-karp',        types:['Water'],          cls:'Sniper',  baseHp:150, sid:129, msid:130,  maxStage:2, mname:'Gyarados',  mtypes:['Water','Flying'],
-    megaEvolutions:[{name:'Mega Gyarados', sid:10041, types:['Water','Dark']}]},
-  {id:5,  name:'Psyduck',    vname:'Sy-duk',             types:['Water'],          cls:'Status',  baseHp:150, sid:54,  msid:55,   maxStage:2, mname:'Golduck',   mtypes:['Water']},
-  {id:6,  name:'Ralts',      vname:'Ralts',              types:['Psychic','Fairy'],cls:'Status',  baseHp:150, sid:280, msid:281, fsid:282, mname:'Kirlia',    fname:'Gardevoir', ftypes:['Psychic','Fairy'],
-    finalEvolutions:[
-      {name:'Gardevoir', sid:282, types:['Psychic','Fairy'], megaEvolution:{name:'Mega Gardevoir', sid:10051, types:['Psychic','Fairy']}},
-      {name:'Gallade',   sid:475, types:['Psychic','Fighting'], megaEvolution:{name:'Mega Gallade', sid:10068, types:['Psychic','Fighting']}},
-    ]},
-  {id:7,  name:'Riolu',      vname:'Ree-oh-loo',         types:['Fighting'],       cls:'Brawler', baseHp:150, sid:447, msid:448,  maxStage:2, mname:'Lucario',   mtypes:['Fighting','Steel']},
-  {id:8,  name:'Axew',       vname:'Ax-oo',              types:['Dragon'],         cls:'Brawler', baseHp:150, sid:610, msid:611, fsid:612, mname:'Fraxure',   fname:'Haxorus'},
-  {id:9,  name:'Rayquaza',   vname:'Ray-quay-zah',       types:['Dragon','Flying'],cls:'Brawler', baseHp:150, sid:384, msid:10079, maxStage:2, mname:'Mega Rayquaza', mtypes:['Dragon','Flying'], megaEvolution:true},
-  {id:10, name:'Scyther',    vname:'Sih-ther',           types:['Bug','Flying'],   cls:'Sniper',  baseHp:150, sid:123, msid:212,  maxStage:2, mname:'Scizor',    mtypes:['Bug','Steel'],
-    megaEvolutions:[{name:'Mega Scizor', sid:10046, types:['Bug','Steel']}]},
-  {id:11, name:'Frigibax',   vname:'Frij-ih-bax',        types:['Dragon','Ice'],   cls:'Brawler', baseHp:150, sid:996, msid:997, fsid:998, mname:'Arctibax',   fname:'Baxcalibur'},
-  {id:12, name:'Wooper',     vname:'Woo-per',            types:['Water','Ground'], cls:'Tank',    baseHp:150, sid:194, msid:195,  maxStage:2, mname:'Quagsire',  mtypes:['Water','Ground']},
-  {id:13, name:'Mudkip',     vname:'Mud-kip',            types:['Water'],          cls:'Sniper',  baseHp:150, sid:258, msid:259, fsid:260, mname:'Marshtomp',  fname:'Swampert',  ftypes:['Water','Ground']},
-  {id:14, name:'Dreepy',     vname:'Dree-pee',           types:['Dragon','Ghost'], cls:'Status',  baseHp:150, sid:885, msid:886, fsid:887, mname:'Drakloak',   fname:'Dragapult'},
-  {id:15, name:'Dratini',    vname:'Dra-tee-nee',        types:['Dragon'],         cls:'Tank',    baseHp:150, sid:147, msid:148, fsid:149, mname:'Dragonair',  fname:'Dragonite', ftypes:['Dragon','Flying']},
-  {id:16, name:'Charcadet',  vname:'Char-ka-det',        types:['Fire'],           cls:'Brawler', baseHp:150, sid:935, msid:936, maxStage:2, mname:'Armarouge',  mtypes:['Fire','Psychic'], branchAtStage:2,
-    finalEvolutions:[
-      {name:'Armarouge', sid:936, types:['Fire','Psychic']},
-      {name:'Ceruledge', sid:937, types:['Fire','Ghost']},
-    ]},
-  {id:17, name:'Goomy',      vname:'Goo-mee',            types:['Dragon'],         cls:'Tank',    baseHp:150, sid:704, msid:705, fsid:706, mname:'Sliggoo',   fname:'Goodra'},
-  {id:18, name:'Rowlet',     vname:'Row-let',            types:['Grass','Flying'], cls:'Tank',    baseHp:150, sid:722, msid:723, fsid:724, mname:'Dartrix',    fname:'Decidueye', ftypes:['Grass','Ghost']},
-  {id:19, name:'Applin',     vname:'Ap-lin',             types:['Grass','Dragon'], cls:'Tank',    baseHp:150, sid:840, msid:1011, fsid:1019, mname:'Dipplin',   fname:'Hydrapple'},
-  {id:20, name:'Cetoddle',   vname:'Seh-tod-ul',         types:['Ice'],            cls:'Tank',    baseHp:150, sid:974, msid:975,  maxStage:2, mname:'Cetitan',   mtypes:['Ice']},
+const GEN1_POKEMON_DATA = [
+  [1,'Bulbasaur','BULB-uh-sore',['Grass','Poison']],[2,'Ivysaur','EYE-vee-sore',['Grass','Poison']],[3,'Venusaur','VEE-nuh-sore',['Grass','Poison']],
+  [4,'Charmander','CHAR-man-der',['Fire']],[5,'Charmeleon','char-MEEL-ee-un',['Fire']],[6,'Charizard','CHAR-ih-zard',['Fire','Flying']],
+  [7,'Squirtle','SKWER-tul',['Water']],[8,'Wartortle','WAR-tor-tul',['Water']],[9,'Blastoise','BLASS-toys',['Water']],
+  [10,'Caterpie','KAT-er-pee',['Bug']],[11,'Metapod','MET-uh-pod',['Bug']],[12,'Butterfree','BUT-er-free',['Bug','Flying']],
+  [13,'Weedle','WEE-dul',['Bug','Poison']],[14,'Kakuna','kuh-KOO-nuh',['Bug','Poison']],[15,'Beedrill','BEE-dril',['Bug','Poison']],
+  [16,'Pidgey','PIH-jee',['Normal','Flying']],[17,'Pidgeotto','pih-jee-AH-toe',['Normal','Flying']],[18,'Pidgeot','PIH-jit',['Normal','Flying']],
+  [19,'Rattata','rat-TAT-uh',['Normal']],[20,'Raticate','RAT-ih-kayt',['Normal']],
+  [21,'Spearow','SPEER-oh',['Normal','Flying']],[22,'Fearow','FEER-oh',['Normal','Flying']],
+  [23,'Ekans','EK-uns',['Poison']],[24,'Arbok','AR-bok',['Poison']],
+  [25,'Pikachu','PEE-kuh-choo',['Electric']],[26,'Raichu','RYE-choo',['Electric']],
+  [27,'Sandshrew','SAND-shroo',['Ground']],[28,'Sandslash','SAND-slash',['Ground']],
+  [29,'Nidoran Female','NEE-doh-ran FEM-ale',['Poison']],[30,'Nidorina','nee-doh-REE-nuh',['Poison']],[31,'Nidoqueen','NEE-doh-kween',['Poison','Ground']],
+  [32,'Nidoran Male','NEE-doh-ran MALE',['Poison']],[33,'Nidorino','nee-doh-REE-noh',['Poison']],[34,'Nidoking','NEE-doh-king',['Poison','Ground']],
+  [35,'Clefairy','kluh-FAIR-ee',['Fairy']],[36,'Clefable','kluh-FAY-bul',['Fairy']],
+  [37,'Vulpix','VUL-piks',['Fire']],[38,'Ninetales','NINE-taylz',['Fire']],
+  [39,'Jigglypuff','JIG-lee-puf',['Normal','Fairy']],[40,'Wigglytuff','WIG-lee-tuf',['Normal','Fairy']],
+  [41,'Zubat','ZOO-bat',['Poison','Flying']],[42,'Golbat','GOHL-bat',['Poison','Flying']],
+  [43,'Oddish','AHD-ish',['Grass','Poison']],[44,'Gloom','GLOOM',['Grass','Poison']],[45,'Vileplume','VILE-ploom',['Grass','Poison']],
+  [46,'Paras','PAIR-us',['Bug','Grass']],[47,'Parasect','PAIR-uh-sekt',['Bug','Grass']],
+  [48,'Venonat','VEN-oh-nat',['Bug','Poison']],[49,'Venomoth','VEN-oh-moth',['Bug','Poison']],
+  [50,'Diglett','DIG-let',['Ground']],[51,'Dugtrio','dug-TREE-oh',['Ground']],
+  [52,'Meowth','mee-OWTH',['Normal']],[53,'Persian','PER-zhun',['Normal']],
+  [54,'Psyduck','SY-duk',['Water']],[55,'Golduck','GOHL-duk',['Water']],
+  [56,'Mankey','MAN-kee',['Fighting']],[57,'Primeape','PRY-mayp',['Fighting']],
+  [58,'Growlithe','GROW-lith',['Fire']],[59,'Arcanine','AR-kuh-nine',['Fire']],
+  [60,'Poliwag','PAHL-ee-wag',['Water']],[61,'Poliwhirl','PAHL-ee-wherl',['Water']],[62,'Poliwrath','PAHL-ee-rath',['Water','Fighting']],
+  [63,'Abra','AB-ruh',['Psychic']],[64,'Kadabra','kuh-DAB-ruh',['Psychic']],[65,'Alakazam','al-uh-kuh-ZAM',['Psychic']],
+  [66,'Machop','muh-CHOP',['Fighting']],[67,'Machoke','muh-CHOHK',['Fighting']],[68,'Machamp','muh-CHAMP',['Fighting']],
+  [69,'Bellsprout','BEL-sprowt',['Grass','Poison']],[70,'Weepinbell','WEE-pin-bel',['Grass','Poison']],[71,'Victreebel','VIK-tree-bel',['Grass','Poison']],
+  [72,'Tentacool','TEN-tuh-kool',['Water','Poison']],[73,'Tentacruel','TEN-tuh-krool',['Water','Poison']],
+  [74,'Geodude','JEE-oh-dood',['Rock','Ground']],[75,'Graveler','GRAV-el-er',['Rock','Ground']],[76,'Golem','GOH-lem',['Rock','Ground']],
+  [77,'Ponyta','POH-nee-tah',['Fire']],[78,'Rapidash','RAP-ih-dash',['Fire']],
+  [79,'Slowpoke','SLOH-pohk',['Water','Psychic']],[80,'Slowbro','SLOH-broh',['Water','Psychic']],
+  [81,'Magnemite','MAG-nuh-mite',['Electric','Steel']],[82,'Magneton','MAG-nuh-ton',['Electric','Steel']],
+  [83,"Farfetch'd",'far-FETCHT',['Normal','Flying']],
+  [84,'Doduo','doh-DOO-oh',['Normal','Flying']],[85,'Dodrio','doh-DREE-oh',['Normal','Flying']],
+  [86,'Seel','SEEL',['Water']],[87,'Dewgong','DOO-gong',['Water','Ice']],
+  [88,'Grimer','GRY-mer',['Poison']],[89,'Muk','MUK',['Poison']],
+  [90,'Shellder','SHEL-der',['Water']],[91,'Cloyster','KLOY-ster',['Water','Ice']],
+  [92,'Gastly','GAST-lee',['Ghost','Poison']],[93,'Haunter','HAWN-ter',['Ghost','Poison']],[94,'Gengar','GHEN-gar',['Ghost','Poison']],
+  [95,'Onix','AH-niks',['Rock','Ground']],
+  [96,'Drowzee','DROW-zee',['Psychic']],[97,'Hypno','HIP-noh',['Psychic']],
+  [98,'Krabby','KRAB-ee',['Water']],[99,'Kingler','KING-ler',['Water']],
+  [100,'Voltorb','VOL-torb',['Electric']],[101,'Electrode','ee-LEK-trohd',['Electric']],
+  [102,'Exeggcute','eg-ZEG-kyoot',['Grass','Psychic']],[103,'Exeggutor','eg-ZEG-kyoo-tor',['Grass','Psychic']],
+  [104,'Cubone','KYOO-bohn',['Ground']],[105,'Marowak','MAIR-oh-wak',['Ground']],
+  [106,'Hitmonlee','hit-mahn-LEE',['Fighting']],[107,'Hitmonchan','hit-mahn-CHAN',['Fighting']],
+  [108,'Lickitung','LIK-ee-tung',['Normal']],
+  [109,'Koffing','KAW-fing',['Poison']],[110,'Weezing','WEE-zing',['Poison']],
+  [111,'Rhyhorn','RYE-horn',['Ground','Rock']],[112,'Rhydon','RYE-don',['Ground','Rock']],
+  [113,'Chansey','CHAN-see',['Normal']],
+  [114,'Tangela','TANG-guh-luh',['Grass']],
+  [115,'Kangaskhan','kang-guss-KAHN',['Normal']],
+  [116,'Horsea','HOR-see',['Water']],[117,'Seadra','SEE-druh',['Water']],
+  [118,'Goldeen','gohl-DEEN',['Water']],[119,'Seaking','SEE-king',['Water']],
+  [120,'Staryu','STAR-yoo',['Water']],[121,'Starmie','STAR-mee',['Water','Psychic']],
+  [122,'Mr. Mime','MIS-ter MYME',['Psychic','Fairy']],
+  [123,'Scyther','SY-ther',['Bug','Flying']],
+  [124,'Jynx','JINKS',['Ice','Psychic']],
+  [125,'Electabuzz','ee-LEK-tuh-buz',['Electric']],
+  [126,'Magmar','MAG-mar',['Fire']],
+  [127,'Pinsir','PIN-ser',['Bug']],
+  [128,'Tauros','TORE-ohss',['Normal']],
+  [129,'Magikarp','MAJ-ee-karp',['Water']],[130,'Gyarados','GAIR-uh-dohss',['Water','Flying']],
+  [131,'Lapras','LAP-russ',['Water','Ice']],
+  [132,'Ditto','DIT-oh',['Normal']],
+  [133,'Eevee','EE-vee',['Normal']],
+  [134,'Vaporeon','vay-PORE-ee-on',['Water']],
+  [135,'Jolteon','JOHL-tee-on',['Electric']],
+  [136,'Flareon','FLAIR-ee-on',['Fire']],
+  [137,'Porygon','PORE-ee-gon',['Normal']],
+  [138,'Omanyte','AHM-uh-nite',['Rock','Water']],[139,'Omastar','AHM-uh-star',['Rock','Water']],
+  [140,'Kabuto','kuh-BOO-toh',['Rock','Water']],[141,'Kabutops','kuh-BOO-tops',['Rock','Water']],
+  [142,'Aerodactyl','air-oh-DAK-tul',['Rock','Flying']],
+  [143,'Snorlax','SNOR-laks',['Normal']],
+  [144,'Articuno','ar-tih-KOO-noh',['Ice','Flying']],
+  [145,'Zapdos','ZAP-dohss',['Electric','Flying']],
+  [146,'Moltres','MOHL-trayss',['Fire','Flying']],
+  [147,'Dratini','druh-TEE-nee',['Dragon']],[148,'Dragonair','drag-un-AIR',['Dragon']],[149,'Dragonite','DRAG-un-ite',['Dragon','Flying']],
+  [150,'Mewtwo','MYOO-too',['Psychic']],
+  [151,'Mew','MYOO',['Psychic']],
 ];
 
-const SECRET_POKEMON = {
-  bull: {id:150, name:'Mewtwo', vname:'Mew-two', types:['Psychic'], cls:'Status', baseHp:300, sid:150, maxStage:1,
-    megaEvolutions:[
-      {name:'Mega Mewtwo X', sid:10043, types:['Psychic','Fighting']},
-      {name:'Mega Mewtwo Y', sid:10044, types:['Psychic']},
-    ]},
-  dbull: {id:493, name:'Arceus', vname:'Ar-key-us', types:['Normal'], cls:'Tank', baseHp:325, sid:493, maxStage:1, randomType:true},
+const GEN1_EVOLUTIONS = {
+  1:[2,3], 2:[3], 4:[5,6], 5:[6], 7:[8,9], 8:[9], 10:[11,12], 11:[12], 13:[14,15], 14:[15],
+  16:[17,18], 17:[18], 19:[20], 21:[22], 23:[24], 25:[26], 27:[28], 29:[30,31], 30:[31],
+  32:[33,34], 33:[34], 35:[36], 37:[38], 39:[40], 41:[42], 43:[44,45], 44:[45], 46:[47],
+  48:[49], 50:[51], 52:[53], 54:[55], 56:[57], 58:[59], 60:[61,62], 61:[62], 63:[64,65],
+  64:[65], 66:[67,68], 67:[68], 69:[70,71], 70:[71], 72:[73], 74:[75,76], 75:[76], 77:[78],
+  79:[80], 81:[82], 84:[85], 86:[87], 88:[89], 90:[91], 92:[93,94], 93:[94], 96:[97],
+  98:[99], 100:[101], 102:[103], 104:[105], 109:[110], 111:[112], 116:[117], 118:[119],
+  120:[121], 129:[130], 133:[134,135,136], 138:[139], 140:[141], 147:[148,149], 148:[149],
 };
 
-const ARCEUS_TYPES = ['Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy'];
+const GEN1_MEGA_EVOLUTIONS = {
+  3:[{name:'Mega Venusaur', sid:10033, types:['Grass','Poison']}],
+  6:[
+    {name:'Mega Charizard X', sid:10034, types:['Fire','Dragon']},
+    {name:'Mega Charizard Y', sid:10035, types:['Fire','Flying']},
+  ],
+  9:[{name:'Mega Blastoise', sid:10036, types:['Water']}],
+  15:[{name:'Mega Beedrill', sid:10090, types:['Bug','Poison']}],
+  18:[{name:'Mega Pidgeot', sid:10073, types:['Normal','Flying']}],
+  65:[{name:'Mega Alakazam', sid:10037, types:['Psychic']}],
+  80:[{name:'Mega Slowbro', sid:10071, types:['Water','Psychic']}],
+  94:[{name:'Mega Gengar', sid:10038, types:['Ghost','Poison']}],
+  115:[{name:'Mega Kangaskhan', sid:10039, types:['Normal']}],
+  127:[{name:'Mega Pinsir', sid:10040, types:['Bug','Flying']}],
+  130:[{name:'Mega Gyarados', sid:10041, types:['Water','Dark']}],
+  142:[{name:'Mega Aerodactyl', sid:10042, types:['Rock','Flying']}],
+  150:[
+    {name:'Mega Mewtwo X', sid:10043, types:['Psychic','Fighting']},
+    {name:'Mega Mewtwo Y', sid:10044, types:['Psychic']},
+  ],
+};
+
+const GEN1_BY_ID = Object.fromEntries(GEN1_POKEMON_DATA.map(([id, name, vname, types]) => [id, {id, name, vname, types}]));
+
+function classForGen1Pokemon(types, id) {
+  if (types.includes('Psychic') || types.includes('Ghost') || types.includes('Poison')) return 'Status';
+  if (types.includes('Rock') || types.includes('Ground') || types.includes('Ice') || id === 143 || id === 131) return 'Tank';
+  if (types.includes('Electric') || types.includes('Flying') || types.includes('Bug')) return 'Sniper';
+  return 'Brawler';
+}
+
+function buildGen1Pokemon(entry) {
+  const [id, name, vname, types] = entry;
+  const evo = GEN1_EVOLUTIONS[id] || [];
+  const poke = {
+    id,
+    name,
+    vname,
+    types,
+    cls: classForGen1Pokemon(types, id),
+    baseHp: 150,
+    sid: id,
+    maxStage: evo.length ? evo.length + 1 : 1,
+  };
+  if (id === 133) {
+    poke.maxStage = 2;
+    poke.eeveelutions = evo.map(eid => ({ name: GEN1_BY_ID[eid].name, sid: eid, types: GEN1_BY_ID[eid].types }));
+    return poke;
+  }
+  if (evo[0]) {
+    const mid = GEN1_BY_ID[evo[0]];
+    poke.msid = mid.id;
+    poke.mname = mid.name;
+    poke.mtypes = mid.types;
+  }
+  if (evo[1]) {
+    const fin = GEN1_BY_ID[evo[1]];
+    poke.fsid = fin.id;
+    poke.fname = fin.name;
+    poke.ftypes = fin.types;
+  }
+  const mega = GEN1_MEGA_EVOLUTIONS[id] || (evo.length ? GEN1_MEGA_EVOLUTIONS[evo[evo.length - 1]] : null);
+  if (mega) poke.megaEvolutions = mega;
+  return poke;
+}
+
+const POKEMON_ROSTER = GEN1_POKEMON_DATA.map(buildGen1Pokemon);
+
+const SECRET_POKEMON = {};
 
 const POKEMON_SPRITE_VERSION = 5;
 
@@ -73,6 +190,7 @@ let round = 1;
 let gameActive = false;
 let draftPhase = false;
 let draftMap = {};
+let draftPage = 0;
 let draftStep = 0;
 let hpAtTurnStart = [0, 0];
 let xAttackBonus = 0;
@@ -183,7 +301,6 @@ function playerPokemonStageName(player) {
   return eeveePick ? eeveePick.name : pokemonStageName(player.pokemon, player.stage);
 }
 function playerPokemonStageTypes(player) {
-  if (player && player.pokemon && player.pokemon.randomType && player.arceusType) return [player.arceusType];
   const eeveePick = playerEvolutionPick(player);
   return eeveePick ? eeveePick.types : pokemonStageTypes(player.pokemon, player.stage);
 }
@@ -411,11 +528,20 @@ function useRemotePokemonSprites() {
   return window.DARTBOT_CONFIG && window.DARTBOT_CONFIG.remotePokemonSprites === true;
 }
 
-function pokemonSpriteUrl(poke, evolved, shiny = false) {
+function pokemonSpriteId(poke, evolved) {
   const stage = typeof evolved === 'number' ? evolved : (evolved ? 2 : 1);
-  const id = stage >= 3 ? (poke.fsid || poke.msid || poke.sid) : (stage >= 2 ? poke.msid : poke.sid);
+  return stage >= 3 ? (poke.fsid || poke.msid || poke.sid) : (stage >= 2 ? (poke.msid || poke.sid) : poke.sid);
+}
+
+function pokemonSpriteUrl(poke, evolved, shiny = false) {
+  const id = pokemonSpriteId(poke, evolved);
   if (shiny) return useRemotePokemonSprites() ? shinySpriteUrl(id) : localShinySpriteUrl(id);
   return useRemotePokemonSprites() ? spriteUrl(id) : localSpriteUrl(id);
+}
+
+function remotePokemonSpriteUrl(poke, evolved, shiny = false) {
+  const id = pokemonSpriteId(poke, evolved);
+  return shiny ? shinySpriteUrl(id) : spriteUrl(id);
 }
 
 function isShinyDraftPick(seg) {
@@ -429,9 +555,7 @@ function rollDraftShiny(seg) {
 }
 
 function secretDraftPokemon(seg) {
-  const num = Number(seg && seg.number);
-  if (num !== 25) return null;
-  return Number(seg && seg.multiplier) === 2 ? SECRET_POKEMON.dbull : SECRET_POKEMON.bull;
+  return null;
 }
 
 function syncShinyClass(playerIdx) {
@@ -442,18 +566,28 @@ function syncShinyClass(playerIdx) {
 }
 
 function pokemonImgAttrs(poke, evolved) {
+  const primary = pokemonSpriteUrl(poke, evolved);
+  const remote = remotePokemonSpriteUrl(poke, evolved);
   const fallback = fallbackSpriteUrl(poke.cls);
-  return `src="${pokemonSpriteUrl(poke, evolved)}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback"`;
+  const firstFallback = primary === remote ? fallback : remote;
+  return `src="${primary}" data-fallback="${firstFallback}" data-final-fallback="${fallback}" onerror="this.onerror=function(){this.onerror=null;this.src=this.dataset.finalFallback};this.src=this.dataset.fallback"`;
 }
 
 function setPokemonSprite(img, poke, evolved, shiny = false) {
   if (!img || !poke) return;
+  const primary = pokemonSpriteUrl(poke, evolved, shiny);
+  const remote = remotePokemonSpriteUrl(poke, evolved, shiny);
+  const fallback = fallbackSpriteUrl(poke.cls);
   img.onerror = function() {
-    this.onerror = null;
+    this.onerror = function() {
+      this.onerror = null;
+      this.src = this.dataset.finalFallback;
+    };
     this.src = this.dataset.fallback;
   };
-  img.dataset.fallback = fallbackSpriteUrl(poke.cls);
-  img.src = pokemonSpriteUrl(poke, evolved, shiny);
+  img.dataset.fallback = primary === remote ? fallback : remote;
+  img.dataset.finalFallback = fallback;
+  img.src = primary;
 }
 
 function setPlayerPokemonSprite(img, player) {
@@ -463,14 +597,21 @@ function setPlayerPokemonSprite(img, player) {
     setPokemonSprite(img, player.pokemon, player.stage || 1, player.shiny);
     return;
   }
-  img.onerror = function() {
-    this.onerror = null;
-    this.src = this.dataset.fallback;
-  };
-  img.dataset.fallback = fallbackSpriteUrl(player.pokemon.cls);
-  img.src = player.shiny
+  const primary = player.shiny
     ? (useRemotePokemonSprites() ? shinySpriteUrl(eeveePick.sid) : localShinySpriteUrl(eeveePick.sid))
     : (useRemotePokemonSprites() ? spriteUrl(eeveePick.sid) : localSpriteUrl(eeveePick.sid));
+  const remote = player.shiny ? shinySpriteUrl(eeveePick.sid) : spriteUrl(eeveePick.sid);
+  const fallback = fallbackSpriteUrl(player.pokemon.cls);
+  img.onerror = function() {
+    this.onerror = function() {
+      this.onerror = null;
+      this.src = this.dataset.finalFallback;
+    };
+    this.src = this.dataset.fallback;
+  };
+  img.dataset.fallback = primary === remote ? fallback : remote;
+  img.dataset.finalFallback = fallback;
+  img.src = primary;
 }
 
 function isMegaPokemon(player) {
@@ -650,7 +791,6 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     branchEvolution: null,
     megaActive: false, megaTurnsLeft: 0, megaJustActivated: false, megaPick: null, megaBaseStage: null,
-    arceusType: null,
     evoScoreOffset: 0,
     shiny: false,
     dmgBoost: 0, evolved: false, evolvedSprite: false,
@@ -765,14 +905,13 @@ function startGame() {
 function launchLeg() {
   document.getElementById('confetti').innerHTML = '';
   ensureDraftKeypadModifiers();
-  // Build draft map: keep the roster in dartboard number order (1-20)
-  draftMap = {};
-  POKEMON_ROSTER.forEach((poke, i) => { draftMap[i + 1] = poke; });
+  draftPage = 0;
+  buildDraftMap();
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
-    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.arceusType = null; p.evoScoreOffset = 0; p.shiny = false;
+    p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
     p.totalDmg = 0; p.totalHeal = 0; p.cpTurns = 0;
@@ -796,13 +935,51 @@ function launchLeg() {
   updateDraftInstruction();
 }
 
+function draftPageCount() {
+  return Math.ceil(POKEMON_ROSTER.length / 20);
+}
+
+function draftPageRange() {
+  const start = draftPage * 20;
+  const end = Math.min(start + 20, POKEMON_ROSTER.length);
+  return { start, end };
+}
+
+function buildDraftMap() {
+  draftMap = {};
+  const { start, end } = draftPageRange();
+  for (let i = start; i < end; i++) {
+    draftMap[(i - start) + 1] = POKEMON_ROSTER[i];
+  }
+}
+
+function changeDraftPage(delta) {
+  if (!draftPhase) return;
+  const pages = draftPageCount();
+  draftPage = (draftPage + delta + pages) % pages;
+  buildDraftMap();
+  buildDraftGrid();
+  updateDraftInstruction();
+  flash(`PAGE ${draftPage + 1}/${pages}`, 'var(--poke-yellow)');
+}
+
+function showDraftPageForPokemon(poke) {
+  const idx = POKEMON_ROSTER.findIndex(p => p.id === poke.id);
+  if (idx < 0) return;
+  draftPage = Math.floor(idx / 20);
+  buildDraftMap();
+  buildDraftGrid();
+}
+
 function updateDraftInstruction() {
   const el = document.getElementById('draft-instruction');
   if (!el) return;
+  const { start, end } = draftPageRange();
+  const pageText = `Page ${draftPage + 1}/${draftPageCount()} - #${start + 1}-${end}`;
   if (draftStep === 0) {
-    el.textContent = `${players[0].name} — throw a dart to pick your Pokémon! (numbers 1–20)`;
+    el.textContent = `${players[0].name} - throw 1-20 to pick. ${pageText}. Bull next page, D-Bull previous.`;
   } else {
-    el.textContent = `${players[1].name} — throw a dart to pick your Pokémon!`;
+    el.textContent = `${players[1].name} - throw 1-20 to pick. ${pageText}. Bull next page, D-Bull previous.`;
   }
 }
 
@@ -814,8 +991,8 @@ function ensureDraftKeypadModifiers() {
   row.innerHTML = `
     <button class="kp-btn kp-mod" data-mod="2" onclick="toggleKeypadMod(2)">DOUBLE</button>
     <button class="kp-btn kp-mod" data-mod="3" onclick="toggleKeypadMod(3)">TREBLE</button>
-    <button class="kp-btn kp-bull" onclick="_throwManual(25, 1)">BULL</button>
-    <button class="kp-btn kp-bull" onclick="_throwManual(25, 2)">D-BULL</button>`;
+    <button class="kp-btn kp-bull" onclick="changeDraftPage(-1)">PREV</button>
+    <button class="kp-btn kp-bull" onclick="changeDraftPage(1)">NEXT</button>`;
   keypad.appendChild(row);
 }
 
@@ -826,10 +1003,20 @@ function buildDraftGrid() {
   for (let n = 1; n <= 20; n++) {
     const poke = draftMap[n];
     const card = document.createElement('div');
-    card.className = 'draft-card';
+    card.className = `draft-card${poke ? '' : ' unavailable'}`;
     card.id = `dcard-${n}`;
+    if (!poke) {
+      card.innerHTML = `
+        <div class="draft-num">${n}</div>
+        <div class="draft-empty">No Pokemon</div>`;
+      grid.appendChild(card);
+      continue;
+    }
+    const pickedBy = players.findIndex(p => p.pokemon && p.pokemon.id === poke.id);
+    if (pickedBy === 0) card.classList.add('selected-p1');
+    if (pickedBy === 1) card.classList.add('selected-p2');
     card.innerHTML = `
-      <div class="draft-num">${n}</div>
+      <div class="draft-num">${n}<span>#${poke.id}</span></div>
       <img class="draft-sprite" ${pokemonImgAttrs(poke, false)} alt="${escapeHTML(poke.name)}" loading="lazy">
       <div class="draft-pname">${escapeHTML(poke.name)}${megaIconHTML(poke)}</div>
       <div class="draft-type-badge">${pokemonTypeHTML(poke)}</div>`;
@@ -840,19 +1027,22 @@ function buildDraftGrid() {
 function registerDraftThrow(seg) {
   if (!draftPhase) return;
   const num = seg ? Number(seg.number) : 0;
-  const secretPoke = secretDraftPokemon(seg);
-  if (!secretPoke && (!num || num < 1 || num > 20)) {
+  if (num === 25) {
+    changeDraftPage(Number(seg && seg.multiplier) === 2 ? -1 : 1);
+    return;
+  }
+  if (!num || num < 1 || num > 20) {
     aSfx(sfxMiss);
     flash('Miss! Try again.', 'var(--muted)');
     return;
   }
-  const poke = secretPoke || draftMap[num];
+  const poke = draftMap[num];
   if (!poke) return;
 
   // Check not already picked
   if (players.some(p => p.pokemon && p.pokemon.id === poke.id)) return;
 
-  const card = secretPoke ? null : document.getElementById(`dcard-${num}`);
+  const card = document.getElementById(`dcard-${num}`);
   if (card) {
     card.classList.add(draftStep === 0 ? 'selected-p1' : 'selected-p2');
   }
@@ -860,7 +1050,6 @@ function registerDraftThrow(seg) {
   players[draftStep].pokemon = poke;
   players[draftStep].shiny = rollDraftShiny(seg);
   if (card && players[draftStep].shiny) card.classList.add('shiny-draft-pick');
-  if (secretPoke) flash('SECRET POKEMON!', 'var(--poke-yellow)');
   aSpeak(`${players[draftStep].shiny ? 'Shiny ' : ''}${voicePokemonName(poke)}, I choose you!`);
 
   if (draftStep === 0) {
@@ -870,11 +1059,10 @@ function registerDraftThrow(seg) {
     if (players[1].isCpu) {
       // CPU auto-picks after delay
       setTimeout(() => {
-        const remaining = [];
-        for (let n = 1; n <= 20; n++) {
-          if (!players.some(p => p.pokemon && p.pokemon.id === draftMap[n].id)) remaining.push(n);
-        }
-        const pick = remaining[rand(0, remaining.length - 1)];
+        const remaining = POKEMON_ROSTER.filter(poke => !players.some(p => p.pokemon && p.pokemon.id === poke.id));
+        const cpuPick = remaining[rand(0, remaining.length - 1)];
+        showDraftPageForPokemon(cpuPick);
+        const pick = Number(Object.keys(draftMap).find(n => draftMap[n] && draftMap[n].id === cpuPick.id));
         registerDraftThrow({ number: pick, multiplier: 1, name: 'S' + pick });
       }, tDelay(900));
     }
@@ -974,12 +1162,6 @@ function startTurn() {
   seenThrows = 0;
   turnEnded = false;
   p._maxDartsThisTurn = 3;
-
-  if (p.pokemon && p.pokemon.randomType) {
-    p.arceusType = ARCEUS_TYPES[rand(0, ARCEUS_TYPES.length - 1)];
-    flash(`ARCEUS ${p.arceusType.toUpperCase()} TYPE!`, 'var(--poke-yellow)');
-    aSpeak(`Arceus ${p.arceusType} type!`);
-  }
 
   const nextBtn = document.getElementById('next-player-btn');
   if (nextBtn) nextBtn.style.display = 'none';
@@ -1959,7 +2141,6 @@ function saveState() {
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
       megaPick: p.megaPick || null, megaBaseStage: p.megaBaseStage || null,
-      arceusType: p.arceusType || null,
       evoScoreOffset: p.evoScoreOffset || 0,
       status: p.status, statusDurtn: p.statusDurtn,
       dartLostNext: p.dartLostNext, totalDmg: p.totalDmg,
@@ -1991,7 +2172,6 @@ function undoLastDart() {
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
     p.megaPick = saved.megaPick || null; p.megaBaseStage = saved.megaBaseStage || null;
-    p.arceusType = saved.arceusType || null;
     p.evoScoreOffset = saved.evoScoreOffset || 0;
     p.dmgBoost = saved.dmgBoost; p.evolved = saved.evolved;
     p.evolvedSprite = saved.evolvedSprite; p.shiny = !!saved.shiny;
