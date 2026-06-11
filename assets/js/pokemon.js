@@ -173,16 +173,17 @@ const SECRET_POKEMON = {};
 const POKEMON_SPRITE_VERSION = 5;
 
 const CLASS_PASSIVES = {
-  Sniper:  'Trebles deal 3.5× in Gym',
-  Tank:    'Even heals +8 extra HP',
-  Brawler: 'Odd attacks +5 flat bonus',
-  Status:  'Bull hit inflicts burn or paralysis',
+  Sniper:  'Type only',
+  Tank:    'Type only',
+  Brawler: 'Type only',
+  Status:  'Type only',
 };
 
 // =============================================
 // STATE
 // =============================================
 let gameMode = 'wild';
+let startingHp = 301;
 let players = [];
 let currentPlayer = 0;
 let currentDarts = [];
@@ -470,38 +471,7 @@ function closeTypeGuide() {
 }
 
 function ensureTypeGuidePanel() {
-  const evoEl = document.getElementById('evo-target');
-  if (!evoEl) return null;
-  ensureTypeGuideStyles();
-  let panel = document.getElementById('type-guide');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'type-guide';
-    panel.className = 'type-guide';
-    panel.innerHTML = `
-      <button class="type-guide-button" onclick="openTypeGuide()">Typing List<span>All advantages</span></button>`;
-    evoEl.insertAdjacentElement('afterend', panel);
-  }
-  let overlay = document.getElementById('type-guide-overlay');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'type-guide-overlay';
-    overlay.className = 'type-guide-overlay';
-    overlay.innerHTML = `
-      <div class="type-guide-card">
-        <div class="type-guide-head">
-          <div class="type-guide-title">Type Advantages</div>
-          <button class="type-guide-close" onclick="closeTypeGuide()">CLOSE</button>
-        </div>
-        <div class="type-guide-list">${renderTypeAdvantageGuide()}</div>
-        <div class="type-guide-note">Advantages only. Advantage hits do 1.2x damage.</div>
-      </div>`;
-    overlay.addEventListener('click', (ev) => {
-      if (ev.target === overlay) closeTypeGuide();
-    });
-    document.body.appendChild(overlay);
-  }
-  return panel;
+  return null;
 }
 
 function spriteUrl(id) {
@@ -728,8 +698,8 @@ function savedMPR(stats) {
 // SETUP UI
 // =============================================
 const MODE_DESCS = {
-  wild: 'Random damage/heals. Odd numbers attack, evens heal. Bulls give random items.',
-  gym:  'Precise hits. Dart value = damage/heal. Trebles maximise damage, doubles score big.'
+  wild: 'Every dart score is direct damage.',
+  gym:  'Every dart score is direct damage.'
 };
 
 function selectMode(v, btn) {
@@ -737,6 +707,12 @@ function selectMode(v, btn) {
   document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
   document.getElementById('variant-desc').textContent = MODE_DESCS[v];
+}
+
+function selectStartingHp(value, btn) {
+  startingHp = Number(value) || 301;
+  document.querySelectorAll('.hp-choice-btn').forEach(b => b.classList.remove('sel'));
+  if (btn) btn.classList.add('sel');
 }
 
 function buildCpuGrid() {
@@ -1117,8 +1093,8 @@ function startBattle() {
 
   // Init HP
   players.forEach(p => {
-    p.maxHp = p.pokemon.baseHp;
-    p.hp = p.pokemon.baseHp;
+    p.maxHp = startingHp;
+    p.hp = startingHp;
     p.dmgBoost = 0;
   });
 
@@ -1166,66 +1142,20 @@ function startTurn() {
   const nextBtn = document.getElementById('next-player-btn');
   if (nextBtn) nextBtn.style.display = 'none';
 
-  // Burn damage at turn start (bypasses endure)
-  if (p.status === 'burn') {
-    p.hp = Math.max(0, p.hp - 20);
-    flash('BURN DAMAGE! -20 HP', 'var(--poke-red)');
-    aSpeak('Burn damage!');
-    aSfx(sfxStatus);
-    updateBattleField();
-    if (p.hp <= 0) {
-      turnEnded = true;
-      setTimeout(() => endWithWinner(1 - currentPlayer), tDelay(600));
-      return;
-    }
-  }
-
-  // Paralyse: 2 darts only
-  if (p.status === 'paralyse') {
-    p._maxDartsThisTurn = 2;
-    aSpeak('Paralysed! 2 darts only.');
-    flash('PARALYSED! 2 DARTS', 'var(--amber)');
-  }
-
-  // Decrement status duration
-  if (p.status) {
-    p.statusDurtn--;
-    if (p.statusDurtn <= 0) {
-      p.status = null;
-      p.statusDurtn = 0;
-    }
-  }
-
-  // Dart lost from previous bull steal
-  if (p.dartLostNext) {
-    p._maxDartsThisTurn = Math.max(1, p._maxDartsThisTurn - 1);
-    p.dartLostNext = false;
-    flash('DART STOLEN! Fewer darts this turn.', '#a78bfa');
-    aSpeak('A dart was stolen!');
-  }
-
-  // Finish mode: opponent has ≤ 20 HP — must hit exactly
   finishMode = false;
   finishTotal = 0;
   finishTarget = 0;
-  const oppForFinish = players[1 - currentPlayer];
-  if (oppForFinish.hp > 0 && oppForFinish.hp <= 20) {
-    finishMode = true;
-    finishTarget = oppForFinish.hp;
-    aSfx(sfxFinishMode);
-    flash(`FINISH! Hit ${finishTarget} exactly!`, 'var(--poke-yellow)');
-  }
 
   resetDartSlots();
   const nameEl = document.getElementById('turn-player-name');
   if (nameEl) { nameEl.textContent = p.name; nameEl.classList.toggle('cpu-turn', p.isCpu); }
   const subEl = document.getElementById('turn-sub');
-  if (subEl) subEl.textContent = p.isCpu ? 'Computer thinking...' : (finishMode ? `Hit ${finishTarget} EXACTLY` : 'Throw your darts');
+  if (subEl) subEl.textContent = p.isCpu ? 'Computer thinking...' : 'Throw your darts';
   applyTurnIndicator();
 
   updateBattleField();
   updateScoringGuide();
-  if (p.isCpu) setTimeout(() => runCpuTurn(), tDelay(finishMode ? 1500 : 2000));
+  if (p.isCpu) setTimeout(() => runCpuTurn(), tDelay(1200));
 }
 
 function advanceTurn() {
@@ -1308,96 +1238,38 @@ function startFinishModeWithRemainingDarts() {
 function registerDart(seg) {
   if (!gameActive || turnEnded) return;
   const p = players[currentPlayer];
+  const opp = players[1 - currentPlayer];
   if (currentDarts.length >= p._maxDartsThisTurn) return;
 
   saveState();
   p.dartsThrown++;
   const dartIdx = currentDarts.length;
 
-  // ── FINISH MODE ──────────────────────────────────────
-  if (finishMode) {
-    const num = seg ? Number(seg.number) : 0;
-    const mul = seg ? Number(seg.multiplier || 1) : 0;
+  const damage = segScore(seg);
+  const mul = seg ? Number(seg.multiplier || 1) : 0;
+  const label = damage > 0 ? `-${damage}` : 'Miss';
+  const slotClass = damage > 0 ? (mul === 3 || damage === 50 ? 'scored' : 'hit') : 'miss';
 
-    // Bull or Bullseye heals in finish mode
-    if (num === 25) {
-      const healAmt = mul === 2 ? 50 : 25;
-      p.hp = Math.min(p.maxHp, p.hp + healAmt);
-      p.totalHeal += healAmt;
-      aSfx(sfxPokeHeal);
-      flash(`+${healAmt} HP (${mul === 2 ? 'Bullseye' : 'Bull'} Heal!)`, 'var(--hp-green)');
-      aSpeak(`${healAmt} healed!`);
-      currentDarts.push({ label: `+${healAmt}HP`, type: 'heal', amount: healAmt, score: num * mul, mul });
-      updateDartSlot(dartIdx, `+${healAmt}HP`, 'heal');
-      updateBattleField();
-    } else if (!num || num === 0) {
-      aSfx(sfxMiss);
-      flash('Miss!', 'var(--muted)');
-      currentDarts.push({ label: 'Miss', type: 'miss', amount: 0, score: 0, mul: 0 });
-      updateDartSlot(dartIdx, 'Miss', 'miss');
-    } else {
-      // Face value only — multiplier ignored
-      finishTotal += num;
-      if (finishTotal > finishTarget) {
-        // Bust
-        aSfx(sfxBust);
-        flash('BUST! No finish!', 'var(--poke-red)');
-        aSpeak('Bust!');
-        currentDarts.push({ label: 'BUST!', type: 'miss', amount: 0, score: 0, mul });
-        updateDartSlot(dartIdx, 'BUST!', 'miss');
-        endFinishTurn();
-        return;
-      } else if (finishTotal === finishTarget) {
-        // Win!
-        players[1 - currentPlayer].hp = 0;
-        aSfx(sfxPokeDamage);
-        flash(`FINISH! ${finishTarget} EXACTLY! 🎯`, 'var(--gold)');
-        aSpeak('Finish!');
-        currentDarts.push({ label: `${num}✓`, type: 'crit', amount: num, score: num * mul, mul });
-        updateDartSlot(dartIdx, `${num}✓`, 'scored');
-        updateBattleField();
-        turnEnded = true;
-        setTimeout(() => endWithWinner(currentPlayer), tDelay(800));
-        return;
-      } else {
-        aSfx(sfxPokeDamage);
-        const rem = finishTarget - finishTotal;
-        flash(`${num} hit — need ${rem} more`, 'var(--amber)');
-        currentDarts.push({ label: `${num} (${finishTotal})`, type: 'hit', amount: num, score: num * mul, mul });
-        updateDartSlot(dartIdx, `${num}`, 'hit');
-        updateBattleField();
-      }
-    }
-
-    if (currentDarts.length >= p._maxDartsThisTurn) {
-      flash('No finish this turn', 'var(--muted)');
-      endFinishTurn();
-    }
-    return;
+  if (damage > 0) {
+    opp.hp = Math.max(0, opp.hp - damage);
+    p.totalDmg += damage;
+    aSfx(mul === 3 || damage === 50 ? sfxPokeCrit : sfxPokeDamage);
+    flash(`-${damage} HP`, 'var(--poke-red)');
+    aSpeak(`${damage} damage!`);
+  } else {
+    aSfx(sfxMiss);
+    flash('Miss!', 'var(--muted)');
   }
 
-  // ── NORMAL MODE ──────────────────────────────────────
-  const result = calcEffect(seg, p, players[1 - currentPlayer]);
-  applyTypeAdvantage(result, p, players[1 - currentPlayer]);
-  const wasEndured = applyEffect(result, currentPlayer);
-
-  const label = result.label || (result.type === 'miss' ? 'Miss' : String(result.amount));
-  let slotClass = 'hit';
-  if (result.type === 'miss') slotClass = 'miss';
-  else if (result.type === 'heal') slotClass = 'heal';
-  else if (result.type === 'status') slotClass = 'status';
-  else if (result.type === 'crit') slotClass = 'scored';
-
-  currentDarts.push({ label, type: result.type, amount: result.amount, score: result.score || 0, mul: result.mul || 0 });
+  currentDarts.push({ label, type: damage > 0 ? 'damage' : 'miss', amount: damage, score: damage, mul });
   updateDartSlot(dartIdx, label, slotClass);
 
-  if (result.type !== 'miss') checkEvolution(currentPlayer);
+  if (damage > 0) checkEvolution(currentPlayer);
   if (checkWin()) { turnEnded = true; return; }
   updateBattleField();
-  const startedFinish = startFinishModeWithRemainingDarts();
 
   const maxed = currentDarts.length >= p._maxDartsThisTurn;
-  if (maxed || (wasEndured && !startedFinish)) {
+  if (maxed) {
     checkEvolution(currentPlayer);
     turnEnded = true;
     if (!p.isCpu) {
@@ -1531,8 +1403,8 @@ function applyEffect(result, attackerIdx) {
       attacker.totalDmg += result.amount;
     }
     aSfx(sfxPokeDamage);
-    flash(`${result.typeBonus ? 'TYPE ADVANTAGE! ' : ''}-${result.amount} HP`, 'var(--poke-red)');
-    aSpeak(`${result.amount} damage${result.typeBonus ? ', type advantage!' : '!'}`);
+    flash(`-${result.amount} HP`, 'var(--poke-red)');
+    aSpeak(`${result.amount} damage!`);
   } else if (result.type === 'heal') {
     const healed = Math.min(attacker.maxHp - attacker.hp, result.amount);
     attacker.hp = Math.min(attacker.maxHp, attacker.hp + result.amount);
@@ -1547,8 +1419,8 @@ function applyEffect(result, attackerIdx) {
       attacker.totalDmg += result.amount;
     }
     aSfx(sfxPokeCrit);
-    flash(`${result.typeBonus ? 'TYPE ADVANTAGE! ' : ''}CRITICAL HIT! -${result.amount}`, '#ff4444');
-    aSpeak(`Critical hit! ${result.amount} damage${result.typeBonus ? ', type advantage!' : '!'}`);
+    flash(`CRITICAL HIT! -${result.amount}`, '#ff4444');
+    aSpeak(`Critical hit! ${result.amount} damage!`);
     if (result.statusInflict) {
       setTimeout(() => applyStatus(oi, result.statusInflict), tDelay(400));
     }
@@ -1560,7 +1432,6 @@ function applyEffect(result, attackerIdx) {
         opp.hp = Math.max(0, opp.hp - result.amount);
         attacker.totalDmg += result.amount;
       }
-      if (result.typeBonus) flash(`TYPE ADVANTAGE! -${result.amount} HP`, 'var(--poke-red)');
     }
     aSfx(sfxBull);
     if (result.statusInflict) {
@@ -1667,8 +1538,6 @@ function triggerMegaEvolution(playerIdx) {
   p.megaJustActivated = true;
   p.evolved = true;
   p.stage = p.pokemon.maxStage || p.stage || 1;
-  p.maxHp += 100;
-  p.hp = Math.min(p.hp + 100, p.maxHp);
   p.evoScoreOffset = 0;
   markCurrentEvolutionScoreUsed();
 
@@ -1682,7 +1551,7 @@ function triggerMegaEvolution(playerIdx) {
   }
 
   const newName = playerPokemonStageName(p);
-  flash(`${newName.toUpperCase()}! +100 HP`, 'var(--poke-yellow)');
+  flash(`${newName.toUpperCase()}!`, 'var(--poke-yellow)');
   aSpeak(`${newName}!`);
   aSfx(sfxEvolution);
   const sideEl = document.getElementById(`poke-side-${playerIdx}`);
@@ -1710,10 +1579,6 @@ function triggerEvolution(playerIdx, targetStage = 2) {
   p.evolved = true;
   p.stage = targetStage;
   const newName = playerPokemonStageName(p);
-  const hpGain = 50 * stageGain;
-  p.maxHp += hpGain;
-  p.hp = Math.min(p.hp + hpGain, p.maxHp);
-  p.dmgBoost += 5 * stageGain;
   p.evoScoreOffset = 0;
   markCurrentEvolutionScoreUsed();
 
@@ -1795,8 +1660,8 @@ async function endWithWinner(idx) {
   const legStr = legNumber > 0 ? `Leg ${legNumber + 1} · ` : '';
   document.getElementById('win-name').textContent = winner.name;
   document.getElementById('win-details').innerHTML =
-    `${legStr}${winner.pokemon.name} · ${gameMode.toUpperCase()}<br>` +
-    `<span style="font-size:14px;color:var(--muted)">Avg CP: ${winnerCp} · Dealt: ${winner.totalDmg} DMG · Healed: ${winner.totalHeal} HP</span>`;
+    `${legStr}${winner.pokemon.name} · ${startingHp} HP<br>` +
+    `<span style="font-size:14px;color:var(--muted)">Avg CP: ${winnerCp} · Dealt: ${winner.totalDmg} DMG</span>`;
 
   const othersEl = document.getElementById('win-others');
   if (othersEl) othersEl.innerHTML = `<div class="win-other-card">
@@ -1806,7 +1671,7 @@ async function endWithWinner(idx) {
   </div>`;
 
   players.forEach((p, i) => {
-    if (!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, avgCp(p), p.pokemon.name, gameMode);
+    if (!p.isCpu) savePlayerStat(p.name, p.flag, i === idx, avgCp(p), p.pokemon.name, `${startingHp} HP`);
   });
 
   if (!testMode) spawnConfetti();
@@ -1893,10 +1758,10 @@ function updateBattleField() {
   if (gameActive) {
     const p = players[currentPlayer];
     const hint = getTargetSuggestion(p);
-    const subText = p.isCpu ? 'CPU is thinking...' : (finishMode ? `Hit ${finishTarget - finishTotal} exactly` : 'Throw your darts');
+    const subText = p.isCpu ? 'CPU is thinking...' : 'Throw your darts';
     setActionZone(hint, subText);
     const az = document.querySelector('.action-zone');
-    if (az) az.classList.toggle('finish-mode', finishMode);
+    if (az) az.classList.remove('finish-mode');
   }
   applyTurnIndicator();
   updateEvolutionTarget();
@@ -1930,7 +1795,6 @@ function setActionZone(main, sub) {
 function updateEvolutionTarget() {
   const el = document.getElementById('evo-target');
   if (!el) return;
-  ensureTypeGuidePanel();
   const p = players[currentPlayer];
   if (!gameActive || !p || !p.pokemon) {
     el.textContent = '';
@@ -1965,69 +1829,13 @@ function updateScoringGuide() {
   }
   guide.classList.add('visible');
 
-  if (finishMode) {
-    const remaining = finishTarget - finishTotal;
-    grid.innerHTML = `
-      <div class="sg-item sg-mega" style="grid-column:1/-1;padding:16px;">
-        <div class="sg-type" style="font-size:13px;letter-spacing:3px;">⚡ FINISH MODE ⚡</div>
-        <div class="sg-value gold" style="font-size:28px;margin:6px 0;">${remaining} HP TO GO</div>
-        <div class="sg-label" style="color:var(--text);font-size:12px;">Face value only · Doubles &amp; Trebles = Single · Bull/Bullseye Heals you</div>
-      </div>`;
-    if (passiveEl) passiveEl.textContent = `Hit ${finishTarget} exactly to win! Total so far: ${finishTotal}`;
-    return;
-  }
-
-  const cls    = p.pokemon.cls;
-  const isWild = gameMode === 'wild';
-  const boost  = p.dmgBoost + xAttackBonus;
-  const bStr   = boost > 0 ? ` +${boost}` : '';
-  const isSni  = cls === 'Sniper';
-  const isTank = cls === 'Tank';
-  const isBraw = cls === 'Brawler';
-  const isStat = cls === 'Status';
-
   const rows = [
-    {
-      type: 'SINGLE ODD',
-      value: isWild ? `${10+boost}–${20+boost}` : `FACE VAL${bStr}${isBraw?' +10':''}`,
-      label: 'DAMAGE' + (isBraw ? ' (+10 BONUS)' : ''),
-      valCls: 'dmg', itemCls: 'sg-dmg',
-    },
-    {
-      type: 'SINGLE EVEN',
-      value: isWild ? '10–15' : 'FACE VAL',
-      label: 'HEAL',
-      valCls: 'heal', itemCls: 'sg-heal',
-    },
-    {
-      type: 'DOUBLE',
-      value: isWild ? `${25+boost}–${40+boost}` : `FACE ×2${bStr}`,
-      label: 'DAMAGE',
-      valCls: 'dmg', itemCls: 'sg-dmg',
-    },
-    {
-      type: 'TREBLE',
-      value: isWild
-        ? `${(isSni?52:45)+boost}–${(isSni?70:60)+boost}`
-        : `FACE ×${isSni?'3.5':'3'}${bStr}`,
-      label: 'DAMAGE' + (isSni ? ' (SNIPER ×3.5)' : ''),
-      valCls: 'dmg', itemCls: 'sg-dmg',
-    },
-    {
-      type: 'BULL',
-      value: isWild ? 'ITEM' : `25${bStr}`,
-      label: isWild
-        ? 'RANDOM ITEM' + (isStat ? ' + STATUS' : '')
-        : 'DMG + ITEM' + (isStat ? ' + STATUS' : ''),
-      valCls: isWild ? 'amber' : 'dmg',
-      itemCls: isWild ? 'sg-item-type' : 'sg-dmg',
-    },
-    {
-      type: 'BULLSEYE',
-      value: `${80+boost}`,
-      label: 'CRITICAL HIT' + (isStat ? ' + STATUS' : ''),
-      valCls: 'gold', itemCls: 'sg-mega',
-    },
+    { type: 'SINGLE', value: 'FACE', label: 'DAMAGE', valCls: 'dmg', itemCls: 'sg-dmg' },
+    { type: 'DOUBLE', value: 'FACE x2', label: 'DAMAGE', valCls: 'dmg', itemCls: 'sg-dmg' },
+    { type: 'TREBLE', value: 'FACE x3', label: 'DAMAGE', valCls: 'dmg', itemCls: 'sg-dmg' },
+    { type: 'BULL', value: '25', label: 'DAMAGE', valCls: 'dmg', itemCls: 'sg-dmg' },
+    { type: 'BULLSEYE', value: '50', label: 'DAMAGE', valCls: 'gold', itemCls: 'sg-mega' },
+    { type: 'MISS', value: '0', label: 'NO DAMAGE', valCls: 'amber', itemCls: 'sg-item-type' },
   ];
 
   grid.innerHTML = rows.map(it => `
@@ -2038,24 +1846,12 @@ function updateScoringGuide() {
     </div>`).join('');
 
   if (passiveEl) {
-    const typeLabel = playerPokemonTypeLabel(p);
-    passiveEl.textContent = `Type: ${typeLabel}${boost > 0 ? `  ·  Current DMG Boost: +${boost}` : ''}${p.megaActive ? `  ·  Mega turns left: ${p.megaTurnsLeft}` : ''}`;
+    passiveEl.textContent = `Type: ${playerPokemonTypeLabel(p)}. Every dart score is direct damage.`;
   }
 }
 
 function getTargetSuggestion(p) {
-  if (finishMode) {
-    const remaining = finishTarget - finishTotal;
-    return `⚡ FINISH! HIT ${remaining} EXACTLY`;
-  }
-  const cls = p.pokemon ? p.pokemon.cls : '';
-  if (cls === 'Sniper') return 'AIM FOR TREBLES';
-  if (cls === 'Tank' && gameMode === 'wild') return 'HIT EVENS TO HEAL';
-  if (cls === 'Tank' && gameMode === 'gym')  return 'HIGH EVENS TO HEAL';
-  if (cls === 'Brawler' && gameMode === 'wild') return 'HIT ODDS FOR +10 BONUS';
-  if (cls === 'Brawler' && gameMode === 'gym')  return 'HIGH ODDS FOR BONUS';
-  if (cls === 'Status') return 'HIT BULL FOR STATUS EFFECT';
-  return 'THROW YOUR DARTS';
+  return 'SCORE DAMAGE';
 }
 
 // =============================================
@@ -2070,36 +1866,9 @@ function runCpuTurn() {
   const sigmaOverride = tier ? tier.sigma : undefined;
 
   function cpuPickTarget() {
-    const opp = players[1 - currentPlayer];
-    const hpPct = p.hp / p.maxHp;
-    const oppPct = opp.hp / opp.maxHp;
-    const highTier = sigmaOverride !== undefined && sigmaOverride <= 18;
-    const wantsHeal = hpPct < 0.38 && oppPct > 0.22;
-
-    // Finish mode: aim for exactly the remaining amount
-    if (finishMode) {
-      const remaining = finishTarget - finishTotal;
-      return remaining >= 1 && remaining <= 20 ? remaining : 20;
-    }
-
-    if (gameMode === 'gym') {
-      const evens = [2,4,6,8,10,12,14,16,18,20];
-      const odds = [1,3,5,7,9,11,13,15,17,19];
-      if (wantsHeal) return highTier ? 20 : (cpu.mpr >= 1.5 ? 18 : evens[rand(0, evens.length - 1)]);
-      if (p.pokemon.cls === 'Status' && Math.random() < .2) return 25;
-      if (p.pokemon.cls === 'Sniper') return highTier ? 19 : 17;
-      return cpu.mpr >= 1.5 ? (Math.random() < .65 ? 19 : 17) : odds[rand(0, odds.length - 1)];
-    }
-
-    if (wantsHeal && highTier && Math.random() < .45) return 25;
-
-    // Status class: aim for bull to inflict status
-    if (p.pokemon.cls === 'Status' && Math.random() < .3) return 25;
-    // Sniper: treble of high number
-    if (p.pokemon.cls === 'Sniper') return cpu.mpr >= 2 ? 19 : 17;
-    // Wild: any odd for damage
-    const odds = [1,3,5,7,9,11,13,15,17,19];
-    return cpu.mpr >= 1.5 ? (Math.random() < .6 ? 19 : 17) : odds[rand(0, odds.length-1)];
+    if (cpu.mpr >= 3.0) return 20;
+    if (cpu.mpr >= 1.5) return Math.random() < .7 ? 20 : 19;
+    return [20,19,18,17,16][rand(0, 4)];
   }
 
   function doThrow(dartN, cb) {
@@ -2109,7 +1878,7 @@ function runCpuTurn() {
       prevSeg,
       dartsThrown: p.dartsThrown,
       sigmaOverride,
-      cricketAim: gameMode === 'gym',
+      cricketAim: true,
     });
     prevSeg = seg;
     registerDart(seg);
@@ -2514,8 +2283,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderRecentPlayers();
   initSpeech();
   initAutodarts(handleWS);
-  // Set default mode description
-  const vd = document.getElementById('variant-desc');
-  if (vd) vd.textContent = MODE_DESCS[gameMode];
   window.addEventListener('resize', () => { if (gameActive) updateBattleField(); });
 });

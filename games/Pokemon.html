@@ -9,22 +9,13 @@
 <script src="../assets/js/pokemon-autodarts.js?v=2"></script>
 <script src="../assets/js/pokemon-utils.js?v=2"></script>
 <script src="../assets/js/pokemon-bots.js?v=2"></script>
-<link rel="stylesheet" href="../assets/css/pokemon.css?v=16">
+<link rel="stylesheet" href="../assets/css/pokemon.css?v=17">
 </head>
 <body>
 
 <!-- SETUP -->
 <div id="setup" class="screen active">
   <div class="setup-title">POKÉMON DARTS 🎮</div>
-
-  <div class="setup-card">
-    <h3>Game Mode</h3>
-    <div class="variant-grid">
-      <button class="variant-btn sel" onclick="selectMode('wild',this)">Wild Encounter</button>
-      <button class="variant-btn" onclick="selectMode('gym',this)">Gym Battle</button>
-    </div>
-    <div class="variant-desc" id="variant-desc"></div>
-  </div>
 
   <div class="setup-card">
     <h3>Players <span style="color:var(--muted);font-size:12px;">(exactly 2)</span></h3>
@@ -34,6 +25,15 @@
       <button class="add-btn add-cpu-btn" onclick="openCpuModal()">+ Computer Player</button>
     </div>
     <div id="recent-players" class="recent-players"></div>
+  </div>
+
+  <div class="setup-card hp-setup-card">
+    <h3>Starting HP</h3>
+    <div class="hp-choice-grid">
+      <button class="hp-choice-btn sel" onclick="selectStartingHp(301,this)">301</button>
+      <button class="hp-choice-btn" onclick="selectStartingHp(401,this)">401</button>
+      <button class="hp-choice-btn" onclick="selectStartingHp(501,this)">501</button>
+    </div>
   </div>
 
   <button class="start-btn" id="start-btn" onclick="startGame()" disabled>START GAME</button>
@@ -360,6 +360,6 @@
 
 <div id="confetti"></div>
 <div id="announce"></div>
-<script src="../assets/js/pokemon.js?v=30"></script>
+<script src="../assets/js/pokemon.js?v=31"></script>
 </body>
 </html>
