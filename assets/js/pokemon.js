@@ -1353,12 +1353,13 @@ function advanceTurn() {
   let next = (currentPlayer + 1) % 2;
   if (next === 0) round++;
   currentPlayer = next;
+  const completedRound = next === 0 ? round - 1 : 0;
 
   updateBattleField();
   const guide = document.getElementById('scoring-guide');
   if (guide) guide.classList.remove('visible');
-  if (round > 1 && round % 4 === 0 && encounterPendingRound !== round) {
-    encounterPendingRound = round;
+  if (completedRound > 0 && completedRound % 3 === 0 && encounterPendingRound !== completedRound) {
+    encounterPendingRound = completedRound;
     setTimeout(() => {
       startWildEncounter();
       advancing = false;
