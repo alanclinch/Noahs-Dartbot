@@ -155,13 +155,9 @@ function rootPokemonIdForSelection(poke) {
   return id;
 }
 
-function stageOnePokemonForSelection(poke) {
+function basePokemonForSelection(poke) {
   const rootId = rootPokemonIdForSelection(poke);
-  const stageOneIds = (GEN1_EVOLUTIONS[rootId] || []).filter(id => GEN1_PRE_EVOLUTION_ID[id] === rootId);
-  if (!stageOneIds.length) return { ...(POKEMON_ROSTER.find(candidate => candidate.id === rootId) || poke), maxStage: 1 };
-  if (stageOneIds.includes(poke.id)) return { ...poke, maxStage: 1 };
-  const stageOneId = stageOneIds.length === 1 ? stageOneIds[0] : stageOneIds[rand(0, stageOneIds.length - 1)];
-  return { ...(POKEMON_ROSTER.find(candidate => candidate.id === stageOneId) || poke), maxStage: 1 };
+  return POKEMON_ROSTER.find(candidate => candidate.id === rootId) || poke;
 }
 
 const SECRET_POKEMON = {};
@@ -874,8 +870,12 @@ function assignRandomPokemon() {
     const j = rand(0, i);
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
+  const usedBaseIds = new Set();
   players.forEach((player, idx) => {
-    player.pokemon = stageOnePokemonForSelection(pool[idx]);
+    const rolled = pool.find(poke => !usedBaseIds.has(rootPokemonIdForSelection(poke))) || pool[idx];
+    const basePick = basePokemonForSelection(rolled);
+    usedBaseIds.add(basePick.id);
+    player.pokemon = basePick;
     player.shiny = false;
   });
 }
@@ -1049,7 +1049,7 @@ function registerDraftThrow(seg) {
 function completeDraft() {
   draftPhase = false;
   players.forEach(p => {
-    p.pokemon = stageOnePokemonForSelection(p.pokemon);
+    p.pokemon = basePokemonForSelection(p.pokemon);
     p.stage = 1;
     p.eeveeEvolution = null;
     p.branchEvolution = null;
