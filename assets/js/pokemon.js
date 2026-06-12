@@ -899,13 +899,27 @@ function teamPokemonRootIds() {
 
 function pickWildEncounterPokemon() {
   const usedRoots = teamPokemonRootIds();
-  const pool = BASE_STAGE_POKEMON_ROSTER.filter(poke => !usedRoots.has(pokemonLineRootId(poke)));
-  const source = pool.length ? pool : BASE_STAGE_POKEMON_ROSTER;
+  const pool = POKEMON_ROSTER.filter(poke => !usedRoots.has(pokemonLineRootId(poke)));
+  const source = pool.length ? pool : POKEMON_ROSTER;
   return source[rand(0, source.length - 1)];
 }
 
-function wildEncounterImgAttrs(poke) {
-  return pokemonImgAttrs(poke, false);
+function applyPokemonSpriteToImage(img, poke, evolved = false, shiny = false) {
+  const primary = pokemonSpriteUrl(poke, evolved, shiny);
+  const remote = remotePokemonSpriteUrl(poke, evolved, shiny);
+  const fallback = fallbackSpriteUrl(poke.cls);
+  const firstFallback = primary === remote ? fallback : remote;
+  img.onerror = function() {
+    this.onerror = function() {
+      this.onerror = null;
+      this.src = this.dataset.finalFallback;
+    };
+    this.src = this.dataset.fallback;
+  };
+  img.dataset.fallback = firstFallback;
+  img.dataset.finalFallback = fallback;
+  img.src = primary;
+  img.alt = poke.name;
 }
 
 function updateWildModal() {
@@ -920,10 +934,7 @@ function updateWildModal() {
   const s1 = document.getElementById('wild-score-1');
   if (modal) modal.classList.add('open');
   if (sprite) {
-    const attrs = wildEncounterImgAttrs(wildEncounter.pokemon);
-    const srcMatch = attrs.match(/src="([^"]+)"/);
-    sprite.src = srcMatch ? srcMatch[1] : localSpriteUrl(wildEncounter.pokemon.sid);
-    sprite.alt = wildEncounter.pokemon.name;
+    applyPokemonSpriteToImage(sprite, wildEncounter.pokemon);
   }
   if (name) name.textContent = wildEncounter.pokemon.name;
   if (p0) p0.textContent = players[0].name;
