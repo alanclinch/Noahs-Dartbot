@@ -476,6 +476,10 @@ function shinySpriteUrl(id) {
   if (id < 10000) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png`;
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${id}.png`;
 }
+function classicSpriteUrl(id, shiny = false) {
+  const folder = shiny ? 'shiny/' : '';
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${folder}${id}.png`;
+}
 function localSpriteUrl(id) {
   return `../assets/sprites/pokemon/pokemon-${id}.png?v=${POKEMON_SPRITE_VERSION}`;
 }
@@ -904,19 +908,20 @@ function pickWildEncounterPokemon() {
   return source[rand(0, source.length - 1)];
 }
 
-function applyPokemonSpriteToImage(img, poke, evolved = false, shiny = false) {
-  const primary = pokemonSpriteUrl(poke, evolved, shiny);
-  const remote = remotePokemonSpriteUrl(poke, evolved, shiny);
+function applyWildPokemonSpriteToImage(img, poke, evolved = false, shiny = false) {
+  const id = pokemonSpriteId(poke, evolved);
+  const primary = remotePokemonSpriteUrl(poke, evolved, shiny);
+  const classic = classicSpriteUrl(id, shiny);
   const fallback = fallbackSpriteUrl(poke.cls);
-  const firstFallback = primary === remote ? fallback : remote;
+  img.removeAttribute('src');
   img.onerror = function() {
     this.onerror = function() {
-      this.onerror = null;
       this.src = this.dataset.finalFallback;
+      this.onerror = null;
     };
     this.src = this.dataset.fallback;
   };
-  img.dataset.fallback = firstFallback;
+  img.dataset.fallback = classic;
   img.dataset.finalFallback = fallback;
   img.src = primary;
   img.alt = poke.name;
@@ -934,7 +939,7 @@ function updateWildModal() {
   const s1 = document.getElementById('wild-score-1');
   if (modal) modal.classList.add('open');
   if (sprite) {
-    applyPokemonSpriteToImage(sprite, wildEncounter.pokemon);
+    applyWildPokemonSpriteToImage(sprite, wildEncounter.pokemon);
   }
   if (name) name.textContent = wildEncounter.pokemon.name;
   if (p0) p0.textContent = players[0].name;
