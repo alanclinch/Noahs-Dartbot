@@ -262,6 +262,152 @@
   letter-spacing: 3px; text-align: center;
 }
 
+/* ===================== WILD ENCOUNTER ===================== */
+.wild-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(4, 14, 30, .82);
+  backdrop-filter: blur(3px);
+}
+.wild-modal.open { display: flex; }
+.wild-card {
+  position: relative;
+  width: min(560px, 94vw);
+  min-height: 520px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 214, 10, .8);
+  border-radius: 14px;
+  padding: 28px;
+  background: linear-gradient(180deg, rgba(19, 58, 91, .98), rgba(12, 34, 62, .98));
+  box-shadow: 0 0 36px rgba(0,0,0,.65), inset 0 0 24px rgba(255,214,10,.09);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.wild-grass {
+  position: absolute;
+  inset: auto -6% 0;
+  height: 180px;
+  background:
+    repeating-linear-gradient(72deg, transparent 0 11px, rgba(72, 187, 120, .88) 12px 18px, transparent 19px 30px),
+    repeating-linear-gradient(108deg, transparent 0 12px, rgba(34, 197, 94, .78) 13px 20px, transparent 21px 32px),
+    linear-gradient(180deg, transparent, rgba(20, 83, 45, .95) 44%, #14532d);
+  opacity: .92;
+}
+.wild-title {
+  position: relative;
+  z-index: 1;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--poke-yellow);
+  font-size: 16px;
+  line-height: 1.5;
+  text-align: center;
+}
+.wild-sprite {
+  position: relative;
+  z-index: 1;
+  width: 190px;
+  height: 190px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.55));
+  animation: wildHop 1.2s ease-in-out infinite;
+}
+.wild-name {
+  position: relative;
+  z-index: 1;
+  font-family: 'Orbitron', monospace;
+  color: #fff;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.wild-rule,
+.wild-prompt {
+  position: relative;
+  z-index: 1;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  text-align: center;
+}
+.wild-scoreboard {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.wild-score {
+  border: 2px solid var(--border2);
+  border-radius: 10px;
+  background: rgba(12,31,58,.72);
+  padding: 12px;
+  text-align: center;
+}
+.wild-score span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wild-score strong {
+  display: block;
+  margin-top: 6px;
+  color: var(--poke-yellow);
+  font-family: 'Orbitron', monospace;
+  font-size: 34px;
+}
+.wild-ball {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 52px;
+  width: 54px;
+  height: 54px;
+  border: 3px solid #111827;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 6px, #111827 7px 9px, transparent 10px),
+    linear-gradient(#ef4444 0 46%, #111827 47% 53%, #fff 54% 100%);
+  transform: translateX(-50%) translateY(120px) scale(.75);
+  opacity: 0;
+}
+.wild-ball.catch {
+  animation: pokeballCatch 1.6s ease-in-out forwards;
+}
+.poke-sprite.pokeball-switch {
+  animation: pokeballSwitchIn 1.2s ease-out forwards;
+}
+@keyframes wildHop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pokeballCatch {
+  0% { opacity: 0; transform: translateX(-50%) translateY(120px) scale(.75) rotate(0); }
+  18% { opacity: 1; transform: translateX(-50%) translateY(-150px) scale(1) rotate(240deg); }
+  38% { transform: translateX(-50%) translateY(-70px) scale(1) rotate(480deg); }
+  58% { transform: translateX(-50%) translateY(-76px) scale(1) rotate(455deg); }
+  72% { transform: translateX(-50%) translateY(-70px) scale(1) rotate(505deg); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(-70px) scale(1) rotate(480deg); }
+}
+@keyframes pokeballSwitchIn {
+  0% { opacity: 0; transform: scale(.15); filter: brightness(7) drop-shadow(0 0 24px #fff); }
+  55% { opacity: 1; transform: scale(1.12); filter: brightness(3) drop-shadow(0 0 26px rgba(255,255,255,.9)); }
+  100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 4px 12px rgba(0,0,0,.5)); }
+}
+
 /* ===================== GAME SCREEN ===================== */
 #game { flex-direction: row; height: 100vh; overflow: hidden; }
 

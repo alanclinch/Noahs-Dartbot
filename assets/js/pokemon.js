@@ -199,6 +199,9 @@ let keypadMod = 1;
 let finishMode = false;
 let finishTarget = 0;
 let finishTotal = 0;
+let encounterActive = false;
+let encounterPendingRound = null;
+let wildEncounter = null;
 
 // Test/audio settings
 let testMode = false;
@@ -751,6 +754,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
   return {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
+    backupPokemon: null,
     branchEvolution: null,
     megaActive: false, megaTurnsLeft: 0, megaJustActivated: false, megaPick: null, megaBaseStage: null,
     evoScoreOffset: 0,
@@ -880,12 +884,171 @@ function assignRandomPokemon() {
   });
 }
 
+function pokemonLineRootId(poke) {
+  return rootPokemonIdForSelection(poke);
+}
+
+function teamPokemonRootIds() {
+  const ids = new Set();
+  players.forEach(p => {
+    if (p.pokemon) ids.add(pokemonLineRootId(p.pokemon));
+    if (p.backupPokemon && p.backupPokemon.pokemon) ids.add(pokemonLineRootId(p.backupPokemon.pokemon));
+  });
+  return ids;
+}
+
+function pickWildEncounterPokemon() {
+  const usedRoots = teamPokemonRootIds();
+  const pool = BASE_STAGE_POKEMON_ROSTER.filter(poke => !usedRoots.has(pokemonLineRootId(poke)));
+  const source = pool.length ? pool : BASE_STAGE_POKEMON_ROSTER;
+  return source[rand(0, source.length - 1)];
+}
+
+function wildEncounterImgAttrs(poke) {
+  return pokemonImgAttrs(poke, false);
+}
+
+function updateWildModal() {
+  if (!wildEncounter) return;
+  const modal = document.getElementById('wild-modal');
+  const sprite = document.getElementById('wild-sprite');
+  const name = document.getElementById('wild-name');
+  const prompt = document.getElementById('wild-prompt');
+  const p0 = document.getElementById('wild-player-0');
+  const p1 = document.getElementById('wild-player-1');
+  const s0 = document.getElementById('wild-score-0');
+  const s1 = document.getElementById('wild-score-1');
+  if (modal) modal.classList.add('open');
+  if (sprite) {
+    const attrs = wildEncounterImgAttrs(wildEncounter.pokemon);
+    const srcMatch = attrs.match(/src="([^"]+)"/);
+    sprite.src = srcMatch ? srcMatch[1] : localSpriteUrl(wildEncounter.pokemon.sid);
+    sprite.alt = wildEncounter.pokemon.name;
+  }
+  if (name) name.textContent = wildEncounter.pokemon.name;
+  if (p0) p0.textContent = players[0].name;
+  if (p1) p1.textContent = players[1].name;
+  if (s0) s0.textContent = wildEncounter.scores[0];
+  if (s1) s1.textContent = wildEncounter.scores[1];
+  if (prompt) {
+    const p = players[wildEncounter.playerIdx];
+    const dartNo = wildEncounter.darts[wildEncounter.playerIdx].length + 1;
+    prompt.textContent = `${p.name}: dart ${dartNo} of 3`;
+  }
+}
+
+function startWildEncounter() {
+  encounterActive = true;
+  finishMode = false;
+  currentDarts = [];
+  seenThrows = 0;
+  turnEnded = false;
+  const first = currentPlayer;
+  wildEncounter = {
+    pokemon: pickWildEncounterPokemon(),
+    scores: [0, 0],
+    darts: [[], []],
+    playerIdx: first,
+    order: [first, 1 - first],
+    resumePlayer: first,
+  };
+  resetDartSlots();
+  updateWildModal();
+  const guide = document.getElementById('scoring-guide');
+  if (guide) guide.classList.remove('visible');
+  setActionZone('WILD POKEMON APPEARED!', 'Highest 3-dart total catches it');
+  aSpeak(`A wild ${voicePokemonName(wildEncounter.pokemon)} appeared!`, true);
+  if (players[currentPlayer].isCpu) setTimeout(() => runCpuTurn(), tDelay(900));
+}
+
+function registerEncounterDart(seg) {
+  if (!encounterActive || !wildEncounter || turnEnded) return;
+  const p = players[currentPlayer];
+  const score = segScore(seg);
+  const dartIdx = wildEncounter.darts[currentPlayer].length;
+  wildEncounter.darts[currentPlayer].push(score);
+  wildEncounter.scores[currentPlayer] += score;
+  const label = score > 0 ? `+${score}` : 'Miss';
+  updateDartSlot(dartIdx, label, score > 0 ? 'scored' : 'miss');
+  if (score > 0) {
+    const hitSfx = (typeof sfxHit !== 'undefined') ? sfxHit : sfxPokeDamage;
+    aSfx(score >= 50 ? sfxPokeCrit : hitSfx);
+    flash(`+${score}`, 'var(--poke-yellow)');
+  } else {
+    aSfx(sfxMiss);
+    flash('Miss!', 'var(--muted)');
+  }
+  updateWildModal();
+
+  if (wildEncounter.darts[currentPlayer].length < 3) return;
+
+  const orderIdx = wildEncounter.order.indexOf(currentPlayer);
+  if (orderIdx === 0) {
+    turnEnded = true;
+    const next = wildEncounter.order[1];
+    setTimeout(() => {
+      currentPlayer = next;
+      wildEncounter.playerIdx = next;
+      currentDarts = [];
+      seenThrows = 0;
+      turnEnded = false;
+      resetDartSlots();
+      updateWildModal();
+      if (players[currentPlayer].isCpu) setTimeout(() => runCpuTurn(), tDelay(700));
+    }, tDelay(700));
+    return;
+  }
+
+  turnEnded = true;
+  setTimeout(() => finishWildEncounter(), tDelay(700));
+}
+
+function finishWildEncounter() {
+  if (!wildEncounter) return;
+  let winnerIdx = wildEncounter.scores[0] >= wildEncounter.scores[1] ? 0 : 1;
+  if (wildEncounter.scores[0] === wildEncounter.scores[1]) {
+    winnerIdx = wildEncounter.order[0];
+  }
+  const winner = players[winnerIdx];
+  winner.backupPokemon = {
+    pokemon: wildEncounter.pokemon,
+    hp: 111,
+    maxHp: 111,
+    stage: 1,
+    shiny: false,
+  };
+  const ball = document.getElementById('wild-ball');
+  if (ball) {
+    ball.classList.remove('catch');
+    void ball.offsetWidth;
+    ball.classList.add('catch');
+  }
+  flash(`${winner.name} caught ${wildEncounter.pokemon.name}!`, 'var(--poke-yellow)');
+  aSpeak(`${winner.name} caught ${voicePokemonName(wildEncounter.pokemon)}!`, true);
+  aSfx(sfxEvolution);
+  setTimeout(() => {
+    const resumePlayer = wildEncounter ? wildEncounter.resumePlayer : currentPlayer;
+    const modal = document.getElementById('wild-modal');
+    if (modal) modal.classList.remove('open');
+    encounterActive = false;
+    wildEncounter = null;
+    turnEnded = false;
+    currentDarts = [];
+    seenThrows = 0;
+    currentPlayer = resumePlayer;
+    encounterPendingRound = null;
+    updateBattleField();
+    startTurn();
+  }, tDelay(1800));
+}
+
 function launchLeg() {
   document.getElementById('confetti').innerHTML = '';
 
   // Reset player state (keep name/flag/color/isCpu/cpuData)
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
+    p.backupPokemon = null;
     p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
@@ -905,6 +1068,9 @@ function launchLeg() {
   finishMode = false;
   finishTarget = 0;
   finishTotal = 0;
+  encounterActive = false;
+  encounterPendingRound = null;
+  wildEncounter = null;
 
   completeDraft();
 }
@@ -1191,6 +1357,14 @@ function advanceTurn() {
   updateBattleField();
   const guide = document.getElementById('scoring-guide');
   if (guide) guide.classList.remove('visible');
+  if (round > 1 && round % 4 === 0 && encounterPendingRound !== round) {
+    encounterPendingRound = round;
+    setTimeout(() => {
+      startWildEncounter();
+      advancing = false;
+    }, tDelay(600));
+    return;
+  }
   setTimeout(() => {
     const callName = players[currentPlayer].isCpu ? players[currentPlayer].name.split(' ')[0] : players[currentPlayer].name;
     aSpeak(callName);
@@ -1242,6 +1416,10 @@ function startFinishModeWithRemainingDarts() {
 // DART REGISTRATION
 // =============================================
 function registerDart(seg) {
+  if (encounterActive) {
+    registerEncounterDart(seg);
+    return;
+  }
   if (!gameActive || turnEnded) return;
   const p = players[currentPlayer];
   const opp = players[1 - currentPlayer];
@@ -1619,10 +1797,50 @@ function triggerEvolution(playerIdx, targetStage = 2) {
 // =============================================
 // WIN CHECK
 // =============================================
+function switchInBackupPokemon(playerIdx) {
+  const p = players[playerIdx];
+  const backup = p && p.backupPokemon;
+  if (!backup || !backup.pokemon) return false;
+  p.pokemon = backup.pokemon;
+  p.hp = backup.hp || 111;
+  p.maxHp = backup.maxHp || 111;
+  p.stage = backup.stage || 1;
+  p.shiny = !!backup.shiny;
+  p.eeveeEvolution = null;
+  p.branchEvolution = null;
+  p.megaActive = false;
+  p.megaTurnsLeft = 0;
+  p.megaJustActivated = false;
+  p.megaPick = null;
+  p.megaBaseStage = null;
+  p.evoScoreOffset = 0;
+  p.dmgBoost = 0;
+  p.evolved = false;
+  p.evolvedSprite = false;
+  p.status = null;
+  p.statusDurtn = 0;
+  p.dartLostNext = false;
+  p.backupPokemon = null;
+
+  updateBattleField();
+  const img = document.getElementById(`sprite-${playerIdx}`);
+  if (img) {
+    img.classList.remove('pokeball-switch');
+    void img.offsetWidth;
+    img.classList.add('pokeball-switch');
+    setTimeout(() => img.classList.remove('pokeball-switch'), tDelay(1300));
+  }
+  flash(`${p.pokemon.name} joins the battle!`, 'var(--poke-yellow)');
+  aSpeak(`${voicePokemonName(p.pokemon)} joins the battle!`, true);
+  aSfx(sfxEvolution);
+  return true;
+}
+
 function checkWin() {
   const opp = players[1 - currentPlayer];
   if (opp.hp <= 0) {
     opp.hp = 0;
+    if (switchInBackupPokemon(1 - currentPlayer)) return false;
     updateBattleField();
     setTimeout(() => endWithWinner(currentPlayer), tDelay(600));
     return true;
@@ -1902,6 +2120,7 @@ function saveState() {
     players: players.map(p => ({
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
+      backupPokemon: p.backupPokemon ? { ...p.backupPokemon } : null,
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
       megaPick: p.megaPick || null, megaBaseStage: p.megaBaseStage || null,
       evoScoreOffset: p.evoScoreOffset || 0,
@@ -1933,6 +2152,7 @@ function undoLastDart() {
   last.players.forEach((saved, i) => {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
+    p.backupPokemon = saved.backupPokemon || null;
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
     p.megaPick = saved.megaPick || null; p.megaBaseStage = saved.megaBaseStage || null;
     p.evoScoreOffset = saved.evoScoreOffset || 0;
