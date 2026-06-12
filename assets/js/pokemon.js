@@ -120,7 +120,7 @@ function buildGen1Pokemon(entry) {
     cls: classForGen1Pokemon(types, id),
     baseHp: 150,
     sid: id,
-    maxStage: evo.length ? evo.length + 1 : 1,
+    maxStage: evo.length ? 2 : 1,
   };
   if (id === 133) {
     poke.maxStage = 2;
@@ -143,6 +143,26 @@ function buildGen1Pokemon(entry) {
 }
 
 const POKEMON_ROSTER = GEN1_POKEMON_DATA.map(buildGen1Pokemon);
+const GEN1_EVOLVED_IDS = new Set(Object.values(GEN1_EVOLUTIONS).flat());
+const BASE_STAGE_POKEMON_ROSTER = POKEMON_ROSTER.filter(poke => !GEN1_EVOLVED_IDS.has(poke.id));
+const GEN1_PRE_EVOLUTION_ID = Object.fromEntries(
+  Object.entries(GEN1_EVOLUTIONS).flatMap(([fromId, toIds]) => toIds.map(toId => [toId, Number(fromId)]))
+);
+
+function rootPokemonIdForSelection(poke) {
+  let id = poke && poke.id;
+  while (GEN1_PRE_EVOLUTION_ID[id]) id = GEN1_PRE_EVOLUTION_ID[id];
+  return id;
+}
+
+function stageOnePokemonForSelection(poke) {
+  const rootId = rootPokemonIdForSelection(poke);
+  const stageOneIds = (GEN1_EVOLUTIONS[rootId] || []).filter(id => GEN1_PRE_EVOLUTION_ID[id] === rootId);
+  if (!stageOneIds.length) return { ...(POKEMON_ROSTER.find(candidate => candidate.id === rootId) || poke), maxStage: 1 };
+  if (stageOneIds.includes(poke.id)) return { ...poke, maxStage: 1 };
+  const stageOneId = stageOneIds.length === 1 ? stageOneIds[0] : stageOneIds[rand(0, stageOneIds.length - 1)];
+  return { ...(POKEMON_ROSTER.find(candidate => candidate.id === stageOneId) || poke), maxStage: 1 };
+}
 
 const SECRET_POKEMON = {};
 
@@ -855,7 +875,7 @@ function assignRandomPokemon() {
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
   players.forEach((player, idx) => {
-    player.pokemon = pool[idx];
+    player.pokemon = stageOnePokemonForSelection(pool[idx]);
     player.shiny = false;
   });
 }
@@ -890,12 +910,12 @@ function launchLeg() {
 }
 
 function draftPageCount() {
-  return Math.ceil(POKEMON_ROSTER.length / 20);
+  return Math.ceil(BASE_STAGE_POKEMON_ROSTER.length / 20);
 }
 
 function draftPageRange() {
   const start = draftPage * 20;
-  const end = Math.min(start + 20, POKEMON_ROSTER.length);
+  const end = Math.min(start + 20, BASE_STAGE_POKEMON_ROSTER.length);
   return { start, end };
 }
 
@@ -903,7 +923,7 @@ function buildDraftMap() {
   draftMap = {};
   const { start, end } = draftPageRange();
   for (let i = start; i < end; i++) {
-    draftMap[(i - start) + 1] = POKEMON_ROSTER[i];
+    draftMap[(i - start) + 1] = BASE_STAGE_POKEMON_ROSTER[i];
   }
 }
 
@@ -918,7 +938,7 @@ function changeDraftPage(delta) {
 }
 
 function showDraftPageForPokemon(poke) {
-  const idx = POKEMON_ROSTER.findIndex(p => p.id === poke.id);
+  const idx = BASE_STAGE_POKEMON_ROSTER.findIndex(p => p.id === poke.id);
   if (idx < 0) return;
   draftPage = Math.floor(idx / 20);
   buildDraftMap();
@@ -1013,7 +1033,7 @@ function registerDraftThrow(seg) {
     if (players[1].isCpu) {
       // CPU auto-picks after delay
       setTimeout(() => {
-        const remaining = POKEMON_ROSTER.filter(poke => !players.some(p => p.pokemon && p.pokemon.id === poke.id));
+        const remaining = BASE_STAGE_POKEMON_ROSTER.filter(poke => !players.some(p => p.pokemon && p.pokemon.id === poke.id));
         const cpuPick = remaining[rand(0, remaining.length - 1)];
         showDraftPageForPokemon(cpuPick);
         const pick = Number(Object.keys(draftMap).find(n => draftMap[n] && draftMap[n].id === cpuPick.id));
@@ -1028,6 +1048,14 @@ function registerDraftThrow(seg) {
 
 function completeDraft() {
   draftPhase = false;
+  players.forEach(p => {
+    p.pokemon = stageOnePokemonForSelection(p.pokemon);
+    p.stage = 1;
+    p.eeveeEvolution = null;
+    p.branchEvolution = null;
+    p.evolved = false;
+    p.evolvedSprite = false;
+  });
   buildVSScreen();
   showScreen('vs-screen');
   setTimeout(() => {
@@ -1490,12 +1518,11 @@ function markCurrentEvolutionScoreUsed() {
 function checkEvolution(playerIdx) {
   const p = players[playerIdx];
   if (p.pokemon.name === 'Eevee' && p.stage > 1) return;
-  const maxStage = p.pokemon.maxStage || 3;
+  const maxStage = p.pokemon.maxStage || 2;
   const turnScore = currentTurnEvolutionScore();
   if ((p.stage || 1) >= maxStage) return;
   let targetStage = p.stage;
   if (p.stage < 2 && turnScore >= 30) targetStage = 2;
-  else if (p.stage === 2 && turnScore >= 45) targetStage = 3;
   targetStage = Math.min(targetStage, maxStage);
   if (targetStage > p.stage) triggerEvolution(playerIdx, targetStage);
 }
@@ -1778,8 +1805,6 @@ function updateEvolutionTarget() {
   el.classList.remove('mega-target');
   if ((p.stage || 1) < 2) {
     el.textContent = `Evolution: ${turnScore}/30 total this turn`;
-  } else if ((p.stage || 1) < (p.pokemon.maxStage || 3)) {
-    el.textContent = `Final Evolution: ${turnScore}/45 total this turn`;
   } else {
     el.textContent = 'Fully evolved';
   }
