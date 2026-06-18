@@ -1009,6 +1009,14 @@ function startWildEncounter() {
   if (players[currentPlayer].isCpu) setTimeout(() => runCpuTurn(), tDelay(900));
 }
 
+function skipToCatch() {
+  if (!gameActive || draftPhase || encounterActive || wildEncounter) return;
+  if (missTimer) { clearTimeout(missTimer); missTimer = null; }
+  advancing = false;
+  encounterPendingRound = `test-${Date.now()}`;
+  startWildEncounter();
+}
+
 function registerEncounterDart(seg) {
   if (!encounterActive || !wildEncounter || turnEnded) return;
   const p = players[currentPlayer];

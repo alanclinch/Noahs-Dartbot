@@ -797,6 +797,28 @@
 .kp-undo        { border-color: var(--amber); color: #fff; }
 .kp-undo:hover  { background: rgba(251,191,36,.1); border-color: var(--amber); }
 
+.catch-test-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 2px solid rgba(255, 214, 10, .78);
+  border-radius: 8px;
+  background: rgba(255, 214, 10, .08);
+  color: var(--poke-yellow);
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .18s, background .18s, color .18s;
+}
+.catch-test-btn:hover {
+  border-color: var(--poke-yellow);
+  background: rgba(255, 214, 10, .15);
+  color: #fff;
+}
+
 .evo-target {
   width: 100%;
   margin-top: 10px;
