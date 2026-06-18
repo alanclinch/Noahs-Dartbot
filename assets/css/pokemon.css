@@ -487,6 +487,7 @@
   display: flex; flex-direction: column;
   align-items: center; gap: 10px;
   height: 100%; justify-content: center;
+  position: relative;
 }
 .poke-player-tag { font-size: 13px; color: var(--text); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
 .poke-name-tag {
@@ -726,6 +727,56 @@
 .poke-side { transition: box-shadow .25s, border-color .25s; border: 2px solid transparent; border-radius: 12px; }
 .poke-side.active-side-p0 { border-color: var(--p1-color, #e84040); box-shadow: inset 0 0 24px rgba(232,64,64,.15), 0 0 14px rgba(232,64,64,.25); }
 .poke-side.active-side-p1 { border-color: var(--p2-color, #4080e8); box-shadow: inset 0 0 24px rgba(64,128,232,.15), 0 0 14px rgba(64,128,232,.25); }
+
+.caught-strip {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: repeat(5, 42px);
+  gap: 8px;
+  padding: 9px 7px;
+  border: 2px solid rgba(124, 170, 219, .5);
+  border-radius: 12px;
+  background: rgba(12, 31, 58, .56);
+  box-shadow: inset 0 0 14px rgba(96, 165, 250, .08), 0 0 18px rgba(0,0,0,.18);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.caught-strip-p0 { right: 12px; }
+.caught-strip-p1 { left: 12px; }
+.caught-slot {
+  width: 42px;
+  height: 42px;
+  border: 2px solid rgba(124, 170, 219, .55);
+  border-radius: 50%;
+  background: rgba(7,18,38,.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.caught-slot.empty::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 2px solid #111827;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #fff 0 3px, #111827 4px 5px, transparent 6px),
+    linear-gradient(#ef4444 0 46%, #111827 47% 53%, #f8fafc 54% 100%);
+  box-shadow: 0 2px 7px rgba(0,0,0,.35);
+}
+.caught-slot.filled {
+  border-color: rgba(255, 214, 10, .78);
+  background: radial-gradient(circle, rgba(255,214,10,.18), rgba(12,31,58,.74));
+}
+.caught-slot img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.45));
+}
 
 .keypad-wrap {
   display: flex; flex-direction: column; gap: 5px;

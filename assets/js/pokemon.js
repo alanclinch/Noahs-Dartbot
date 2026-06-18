@@ -588,6 +588,23 @@ function setPlayerPokemonSprite(img, player) {
   img.src = primary;
 }
 
+function renderCaughtPokemonStrip(playerIdx) {
+  const strip = document.getElementById(`caught-strip-${playerIdx}`);
+  const player = players[playerIdx];
+  if (!strip || !player) return;
+  const caught = Array.isArray(player.caughtPokemon) ? player.caughtPokemon.slice(0, 5) : [];
+  strip.innerHTML = Array.from({ length: 5 }, (_, idx) => {
+    const entry = caught[idx];
+    if (!entry || !entry.pokemon) return '<div class="caught-slot empty"></div>';
+    return `<div class="caught-slot filled"><img ${pokemonImgAttrs(entry.pokemon, false)} alt="${escapeHTML(entry.pokemon.name)}" loading="lazy"></div>`;
+  }).join('');
+}
+
+function updateCaughtPokemonStrips() {
+  renderCaughtPokemonStrip(0);
+  renderCaughtPokemonStrip(1);
+}
+
 function isMegaPokemon(player) {
   return !!(player && player.pokemon && player.pokemon.megaEvolution);
 }
@@ -759,6 +776,7 @@ function makePlayer(name, color, flag, isCpu, cpuData) {
     name, color, flag, isCpu, cpuData,
     pokemon: null, hp: 0, maxHp: 0, stage: 1, eeveeEvolution: null,
     backupPokemon: null,
+    caughtPokemon: [],
     branchEvolution: null,
     megaActive: false, megaTurnsLeft: 0, megaJustActivated: false, megaPick: null, megaBaseStage: null,
     evoScoreOffset: 0,
@@ -1049,6 +1067,11 @@ function finishWildEncounter() {
     stage: 1,
     shiny: false,
   };
+  if (!Array.isArray(winner.caughtPokemon)) winner.caughtPokemon = [];
+  if (winner.caughtPokemon.length < 5) {
+    winner.caughtPokemon.push({ pokemon: wildEncounter.pokemon, shiny: false });
+  }
+  updateCaughtPokemonStrips();
   const ball = document.getElementById('wild-ball');
   if (ball) {
     ball.classList.remove('catch');
@@ -1081,6 +1104,7 @@ function launchLeg() {
   players.forEach(p => {
     p.pokemon = null; p.hp = 0; p.maxHp = 0; p.stage = 1; p.eeveeEvolution = null; p.branchEvolution = null;
     p.backupPokemon = null;
+    p.caughtPokemon = [];
     p.megaActive = false; p.megaTurnsLeft = 0; p.megaJustActivated = false; p.megaPick = null; p.megaBaseStage = null; p.evoScoreOffset = 0; p.shiny = false;
     p.dmgBoost = 0; p.evolved = false; p.evolvedSprite = false;
     p.status = null; p.statusDurtn = 0; p.dartLostNext = false;
@@ -1328,6 +1352,7 @@ function buildBattleUI() {
   resetDartSlots();
   const nextBtn = document.getElementById('next-player-btn');
   if (nextBtn) nextBtn.style.display = 'none';
+  updateCaughtPokemonStrips();
 }
 
 // =============================================
@@ -1390,7 +1415,7 @@ function advanceTurn() {
   updateBattleField();
   const guide = document.getElementById('scoring-guide');
   if (guide) guide.classList.remove('visible');
-  if (completedRound > 0 && completedRound % 4 === 0 && encounterPendingRound !== completedRound) {
+  if (completedRound > 0 && completedRound % 7 === 0 && encounterPendingRound !== completedRound) {
     encounterPendingRound = completedRound;
     setTimeout(() => {
       startWildEncounter();
@@ -2154,6 +2179,7 @@ function saveState() {
       hp: p.hp, maxHp: p.maxHp, stage: p.stage, eeveeEvolution: p.eeveeEvolution, dmgBoost: p.dmgBoost,
       evolved: p.evolved, evolvedSprite: p.evolvedSprite, shiny: p.shiny, branchEvolution: p.branchEvolution,
       backupPokemon: p.backupPokemon ? { ...p.backupPokemon } : null,
+      caughtPokemon: Array.isArray(p.caughtPokemon) ? p.caughtPokemon.map(entry => ({ ...entry })) : [],
       megaActive: p.megaActive, megaTurnsLeft: p.megaTurnsLeft, megaJustActivated: p.megaJustActivated,
       megaPick: p.megaPick || null, megaBaseStage: p.megaBaseStage || null,
       evoScoreOffset: p.evoScoreOffset || 0,
@@ -2186,6 +2212,7 @@ function undoLastDart() {
     const p = players[i];
     p.hp = saved.hp; p.maxHp = saved.maxHp; p.stage = saved.stage || 1; p.eeveeEvolution = saved.eeveeEvolution || null; p.branchEvolution = saved.branchEvolution || null;
     p.backupPokemon = saved.backupPokemon || null;
+    p.caughtPokemon = Array.isArray(saved.caughtPokemon) ? saved.caughtPokemon : [];
     p.megaActive = !!saved.megaActive; p.megaTurnsLeft = saved.megaTurnsLeft || 0; p.megaJustActivated = !!saved.megaJustActivated;
     p.megaPick = saved.megaPick || null; p.megaBaseStage = saved.megaBaseStage || null;
     p.evoScoreOffset = saved.evoScoreOffset || 0;
@@ -2207,6 +2234,7 @@ function undoLastDart() {
     updateDartSlot(idx, d.label, cls);
   });
   updateBattleField();
+  updateCaughtPokemonStrips();
   updateScoringGuide();
   const nameEl = document.getElementById('turn-player-name');
   if (nameEl) { nameEl.textContent = players[currentPlayer].name; nameEl.classList.toggle('cpu-turn', players[currentPlayer].isCpu); }
