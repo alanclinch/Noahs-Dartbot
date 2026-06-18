@@ -263,42 +263,97 @@
 }
 
 /* ===================== WILD ENCOUNTER ===================== */
+.battle-area {
+  position: relative;
+}
+
 .wild-modal {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 950;
+  z-index: 40;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(4, 14, 30, .82);
-  backdrop-filter: blur(3px);
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  pointer-events: none;
 }
 .wild-modal.open { display: flex; }
 .wild-card {
   position: relative;
   width: min(560px, 94vw);
-  min-height: 520px;
+  min-height: 470px;
   overflow: hidden;
   border: 3px solid rgba(255, 214, 10, .8);
   border-radius: 14px;
-  padding: 28px;
-  background: linear-gradient(180deg, rgba(19, 58, 91, .98), rgba(12, 34, 62, .98));
+  padding: 26px 30px 30px;
+  background:
+    radial-gradient(circle at 50% 33%, rgba(96, 165, 250, .13), transparent 35%),
+    linear-gradient(180deg, rgba(25, 75, 115, .98) 0%, rgba(18, 58, 88, .98) 62%, rgba(23, 83, 51, .98) 100%);
   box-shadow: 0 0 36px rgba(0,0,0,.65), inset 0 0 24px rgba(255,214,10,.09);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  pointer-events: auto;
+}
+
+#poke-panel,
+#poke-panel .keypad-wrap,
+#poke-panel .kp-btn,
+#poke-panel .end-btn {
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto;
 }
 .wild-grass {
   position: absolute;
-  inset: auto -6% 0;
-  height: 180px;
+  z-index: 0;
+  inset: auto -3% 0;
+  height: 104px;
   background:
-    repeating-linear-gradient(72deg, transparent 0 11px, rgba(72, 187, 120, .88) 12px 18px, transparent 19px 30px),
-    repeating-linear-gradient(108deg, transparent 0 12px, rgba(34, 197, 94, .78) 13px 20px, transparent 21px 32px),
-    linear-gradient(180deg, transparent, rgba(20, 83, 45, .95) 44%, #14532d);
-  opacity: .92;
+    radial-gradient(ellipse at 18% 100%, rgba(82, 185, 74, .85) 0 28%, transparent 29%),
+    radial-gradient(ellipse at 44% 105%, rgba(43, 143, 61, .92) 0 34%, transparent 35%),
+    radial-gradient(ellipse at 72% 100%, rgba(92, 196, 84, .8) 0 27%, transparent 28%),
+    linear-gradient(180deg, rgba(94, 176, 75, .08) 0%, rgba(43, 137, 57, .78) 54%, #14532d 100%);
+  opacity: .98;
+  pointer-events: none;
+}
+.wild-grass::before,
+.wild-grass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+.wild-grass::before {
+  background:
+    radial-gradient(ellipse at 7% 100%, rgba(110, 210, 91, .82) 0 8px, transparent 9px),
+    radial-gradient(ellipse at 16% 100%, rgba(38, 132, 55, .95) 0 12px, transparent 13px),
+    radial-gradient(ellipse at 27% 100%, rgba(130, 218, 103, .78) 0 9px, transparent 10px),
+    radial-gradient(ellipse at 39% 100%, rgba(42, 143, 58, .92) 0 13px, transparent 14px),
+    radial-gradient(ellipse at 52% 100%, rgba(123, 215, 99, .78) 0 10px, transparent 11px),
+    radial-gradient(ellipse at 66% 100%, rgba(41, 135, 58, .94) 0 12px, transparent 13px),
+    radial-gradient(ellipse at 79% 100%, rgba(130, 220, 104, .76) 0 9px, transparent 10px),
+    radial-gradient(ellipse at 92% 100%, rgba(42, 139, 58, .92) 0 12px, transparent 13px);
+  animation: wildGrassSway 4.2s ease-in-out infinite;
+}
+.wild-grass::after {
+  height: 46px;
+  top: auto;
+  bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(58, 172, 72, .25), rgba(17, 91, 43, .94)),
+    radial-gradient(ellipse at 8% 100%, #6fca5f 0 12px, transparent 13px),
+    radial-gradient(ellipse at 23% 100%, #309647 0 15px, transparent 16px),
+    radial-gradient(ellipse at 41% 100%, #80d26a 0 11px, transparent 12px),
+    radial-gradient(ellipse at 60% 100%, #2f8f43 0 16px, transparent 17px),
+    radial-gradient(ellipse at 78% 100%, #7ad066 0 12px, transparent 13px),
+    radial-gradient(ellipse at 94% 100%, #319247 0 15px, transparent 16px);
+  filter: drop-shadow(0 -2px 4px rgba(5, 46, 22, .35));
+  animation: wildGrassSway 3.6s ease-in-out infinite reverse;
 }
 .wild-title {
   position: relative;
@@ -312,8 +367,8 @@
 .wild-sprite {
   position: relative;
   z-index: 1;
-  width: 190px;
-  height: 190px;
+  width: 160px;
+  height: 160px;
   object-fit: contain;
   filter: drop-shadow(0 8px 18px rgba(0,0,0,.55));
   animation: wildHop 1.2s ease-in-out infinite;
@@ -393,6 +448,10 @@
 @keyframes wildHop {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
+}
+@keyframes wildGrassSway {
+  0%, 100% { transform: skewX(-1deg) translateX(-2px); }
+  50% { transform: skewX(1.4deg) translateX(2px); }
 }
 @keyframes pokeballCatch {
   0% { opacity: 0; transform: translateX(-50%) translateY(120px) scale(.75) rotate(0); }
@@ -620,6 +679,8 @@
 
 /* ===================== SIDE PANEL ===================== */
 #poke-panel {
+  position: relative;
+  z-index: 1200;
   width: 260px; flex-shrink: 0;
   background: var(--surface);
   border-left: 2px solid var(--border2);

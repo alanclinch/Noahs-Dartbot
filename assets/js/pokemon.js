@@ -951,6 +951,16 @@ function updateWildModal() {
     const dartNo = wildEncounter.darts[wildEncounter.playerIdx].length + 1;
     prompt.textContent = `${p.name}: dart ${dartNo} of 3`;
   }
+  const p = players[wildEncounter.playerIdx];
+  const nameEl = document.getElementById('turn-player-name');
+  const subEl = document.getElementById('turn-sub');
+  if (nameEl && p) {
+    nameEl.textContent = p.name;
+    nameEl.classList.toggle('cpu-turn', p.isCpu);
+  }
+  if (subEl && p) subEl.textContent = p.isCpu ? 'Computer catching...' : 'Throw to catch';
+  if (p) setActionZone('CATCH THE WILD POKEMON!', `${p.name}: highest 3-dart total`);
+  applyTurnIndicator();
 }
 
 function startWildEncounter() {
@@ -960,6 +970,10 @@ function startWildEncounter() {
   seenThrows = 0;
   turnEnded = false;
   const first = currentPlayer;
+  const nextBtn = document.getElementById('next-player-btn');
+  const ball = document.getElementById('wild-ball');
+  if (nextBtn) nextBtn.style.display = 'none';
+  if (ball) ball.classList.remove('catch');
   wildEncounter = {
     pokemon: pickWildEncounterPokemon(),
     scores: [0, 0],
@@ -1009,6 +1023,8 @@ function registerEncounterDart(seg) {
       seenThrows = 0;
       turnEnded = false;
       resetDartSlots();
+      const nextBtn = document.getElementById('next-player-btn');
+      if (nextBtn) nextBtn.style.display = 'none';
       updateWildModal();
       if (players[currentPlayer].isCpu) setTimeout(() => runCpuTurn(), tDelay(700));
     }, tDelay(700));
@@ -1374,7 +1390,7 @@ function advanceTurn() {
   updateBattleField();
   const guide = document.getElementById('scoring-guide');
   if (guide) guide.classList.remove('visible');
-  if (completedRound > 0 && completedRound % 3 === 0 && encounterPendingRound !== completedRound) {
+  if (completedRound > 0 && completedRound % 4 === 0 && encounterPendingRound !== completedRound) {
     encounterPendingRound = completedRound;
     setTimeout(() => {
       startWildEncounter();
@@ -2222,6 +2238,30 @@ function manualDraft(num) {
 function manualDart(num) {
   if (draftPhase) {
     if (num >= 1 && num <= 20) manualDraft(num);
+    return;
+  }
+  if (encounterActive) {
+    if (!wildEncounter || turnEnded || !players[currentPlayer] || players[currentPlayer].isCpu) {
+      if (keypadMod !== 1) toggleKeypadMod(keypadMod);
+      return;
+    }
+    if (num === 0) {
+      throwLog.push({ segment: null, source: 'manual', phase: 'encounter', player: currentPlayer, ts: Date.now() });
+      registerDart(null);
+    } else {
+      let mul = keypadMod;
+      if (num === 25 && mul === 3) mul = 1;
+      const nameMap = { 1:'S', 2:'D', 3:'T' };
+      const seg = {
+        number: num,
+        multiplier: mul,
+        name: num === 25 ? (mul === 2 ? 'D25' : 'B25') : `${nameMap[mul]}${num}`,
+        bed: num === 25 ? 'Single' : (mul === 2 ? 'Double' : mul === 3 ? 'Triple' : 'SingleOuter'),
+      };
+      throwLog.push({ segment: seg, source: 'manual', phase: 'encounter', player: currentPlayer, ts: Date.now() });
+      registerDart(seg);
+    }
+    if (keypadMod !== 1) toggleKeypadMod(keypadMod);
     return;
   }
   if (!gameActive || turnEnded || players[currentPlayer].isCpu) {
